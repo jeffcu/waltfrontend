@@ -27,4 +27,5 @@ def experiment():
         return str(e)
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    port = int(os.environ.get('PORT', 5000)) # This is how the $PORT is obtained
+    app.run(host='0.0.0.0', port=port)  #  Binding to 0.0.0.0 for heroku and using the $PORT
