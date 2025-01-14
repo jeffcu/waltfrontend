@@ -1,35 +1,48 @@
-import os
-from flask import Flask, request, render_template
-from openai import OpenAI
-from dotenv import load_dotenv
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jeff's Virtual Lab</title>
+    <style>
+        body {
+            background-color: lightblue;
+            font-family: sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-top: 20px;
+        }
+        textarea {
+          width: 80%;
+          padding: 10px;
+          margin: 10px 0;
+        }
+        .container {
+            width: 80%;
+            max-width: 800px;
+            padding: 20px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
 
-# Load the API key from .env
-load_dotenv()
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-
-app = Flask(__name__)
-
-@app.route('/')
-def home():
-    return render_template('index.html')
-
-@app.route('/experiment', methods=['POST'])
-def experiment():
-    user_input = request.form['user_input']
-    if len(user_input.split()) > 256:
-      return "Error: Input must be less than 256 words."
-    try:
-        response = client.completions.create(
-            model="text-davinci-003",
-            prompt=user_input,
-            max_tokens=150, # set to 150 for this
-            temperature=0.7 # added a temperature parameter
-        )
-        return render_template('index.html', response=response.choices[0].text.strip(), user_input=user_input)
-    except Exception as e:
-        return render_template('index.html', error=str(e), user_input=user_input)
-
-
-if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port)
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Jeff's Virtual Lab</h1>
+        <form method="post" action="/experiment">
+            <label for="user_input">Enter your prompt (max 256 words):</label><br>
+            <textarea id="user_input" name="user_input" rows="5" required>{{user_input}}</textarea><br>
+            <input type="submit" value="Run Experiment">
+        </form>
+    {% if response %}
+         <h2>OpenAI Response:</h2>
+        <p>{{response}}</p>
+    {% elif error %}
+        <p style="color: red;">Error: {{ error }}</p>
+    {% endif %}
+    </div>
+</body>
+</html>
