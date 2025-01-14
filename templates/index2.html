@@ -25,16 +25,14 @@
             background-color: white;
             border-radius: 8px;
             box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+         .response-container {
+             max-height: 300px;
+             overflow-y: auto;
+             border: 1px solid #ddd;
+             padding: 10px;
+             margin-top: 10px;
          }
-        .response-container {
-            max-height: 80vh; /* Use 80% of the viewport height */
-            overflow-y: auto; /* Enable vertical scroll if content overflows */
-            border: 1px solid #ddd;
-            padding: 10px;
-            margin-top: 10px;
-            width: 100%; /* Ensure the box fills available width */
-         }
-
     </style>
 </head>
 <body>
@@ -47,14 +45,14 @@
             <textarea id="user_input" name="user_input" rows="5" required>{{user_input}}</textarea><br>
             <input type="submit" value="Run Experiment">
         </form>
-    {% if response %}
-        <h2>OpenAI Response:</h2>
-        <div class="response-container">
-          <p>{{response}}</p>
-       </div>
-       {% elif error %}
-        <p style="color: red;">Error: {{ error }}</p>
-       {% endif %}
+      {% if response %}
+          <h2>OpenAI Response:</h2>
+          <div class="response-container">
+             <p>{{response}}</p>
+          </div>
+        {% elif error %}
+             <p style="color: red;">Error: {{ error }}</p>
+        {% endif %}
     </div>
 </body>
 </html>
