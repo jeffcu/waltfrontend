@@ -12,33 +12,40 @@ client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 # Initialize Flask application
 app = Flask(__name__)
 
-@app.route('/', methods=['GET', 'POST']) # allow for get and post methods
+@app.route('/', methods=['GET', 'POST'])
 def home():
     """Renders the main page with the user prompt input and displays the response."""
-    user_input = "" # set an initial empty string for user input
-    response = "" # set an initial empty string for the response
-    error = "" # set an initial empty string for errors
+    user_input = ""
+    response = ""
+    error = ""
+    system_instructions = "" # set an initial empty string for the system instructions
 
-    if request.method == 'POST': # check to see if we have received a post request
+    if request.method == 'POST':
         user_input = request.form['user_input'] # get the user input from the form
+        system_instructions = request.form.get('system_instructions', "") # get the system instructions, but default to an empty string
+
         if len(user_input.split()) > 256:
-           error = "Error: Input must be less than 256 words." # set the error message
-           return render_template('index.html', error=error, user_input=user_input) # render template with the error
+            error = "Error: Input must be less than 256 words."
+            return render_template('index.html', error=error, user_input=user_input, system_instructions=system_instructions)
+
+
+        combined_prompt = f"{system_instructions}\n\nUser Input: {user_input}" # combine the instructions and user input
 
         try:
             response = client.completions.create(
                 model="gpt-3.5-turbo-instruct",
-                prompt=user_input,
+                prompt=combined_prompt, # use the combined prompt
                 max_tokens=150,
                 temperature=0.7
             )
-            response = response.choices[0].text.strip() # set the response
+            response = response.choices[0].text.strip() # get the response
         except Exception as e:
-           error = str(e) # If there is an error store that as the error string
+           error = str(e) # catch any errors
 
-    return render_template('index.html', response=response, user_input=user_input, error=error) # render the template
+        return render_template('index.html', response=response, user_input=user_input, system_instructions=system_instructions, error=error) # Render the response and user_input
+
+    return render_template('index.html', response=response, user_input=user_input, system_instructions=system_instructions, error=error) # render the template
+
 if __name__ == '__main__':
-    # Get the port from environment variable or default to 5000 locally
     port = int(os.environ.get('PORT', 5000))
-    # Run the flask app
     app.run(host='0.0.0.0', port=port)
