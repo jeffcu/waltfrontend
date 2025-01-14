@@ -32,17 +32,17 @@
 <body>
     <div class="container">
         <h1>Jeff's Virtual Lab</h1>
-        <form method="post" action="/">
+        <form method="post" action="/experiment">
             <label for="user_input">Enter your prompt (max 256 words):</label><br>
             <textarea id="user_input" name="user_input" rows="5" required>{{user_input}}</textarea><br>
             <input type="submit" value="Run Experiment">
         </form>
-      {% if response %}
+    {% if response %}
         <h2>OpenAI Response:</h2>
         <p>{{response}}</p>
-      {% elif error %}
-       <p style="color: red;">Error: {{ error }}</p>
-      {% endif %}
+    {% elif error %}
+        <p style="color: red;">Error: {{ error }}</p>
+    {% endif %}
     </div>
 </body>
 </html>
