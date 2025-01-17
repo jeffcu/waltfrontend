@@ -3,6 +3,7 @@ from flask import Flask, request, render_template
 from openai import OpenAI
 from dotenv import load_dotenv
 import asyncio
+from PyPDF2 import PdfReader
 
 # Load the API key from .env file (for local testing)
 load_dotenv()
@@ -63,6 +64,21 @@ async def call_openai_api(prompt):
     except Exception as e:
         return f"Error: {str(e)}"
 
+def extract_text_from_file(filepath):
+    """Extract text content from supported file types."""
+    if filepath.endswith('.pdf'):
+        try:
+            reader = PdfReader(filepath)
+            return "\n".join([page.extract_text() for page in reader.pages])
+        except Exception as e:
+            return f"Error reading PDF: {str(e)}"
+    else:
+        try:
+            with open(filepath, 'r', encoding='utf-8', errors='replace') as f:
+                return f.read()
+        except Exception as e:
+            return f"Error reading file: {str(e)}"
+
 @app.route('/', methods=['GET', 'POST'])
 def home():
     """Renders the main page with the user query input and displays the responses."""
@@ -72,7 +88,7 @@ def home():
     if request.method == 'POST':
         try:
             # Get user input
-            user_query = request.form['user_query']
+            user_query = request.form['user_query'].encode('utf-8', errors='replace').decode('utf-8')
             uploaded_files = request.files.getlist('uploaded_files')
 
             # Read content from uploaded files
@@ -81,8 +97,7 @@ def home():
                 if file.filename:
                     filepath = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
                     file.save(filepath)
-                    with open(filepath, 'r') as f:
-                        file_content += f.read() + "\n"
+                    file_content += extract_text_from_file(filepath).encode('utf-8', errors='replace').decode('utf-8') + "\n"
 
             # Combine user query and file content
             combined_content = f"User Query: {user_query}\n\nUploaded Content:\n{file_content}"
