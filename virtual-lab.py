@@ -84,6 +84,8 @@ def home():
     """Renders the main page with the user query input and displays the responses."""
     responses = None  # Ensure no responses are set initially
     error = ""
+    user_query = ""
+    uploaded_files_content = ""
 
     if request.method == 'POST':
         try:
@@ -101,6 +103,7 @@ def home():
 
             # Combine user query and file content
             combined_content = f"User Query: {user_query}\n\nUploaded Content:\n{file_content}"
+            uploaded_files_content = file_content  # Preserve file content for UI display
 
             # Generate prompts and make API calls
             loop = asyncio.new_event_loop()
@@ -120,8 +123,8 @@ def home():
         except Exception as e:
             error = f"An error occurred: {str(e)}"
 
-    # For GET requests, render the template without responses
-    return render_template('index.html', responses=responses, error=error)
+    # Render template with user input preserved
+    return render_template('index.html', responses=responses, error=error, user_query=user_query, uploaded_files_content=uploaded_files_content)
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
