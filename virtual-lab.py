@@ -120,7 +120,7 @@ def home():
         except Exception as e:
             error = f"An error occurred: {str(e)}"
 
-    return render_template('index.html', responses=responses, error=error)
+    return render_template('index.html', responses=responses if request.method == 'POST' else None, error=error)
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))

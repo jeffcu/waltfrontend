@@ -3,49 +3,87 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Enhanced Virtual Lab</title>
+    <title>Virtual Lab</title>
     <style>
         body {
-            background-color: lightblue;
-            font-family: sans-serif;
+            background-color: #f0e6d2;
+            font-family: 'Courier New', Courier, monospace;
+            color: #3a3a3a;
             display: flex;
-            flex-direction: column;
+            justify-content: center;
             align-items: center;
-            padding-top: 20px;
+            height: 100vh;
+            margin: 0;
         }
-        textarea, input[type="file"] {
-            width: 80%;
-            padding: 10px;
-            margin: 10px 0;
-        }
+
         .container {
             width: 80%;
             max-width: 800px;
+            background-color: #fffbe0;
+            border: 5px solid #f9c74f;
+            border-radius: 15px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
             padding: 20px;
-            background-color: white;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
         }
-        .response-container {
-            margin-top: 20px;
+
+        h1 {
+            font-size: 2rem;
+            text-align: center;
+            color: #3f88c5;
+            margin-bottom: 20px;
+        }
+
+        textarea, input[type="file"], input[type="submit"] {
+            display: block;
+            width: 100%;
             padding: 10px;
-            background-color: #f9f9f9;
-            border: 1px solid #ddd;
+            margin: 10px 0;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 1rem;
+            border: 2px solid #8d99ae;
             border-radius: 5px;
         }
+
+        textarea {
+            resize: vertical;
+            height: 100px;
+        }
+
+        input[type="submit"] {
+            background-color: #3f88c5;
+            color: white;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        input[type="submit"]:hover {
+            background-color: #2b6ca3;
+        }
+
+        .response-container {
+            margin-top: 20px;
+            background-color: #fdfcdc;
+            border: 2px solid #f9c74f;
+            border-radius: 10px;
+            padding: 15px;
+        }
+
         .response-title {
             font-weight: bold;
-            margin-bottom: 10px;
+            color: #3a3a3a;
         }
+
         .error {
             color: red;
             font-weight: bold;
+            text-align: center;
+            margin-top: 10px;
         }
-        #loading {
-            display: none;
-            margin-top: 20px;
+
+        .loading {
+            text-align: center;
+            color: #3f88c5;
             font-weight: bold;
-            color: darkblue;
         }
     </style>
     <script>
@@ -57,29 +95,28 @@
 </head>
 <body>
     <div class="container">
-        <h1>Enhanced Virtual Lab</h1>
+        <h1>Virtual Lab - Retro AI</h1>
         <form method="post" action="/" enctype="multipart/form-data" onsubmit="showLoading()">
-            <label for="user_query">Enter your query:</label><br>
-            <textarea id="user_query" name="user_query" rows="3" required></textarea><br>
+            <label for="user_query">Enter your query:</label>
+            <textarea id="user_query" name="user_query" required></textarea>
 
-            <label for="uploaded_files">Upload files (optional):</label><br>
-            <input id="uploaded_files" name="uploaded_files" type="file" multiple><br>
+            <label for="uploaded_files">Upload files (optional):</label>
+            <input id="uploaded_files" name="uploaded_files" type="file" multiple>
 
-            <input type="submit" value="Run Analysis">
+            <input type="submit" value="Analyze">
         </form>
 
-        <div id="loading">Processing your request, please wait...</div>
+        <div id="loading" class="loading" style="display: none;">Processing your request, please wait...</div>
 
         {% if error %}
             <p class="error">Error: {{ error }}</p>
         {% endif %}
 
         {% if responses %}
-            <h2>Analysis Results:</h2>
             {% for response in responses %}
                 <div class="response-container">
                     <div class="response-title">{{ response.title }}</div>
-                    <div class="response-content">{{ response.response }}</div>
+                    <div>{{ response.response }}</div>
                 </div>
             {% endfor %}
         {% endif %}
