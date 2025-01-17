@@ -4,6 +4,7 @@ from openai import OpenAI
 from dotenv import load_dotenv
 import asyncio
 from PyPDF2 import PdfReader
+import fitz  # PyMuPDF
 
 # Load the API key from .env file (for local testing)
 load_dotenv()
@@ -68,9 +69,17 @@ def extract_text_from_file(filepath):
     """Extract text content from supported file types."""
     if filepath.endswith('.pdf'):
         try:
+            # Attempt with PyPDF2
             reader = PdfReader(filepath)
             text = "\n".join([page.extract_text() for page in reader.pages])
-            return text
+            if text.strip():
+                return text
+            # Fallback to PyMuPDF
+            with fitz.open(filepath) as doc:
+                text = ""
+                for page in doc:
+                    text += page.get_text()
+                return text
         except Exception as e:
             return f"Error reading PDF: {str(e)}"
     else:
