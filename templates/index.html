@@ -41,12 +41,24 @@
             color: red;
             font-weight: bold;
         }
+        #loading {
+            display: none;
+            margin-top: 20px;
+            font-weight: bold;
+            color: darkblue;
+        }
     </style>
+    <script>
+        function showLoading() {
+            const loading = document.getElementById('loading');
+            loading.style.display = 'block';
+        }
+    </script>
 </head>
 <body>
     <div class="container">
         <h1>Enhanced Virtual Lab</h1>
-        <form method="post" action="/" enctype="multipart/form-data">
+        <form method="post" action="/" enctype="multipart/form-data" onsubmit="showLoading()">
             <label for="user_query">Enter your query:</label><br>
             <textarea id="user_query" name="user_query" rows="3" required></textarea><br>
 
@@ -55,6 +67,8 @@
 
             <input type="submit" value="Run Analysis">
         </form>
+
+        <div id="loading">Processing your request, please wait...</div>
 
         {% if error %}
             <p class="error">Error: {{ error }}</p>
