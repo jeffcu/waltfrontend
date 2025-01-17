@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Jeff's Virtual Lab</title>
+    <title>Enhanced Virtual Lab</title>
     <style>
         body {
             background-color: lightblue;
@@ -13,7 +13,7 @@
             align-items: center;
             padding-top: 20px;
         }
-        textarea {
+        textarea, input[type="file"] {
             width: 80%;
             padding: 10px;
             margin: 10px 0;
@@ -25,36 +25,50 @@
             background-color: white;
             border-radius: 8px;
             box-shadow: 0 0 10px rgba(0,0,0,0.1);
-         }
+        }
         .response-container {
-            max-height: 80vh; /* Use 80% of the viewport height */
-            overflow-y: auto; /* Enable vertical scroll if content overflows */
-            border: 1px solid #ddd;
+            margin-top: 20px;
             padding: 10px;
-            margin-top: 10px;
-            width: 100%; /* Ensure the box fills available width */
-         }
-
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .response-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .error {
+            color: red;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Jeff's Virtual Lab</h1>
-        <form method="post" action="/">
-            <label for="system_instructions">System Instructions:</label><br>
-            <textarea id="system_instructions" name="system_instructions" rows="3">{{system_instructions}}</textarea><br>
-            <label for="user_input">Enter your prompt (max 256 words):</label><br>
-            <textarea id="user_input" name="user_input" rows="5" required>{{user_input}}</textarea><br>
-            <input type="submit" value="Run Experiment">
+        <h1>Enhanced Virtual Lab</h1>
+        <form method="post" action="/" enctype="multipart/form-data">
+            <label for="user_query">Enter your query:</label><br>
+            <textarea id="user_query" name="user_query" rows="3" required></textarea><br>
+
+            <label for="uploaded_files">Upload files (optional):</label><br>
+            <input id="uploaded_files" name="uploaded_files" type="file" multiple><br>
+
+            <input type="submit" value="Run Analysis">
         </form>
-    {% if response %}
-        <h2>OpenAI Response:</h2>
-        <div class="response-container">
-          <p>{{response}}</p>
-       </div>
-       {% elif error %}
-        <p style="color: red;">Error: {{ error }}</p>
-       {% endif %}
+
+        {% if error %}
+            <p class="error">Error: {{ error }}</p>
+        {% endif %}
+
+        {% if responses %}
+            <h2>Analysis Results:</h2>
+            {% for response in responses %}
+                <div class="response-container">
+                    <div class="response-title">{{ response.title }}</div>
+                    <div class="response-content">{{ response.response }}</div>
+                </div>
+            {% endfor %}
+        {% endif %}
     </div>
 </body>
 </html>
