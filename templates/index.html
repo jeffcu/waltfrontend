@@ -6,30 +6,33 @@
     <title>Virtual Lab</title>
     <style>
         body {
-            background-color: #f0e6d2;
+            background-color: #00274d;
             font-family: 'Courier New', Courier, monospace;
-            color: #3a3a3a;
+            color: #ffffff;
             display: flex;
-            justify-content: center;
+            flex-direction: column;
             align-items: center;
-            height: 100vh;
             margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            box-sizing: border-box;
         }
 
         .container {
-            width: 80%;
+            width: 100%;
             max-width: 800px;
-            background-color: #fffbe0;
+            background-color: #003366;
             border: 5px solid #f9c74f;
             border-radius: 15px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
             padding: 20px;
+            overflow: auto;
         }
 
         h1 {
             font-size: 2rem;
             text-align: center;
-            color: #3f88c5;
+            color: #f9c74f;
             margin-bottom: 20px;
         }
 
@@ -42,6 +45,8 @@
             font-size: 1rem;
             border: 2px solid #8d99ae;
             border-radius: 5px;
+            background-color: #00274d;
+            color: #ffffff;
         }
 
         textarea {
@@ -50,27 +55,28 @@
         }
 
         input[type="submit"] {
-            background-color: #3f88c5;
-            color: white;
+            background-color: #f9c74f;
+            color: #00274d;
             cursor: pointer;
             font-weight: bold;
         }
 
         input[type="submit"]:hover {
-            background-color: #2b6ca3;
+            background-color: #d6a92c;
         }
 
         .response-container {
             margin-top: 20px;
-            background-color: #fdfcdc;
+            background-color: #00509e;
             border: 2px solid #f9c74f;
             border-radius: 10px;
             padding: 15px;
+            color: #ffffff;
         }
 
         .response-title {
             font-weight: bold;
-            color: #3a3a3a;
+            color: #f9c74f;
         }
 
         .error {
@@ -82,9 +88,14 @@
 
         .loading {
             text-align: center;
-            color: #3f88c5;
+            color: #f9c74f;
             font-weight: bold;
         }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
     </style>
     <script>
         function showLoading() {

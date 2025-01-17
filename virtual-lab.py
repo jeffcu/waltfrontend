@@ -82,7 +82,7 @@ def extract_text_from_file(filepath):
 @app.route('/', methods=['GET', 'POST'])
 def home():
     """Renders the main page with the user query input and displays the responses."""
-    responses = []
+    responses = None  # Ensure no responses are set initially
     error = ""
 
     if request.method == 'POST':
@@ -120,7 +120,8 @@ def home():
         except Exception as e:
             error = f"An error occurred: {str(e)}"
 
-    return render_template('index.html', responses=responses if request.method == 'POST' else None, error=error)
+    # For GET requests, render the template without responses
+    return render_template('index.html', responses=responses, error=error)
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
