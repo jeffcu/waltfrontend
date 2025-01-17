@@ -69,7 +69,8 @@ def extract_text_from_file(filepath):
     if filepath.endswith('.pdf'):
         try:
             reader = PdfReader(filepath)
-            return "\n".join([page.extract_text() for page in reader.pages])
+            text = "\n".join([page.extract_text() for page in reader.pages])
+            return text
         except Exception as e:
             return f"Error reading PDF: {str(e)}"
     else:
@@ -86,24 +87,38 @@ def home():
     error = ""
     user_query = ""
     uploaded_files_content = ""
+    status_messages = []
 
     if request.method == 'POST':
         try:
             # Get user input
             user_query = request.form['user_query'].encode('utf-8', errors='replace').decode('utf-8')
+            status_messages.append("User query received.")
+
             uploaded_files = request.files.getlist('uploaded_files')
 
             # Read content from uploaded files
             file_content = ""
+            word_count = 0
             for file in uploaded_files:
                 if file.filename:
                     filepath = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
                     file.save(filepath)
-                    file_content += extract_text_from_file(filepath).encode('utf-8', errors='replace').decode('utf-8') + "\n"
+                    extracted_text = extract_text_from_file(filepath)
+                    if "Error" in extracted_text:
+                        status_messages.append(f"Error processing file {file.filename}: {extracted_text}")
+                    else:
+                        word_count += len(extracted_text.split())
+                        file_content += extracted_text + "\n"
+            if word_count > 0:
+                status_messages.append(f"Successfully extracted {word_count} words from uploaded files.")
+            else:
+                status_messages.append("No valid content extracted from uploaded files.")
 
             # Combine user query and file content
             combined_content = f"User Query: {user_query}\n\nUploaded Content:\n{file_content}"
             uploaded_files_content = file_content  # Preserve file content for UI display
+            status_messages.append("Combined user query and uploaded content for API calls.")
 
             # Generate prompts and make API calls
             loop = asyncio.new_event_loop()
@@ -111,6 +126,7 @@ def home():
             tasks = [
                 call_openai_api(prompt.format(content=combined_content)) for _, prompt in PREDEFINED_PROMPTS
             ]
+            status_messages.append("Initiating API calls for all prompts.")
             responses = loop.run_until_complete(asyncio.gather(*tasks))
             loop.close()
 
@@ -119,12 +135,13 @@ def home():
                 {"title": title, "response": response}
                 for (title, _), response in zip(PREDEFINED_PROMPTS, responses)
             ]
+            status_messages.append("API calls completed and responses formatted.")
 
         except Exception as e:
             error = f"An error occurred: {str(e)}"
 
-    # Render template with user input preserved
-    return render_template('index.html', responses=responses, error=error, user_query=user_query, uploaded_files_content=uploaded_files_content)
+    # Render template with user input preserved and status messages
+    return render_template('index.html', responses=responses, error=error, user_query=user_query, uploaded_files_content=uploaded_files_content, status_messages=status_messages)
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))

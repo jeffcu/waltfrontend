@@ -86,6 +86,19 @@
             margin-top: 10px;
         }
 
+        .status-messages {
+            margin-top: 15px;
+            background-color: #004080;
+            border: 2px solid #f9c74f;
+            border-radius: 10px;
+            padding: 10px;
+        }
+
+        .status-message {
+            margin: 5px 0;
+            font-size: 0.9rem;
+        }
+
         .loading {
             text-align: center;
             color: #f9c74f;
@@ -109,7 +122,7 @@
         <h1>Virtual Lab - Retro AI</h1>
         <form method="post" action="/" enctype="multipart/form-data" onsubmit="showLoading()">
             <label for="user_query">Enter your query:</label>
-            <textarea id="user_query" name="user_query" required></textarea>
+            <textarea id="user_query" name="user_query">{{ user_query }}</textarea>
 
             <label for="uploaded_files">Upload files (optional):</label>
             <input id="uploaded_files" name="uploaded_files" type="file" multiple>
@@ -118,6 +131,15 @@
         </form>
 
         <div id="loading" class="loading" style="display: none;">Processing your request, please wait...</div>
+
+        {% if status_messages %}
+            <div class="status-messages">
+                <h3>Status Updates:</h3>
+                {% for message in status_messages %}
+                    <div class="status-message">{{ message }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
 
         {% if error %}
             <p class="error">Error: {{ error }}</p>
