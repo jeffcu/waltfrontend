@@ -101,7 +101,9 @@ def home():
     if request.method == 'POST':
         try:
             # Get user input
-            user_query = request.form['user_query'].encode('utf-8', errors='replace').decode('utf-8')
+            user_query = request.form['user_query'].encode('utf-8', errors='replace').decode('utf-8').strip()
+            if not user_query:
+                raise ValueError("No user query provided.")
             status_messages.append("User query received.")
 
             uploaded_files = request.files.getlist('uploaded_files')
@@ -122,7 +124,10 @@ def home():
             if word_count > 0:
                 status_messages.append(f"Successfully extracted {word_count} words from uploaded files.")
             else:
-                status_messages.append("No valid content extracted from uploaded files.")
+                raise ValueError("No valid content extracted from uploaded files.")
+
+            if not PREDEFINED_PROMPTS:
+                raise ValueError("No prompts are defined for API calls.")
 
             # Combine user query and file content
             combined_content = f"User Query: {user_query}\n\nUploaded Content:\n{file_content}"
@@ -146,6 +151,8 @@ def home():
             ]
             status_messages.append("API calls completed and responses formatted.")
 
+        except ValueError as ve:
+            error = str(ve)
         except Exception as e:
             error = f"An error occurred: {str(e)}"
 
