@@ -7,6 +7,7 @@ import fitz  # PyMuPDF
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 import re
+import unicodedata
 
 # Load the API key from .env file (for local testing)
 load_dotenv()
@@ -20,7 +21,7 @@ app.config['UPLOAD_FOLDER'] = 'uploads'  # Folder to store uploaded files
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 # Application version
-APP_VERSION = "0.1.05"
+APP_VERSION = "0.1.07"
 
 def call_openai_api(prompt):
     """Function to call OpenAI API with the latest supported method."""
@@ -62,8 +63,13 @@ def extract_text_from_file(filepath):
         except Exception as e:
             return f"Error reading file: {str(e)}"
 
-def save_to_pdf(output_text, filename="output.pdf"):
-    """Saves given text to a PDF file with professional formatting."""
+def sanitize_text(text):
+    """Sanitize text to remove unwanted characters."""
+    text = unicodedata.normalize('NFKD', text)
+    return re.sub(r'[\u201c\u201d]', '"', text).replace("\u2022", "-").strip()
+
+def save_to_pdf(api_response, filename="output.pdf"):
+    """Saves given API response text to a PDF file with professional formatting."""
     pdf_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
     c = canvas.Canvas(pdf_path, pagesize=letter)
     width, height = letter
@@ -82,21 +88,14 @@ def save_to_pdf(output_text, filename="output.pdf"):
     # Content
     y_position = height - margin - 60
     c.setFont("Helvetica", 12)
-    lines = output_text.split("\n")
+    lines = sanitize_text(api_response).split("\n")
     for line in lines:
-        # Bold labels for sections
-        if line.startswith("Meta Instructions:") or line.startswith("User Query:") or line.startswith("API Response:"):
-            c.setFont("Helvetica-Bold", 12)
-            c.drawString(margin, y_position, line)
-            y_position -= 20  # Add extra spacing after a bold line
+        # Handle bullet points with indentation
+        if line.strip().startswith(('-', '*', '•')):
+            c.drawString(margin + 20, y_position, line)
         else:
-            c.setFont("Helvetica", 12)
-            # Handle bullet points with indentation
-            if line.strip().startswith(('-', '*', '•')):
-                c.drawString(margin + 20, y_position, line)
-            else:
-                c.drawString(margin, y_position, line)
-            y_position -= 14
+            c.drawString(margin, y_position, line)
+        y_position -= 14
 
         # Add page break if necessary
         if y_position < margin:
@@ -172,26 +171,17 @@ def download_pdf():
     """Generate and serve a PDF of the API response."""
     try:
         # Collect data from the form
-        meta_instructions = request.form['meta_instructions']
-        user_query = request.form['user_query']
         api_response = request.form['api_response']
 
         # Extract a default name from the API response (e.g., "Company Analysis")
         default_filename = "output.pdf"
         match = re.search(r'\b(?:Company|Startup|Business):?\s*([\w\s]+)', api_response)
         if match:
-            subject_name = match.group(1).strip()
+            subject_name = sanitize_text(match.group(1).strip())
             default_filename = f"{subject_name.replace(' ', '_')}_Analysis.pdf"
 
-        # Combine data into a formatted string
-        output_text = (
-            f"Meta Instructions:\n{meta_instructions}\n\n"
-            f"User Query:\n{user_query}\n\n"
-            f"API Response:\n{api_response}\n"
-        )
-
-        # Generate the PDF
-        pdf_path = save_to_pdf(output_text, filename=default_filename)
+        # Generate the PDF with only the API response
+        pdf_path = save_to_pdf(api_response, filename=default_filename)
 
         # Serve the PDF as a downloadable file
         return send_file(pdf_path, as_attachment=True, download_name=default_filename)
