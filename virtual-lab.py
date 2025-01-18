@@ -96,7 +96,8 @@ def angel_investment_analysis():
                 "- Strong barriers against competitors\n"
                 "- Business model includes direct-to-consumer sales, professional installers/distributors, and partnerships with insurance companies\n"
                 "- Sales projections include revenue of $168M and profit of $110M over five years\n"
-                "- Team includes experienced founders and key team members\n                "- Seeking funding of $250k - $1M\n"
+                "- Team includes experienced founders and key team members\n"
+                "• Seeking funding of $250k - $1M\n"
             )
 
         except Exception as e:
