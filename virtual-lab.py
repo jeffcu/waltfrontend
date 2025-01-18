@@ -1,4 +1,3 @@
-
 import os
 from flask import Flask, request, render_template
 from openai import OpenAI
@@ -17,6 +16,9 @@ client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'uploads'  # Folder to store uploaded files
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+
+# Application version
+APP_VERSION = "0.0.5"
 
 # Load predefined prompts and meta instructions from a file
 PROMPTS_FILE = 'prompts.txt'
@@ -181,7 +183,7 @@ def home():
             error = f"An error occurred: {str(e)}"
 
     # Render template with user input preserved, meta-instructions, and status messages
-    return render_template('index.html', responses=responses, error=error, user_query=user_query, meta_instructions=meta_instructions, uploaded_files_content=uploaded_files_content, status_messages=status_messages)
+    return render_template('index.html', responses=responses, error=error, user_query=user_query, meta_instructions=meta_instructions, uploaded_files_content=uploaded_files_content, status_messages=status_messages, app_version=APP_VERSION)
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
