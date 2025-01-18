@@ -56,7 +56,7 @@ def gallery():
     """Render the gallery page."""
     return render_template('gallery.html', app_version=APP_VERSION)
 
-@app.route('/')
+@app.route('/', methods=['GET'])
 def index():
     """Redirect to the gallery page."""
     return redirect(url_for('gallery'))
@@ -74,7 +74,7 @@ def angel_investment_analysis():
 
     if request.method == 'POST':
         try:
-            # Get form inputs
+            print("Form data received:", request.form)  # Debugging line
             meta_instructions = request.form.get('meta_instructions', default_meta_instructions).strip()
             user_query = request.form.get('user_query', default_user_query).strip()
 
@@ -83,6 +83,8 @@ def angel_investment_analysis():
                 "Meta Instructions": meta_instructions,
                 "User Query": user_query
             }
+
+            print("Inputs processed:", inputs)  # Debugging line
 
             # Mock API response (replace with actual API call)
             api_response = (
@@ -102,6 +104,7 @@ def angel_investment_analysis():
 
         except Exception as e:
             error = str(e)
+            print("Error occurred:", error)  # Debugging line
 
     return render_template('index.html', inputs=inputs, api_response=api_response, error=error, app_version=APP_VERSION)
 
