@@ -14,7 +14,7 @@ app.config['UPLOAD_FOLDER'] = 'uploads'  # Folder to store uploaded files
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 # Application version
-APP_VERSION = "0.2.0"
+APP_VERSION = "0.2.1"
 
 def sanitize_text(text):
     """Sanitize text to remove unwanted characters."""
@@ -99,7 +99,7 @@ def angel_investment_analysis():
                 "- Business model includes direct-to-consumer sales, professional installers/distributors, and partnerships with insurance companies\n"
                 "- Sales projections include revenue of $168M and profit of $110M over five years\n"
                 "- Team includes experienced founders and key team members\n"
-                "• Seeking funding of $250k - $1M\n"
+                "- Seeking funding of $250k - $1M\n"
             )
 
         except Exception as e:

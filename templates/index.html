@@ -1,182 +1,121 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Jeff's AI Workshop</title>
+    <title>Angel Investment Analysis</title>
     <style>
         body {
             font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #f4f4f9;
-            color: #333;
-        }
-
-        .container {
-            max-width: 800px;
-            margin: 50px auto;
-            padding: 20px;
-            background: #ffffff;
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            margin: 20px;
+            line-height: 1.6;
         }
 
         h1 {
-            font-size: 24px;
-            margin-bottom: 20px;
             text-align: center;
             color: #0073e6;
         }
 
+        .form-section {
+            margin-bottom: 20px;
+        }
+
         label {
             font-weight: bold;
-            margin-top: 10px;
             display: block;
+            margin-bottom: 5px;
         }
 
-        input[type="text"], textarea {
+        textarea {
             width: 100%;
-            padding: 10px;
-            margin-top: 5px;
-            margin-bottom: 20px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-        }
-
-        input[type="file"] {
-            margin-top: 10px;
-            margin-bottom: 20px;
+            height: 100px;
+            margin-bottom: 15px;
         }
 
         button {
-            display: block;
-            width: 100%;
             background-color: #0073e6;
             color: white;
-            padding: 10px;
             border: none;
-            border-radius: 4px;
+            padding: 10px 20px;
             cursor: pointer;
-            font-size: 16px;
         }
 
         button:hover {
             background-color: #005bb5;
         }
 
-        .output-box {
-            background: #f9f9f9;
+        .output-section {
+            margin-top: 20px;
             border: 1px solid #ddd;
             padding: 15px;
-            margin-top: 10px;
-            border-radius: 4px;
-            white-space: pre-wrap;
-            word-wrap: break-word;
+            background-color: #f9f9f9;
         }
 
-        .collapsible {
-            background-color: #555;
-            color: white;
-            cursor: pointer;
-            padding: 10px;
-            width: 100%;
-            border: none;
-            text-align: left;
-            outline: none;
-            font-size: 14px;
-            border-radius: 4px;
-            margin-top: 10px;
-        }
-
-        .active, .collapsible:hover {
-            background-color: #333;
-        }
-
-        .content {
-            padding: 0 18px;
+        .collapsed {
             display: none;
-            overflow: hidden;
-            background-color: #f4f4f9;
+        }
+
+        .toggle-button {
+            background-color: #f1f1f1;
             border: 1px solid #ddd;
-            margin-top: 10px;
-            border-radius: 4px;
+            padding: 5px 10px;
+            cursor: pointer;
+            font-size: 14px;
+            color: #555;
+        }
+
+        .toggle-button:hover {
+            background-color: #e1e1e1;
         }
 
         .footer {
             text-align: center;
-            margin-top: 20px;
-            font-size: 14px;
+            margin-top: 30px;
+            font-size: 12px;
             color: #777;
         }
+
     </style>
+    <script>
+        function toggleSection(id) {
+            const section = document.getElementById(id);
+            section.classList.toggle("collapsed");
+        }
+    </script>
 </head>
+
 <body>
-    <div class="container">
-        <h1>Jeff's AI Workshop</h1>
+    <h1>Angel Investment Analysis</h1>
 
-        <form method="POST" enctype="multipart/form-data" action="/">
-            <label for="meta_instructions">Meta Instructions</label>
-            <textarea id="meta_instructions" name="meta_instructions" rows="4" placeholder="Enter meta instructions here...">You're an expert at understanding startup companies. You can summarize them quickly.</textarea>
-
-            <label for="user_query">User Query</label>
-            <textarea id="user_query" name="user_query" rows="4" placeholder="Enter your query here...">Tell me about this company and its market. Summarize the company name and what other information you can determine from the provided passed information from their presentation.</textarea>
-
-            <label for="uploaded_files">Upload Files</label>
-            <input type="file" id="uploaded_files" name="uploaded_files" multiple>
-
-            <button type="submit">Analyze</button>
-        </form>
-
-        <form method="POST" action="/download">
-            <input type="hidden" name="meta_instructions" value="{{ inputs['Meta Instructions'] }}">
-            <input type="hidden" name="user_query" value="{{ inputs['User Query'] }}">
-            <input type="hidden" name="api_response" value="{{ api_response }}">
-            <button type="submit">Download PDF</button>
-        </form>
-
-        {% if inputs %}
-        <div class="output-box">
-            <strong>API Response:</strong>
-            <div>{{ api_response }}</div>
+    <form method="POST" action="/angel-investment-analysis">
+        <div class="form-section">
+            <label for="meta_instructions">Meta Instructions:</label>
+            <textarea id="meta_instructions" name="meta_instructions">You're an expert at understanding startup companies. You can summarize them quickly.</textarea>
         </div>
 
-        <button type="button" class="collapsible">Uploaded Content</button>
-        <div class="content">
-            <div class="output-box">{{ inputs['Uploaded Content'] }}</div>
+        <div class="form-section">
+            <label for="user_query">User Query:</label>
+            <textarea id="user_query" name="user_query">Tell me about this company and its market. Summarize the company name and what other information you can determine from the provided passed information from their presentation.</textarea>
         </div>
 
-        <button type="button" class="collapsible">API Call Text</button>
-        <div class="content">
-            <div class="output-box">{{ api_call_text }}</div>
-        </div>
-        {% endif %}
+        <button type="submit">Analyze</button>
+    </form>
 
-        {% if error %}
-        <div class="output-box" style="color: red;">
-            <strong>Error:</strong>
-            <div>{{ error }}</div>
-        </div>
-        {% endif %}
+    <div class="output-section">
+        <h2>Inputs</h2>
+        <pre>{{ inputs }}</pre>
 
-        <div class="footer">
-            Version {{ app_version }}
-        </div>
+        <h2>API Response</h2>
+        <pre>{{ api_response }}</pre>
+
+        <h2>Error (if any)</h2>
+        <pre>{{ error }}</pre>
     </div>
 
-    <script>
-        const collapsibles = document.querySelectorAll(".collapsible");
-        collapsibles.forEach(collapsible => {
-            collapsible.addEventListener("click", function() {
-                this.classList.toggle("active");
-                const content = this.nextElementSibling;
-                if (content.style.display === "block") {
-                    content.style.display = "none";
-                } else {
-                    content.style.display = "block";
-                }
-            });
-        });
-    </script>
+    <div class="footer">
+        <p>Generated by Jeff's Virtual Lab - Version {{ app_version }}</p>
+    </div>
 </body>
+
 </html>
