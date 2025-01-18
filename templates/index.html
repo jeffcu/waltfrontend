@@ -1,121 +1,191 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Angel Investment Analysis</title>
+    <title>Jeff's Virtual Lab - Angel Investment Analysis</title>
     <style>
         body {
             font-family: Arial, sans-serif;
-            margin: 20px;
             line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f9;
+            color: #333;
+        }
+
+        header {
+            background-color: #0073e6;
+            color: white;
+            padding: 1rem 0;
+            text-align: center;
+        }
+
+        main {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 1rem;
+            background: white;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
         }
 
         h1 {
             text-align: center;
-            color: #0073e6;
         }
 
         .form-section {
-            margin-bottom: 20px;
+            margin-bottom: 1.5rem;
         }
 
         label {
-            font-weight: bold;
             display: block;
-            margin-bottom: 5px;
+            margin-bottom: 0.5rem;
+            font-weight: bold;
+        }
+
+        input[type="text"], textarea, input[type="file"] {
+            width: 100%;
+            padding: 0.75rem;
+            margin-bottom: 1rem;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 1rem;
         }
 
         textarea {
-            width: 100%;
-            height: 100px;
-            margin-bottom: 15px;
+            resize: vertical;
+            min-height: 100px;
         }
 
         button {
             background-color: #0073e6;
             color: white;
+            padding: 0.75rem 1.5rem;
             border: none;
-            padding: 10px 20px;
+            border-radius: 4px;
             cursor: pointer;
+            font-size: 1rem;
         }
 
         button:hover {
             background-color: #005bb5;
         }
 
-        .output-section {
-            margin-top: 20px;
+        .output {
+            margin-top: 2rem;
+            padding: 1rem;
+            background: #f9f9f9;
             border: 1px solid #ddd;
-            padding: 15px;
-            background-color: #f9f9f9;
+            border-radius: 4px;
         }
 
-        .collapsed {
-            display: none;
-        }
-
-        .toggle-button {
-            background-color: #f1f1f1;
-            border: 1px solid #ddd;
-            padding: 5px 10px;
+        .collapsible {
             cursor: pointer;
-            font-size: 14px;
+            padding: 0.5rem;
+            border: none;
+            text-align: left;
+            outline: none;
+            background-color: #f1f1f1;
+            font-size: 1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .collapsible:hover {
+            background-color: #ddd;
+        }
+
+        .content {
+            padding: 0 1rem;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.2s ease-out;
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 2rem;
+            font-size: 0.9rem;
             color: #555;
         }
-
-        .toggle-button:hover {
-            background-color: #e1e1e1;
-        }
-
-        .footer {
-            text-align: center;
-            margin-top: 30px;
-            font-size: 12px;
-            color: #777;
-        }
-
     </style>
-    <script>
-        function toggleSection(id) {
-            const section = document.getElementById(id);
-            section.classList.toggle("collapsed");
-        }
-    </script>
 </head>
-
 <body>
-    <h1>Angel Investment Analysis</h1>
+    <header>
+        <h1>Jeff's Virtual Lab</h1>
+    </header>
+    <main>
+        <h1>Angel Investment Analysis</h1>
+        <form method="POST" action="/angel-investment-analysis" enctype="multipart/form-data">
+            <div class="form-section">
+                <label for="meta_instructions">Meta Instructions:</label>
+                <textarea id="meta_instructions" name="meta_instructions">You're an expert at understanding startup companies. You can summarize them quickly.</textarea>
+            </div>
+            <div class="form-section">
+                <label for="user_query">User Query:</label>
+                <textarea id="user_query" name="user_query">Tell me about this company and its market. Summarize the company name and what other information you can determine from the provided passed information from their presentation.</textarea>
+            </div>
+            <div class="form-section">
+                <label for="file_upload">Upload File:</label>
+                <input type="file" id="file_upload" name="file_upload">
+            </div>
+            <button type="submit">Analyze</button>
+        </form>
 
-    <form method="POST" action="/angel-investment-analysis">
-        <div class="form-section">
-            <label for="meta_instructions">Meta Instructions:</label>
-            <textarea id="meta_instructions" name="meta_instructions">You're an expert at understanding startup companies. You can summarize them quickly.</textarea>
+        {% if inputs %}
+        <div class="output">
+            <h2>Inputs:</h2>
+            <pre>{{ inputs }}</pre>
+        </div>
+        {% endif %}
+
+        {% if api_response %}
+        <div class="output">
+            <h2>API Response:</h2>
+            <pre>{{ api_response }}</pre>
+        </div>
+        {% endif %}
+
+        {% if error %}
+        <div class="output">
+            <h2>Error:</h2>
+            <pre>{{ error }}</pre>
+        </div>
+        {% endif %}
+
+        <form method="POST" action="/download">
+            <input type="hidden" name="api_response" value="{{ api_response }}">
+            <button type="submit">Download PDF</button>
+        </form>
+
+        <button class="collapsible">Show Uploaded Content</button>
+        <div class="content">
+            <p>Uploaded content details will be shown here...</p>
         </div>
 
-        <div class="form-section">
-            <label for="user_query">User Query:</label>
-            <textarea id="user_query" name="user_query">Tell me about this company and its market. Summarize the company name and what other information you can determine from the provided passed information from their presentation.</textarea>
+        <button class="collapsible">Show API Call Details</button>
+        <div class="content">
+            <p>API call details will be shown here...</p>
         </div>
+    </main>
+    <footer>
+        <p>Jeff's Virtual Lab &copy; 2025 | Version {{ app_version }}</p>
+    </footer>
 
-        <button type="submit">Analyze</button>
-    </form>
-
-    <div class="output-section">
-        <h2>Inputs</h2>
-        <pre>{{ inputs }}</pre>
-
-        <h2>API Response</h2>
-        <pre>{{ api_response }}</pre>
-
-        <h2>Error (if any)</h2>
-        <pre>{{ error }}</pre>
-    </div>
-
-    <div class="footer">
-        <p>Generated by Jeff's Virtual Lab - Version {{ app_version }}</p>
-    </div>
+    <script>
+        const collapsibles = document.querySelectorAll(".collapsible");
+        collapsibles.forEach(button => {
+            button.addEventListener("click", function () {
+                this.classList.toggle("active");
+                const content = this.nextElementSibling;
+                if (content.style.maxHeight) {
+                    content.style.maxHeight = null;
+                } else {
+                    content.style.maxHeight = content.scrollHeight + "px";
+                }
+            });
+        });
+    </script>
 </body>
-
 </html>
