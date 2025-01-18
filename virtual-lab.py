@@ -14,12 +14,12 @@ app.config['UPLOAD_FOLDER'] = 'uploads'  # Folder to store uploaded files
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 # Application version
-APP_VERSION = "0.1.10"
+APP_VERSION = "0.1.12"
 
 def sanitize_text(text):
     """Sanitize text to remove unwanted characters."""
     text = unicodedata.normalize('NFKD', text)
-    return re.sub(r'[“”]', '"', text).replace("\u2022", "-").strip()
+    return re.sub(r'[\u201c\u201d]', '"', text).replace("\u2022", "-").strip()
 
 def generate_pdf(content, filename="output.pdf"):
     """Generate a styled PDF from HTML content."""
