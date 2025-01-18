@@ -18,39 +18,32 @@ app.config['UPLOAD_FOLDER'] = 'uploads'  # Folder to store uploaded files
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 # Application version
-APP_VERSION = "0.0.6"
+APP_VERSION = "0.0.7"
 
-# Load predefined prompts and meta instructions from a file
+# Load predefined prompts from a file
 PROMPTS_FILE = 'prompts.txt'
-def load_prompts_and_meta():
-    """Load prompts, titles, and meta instructions from the PROMPTS_FILE."""
+def load_prompts():
+    """Load prompts and titles from the PROMPTS_FILE."""
     prompts = []
-    meta_instructions = ""
     if os.path.exists(PROMPTS_FILE):
         with open(PROMPTS_FILE, 'r') as f:
             lines = f.readlines()
-            if len(lines) > 0:
-                try:
-                    meta_instructions = lines[0].strip().split(',', 1)[1].strip()
-                except IndexError:
-                    raise ValueError("Meta instructions must be on the first line, separated by a comma.")
-            for line in lines[1:]:
+            for line in lines:
                 line = line.strip()
                 if ',' in line:
                     title, prompt = line.split(',', 1)
                     prompts.append((title.strip(), prompt.strip()))
                 else:
                     print(f"Skipping invalid line in prompts file: {line}")
-    return meta_instructions, prompts
+    return prompts
 
-def save_prompts_and_meta(meta_instructions, prompts):
-    """Save meta instructions and prompts to the PROMPTS_FILE."""
+def save_prompts(prompts):
+    """Save prompts to the PROMPTS_FILE."""
     with open(PROMPTS_FILE, 'w') as f:
-        f.write(f"Meta Instructions, {meta_instructions}\n")
         for title, prompt in prompts:
             f.write(f"{title}, {prompt}\n")
 
-META_INSTRUCTIONS, PREDEFINED_PROMPTS = load_prompts_and_meta()
+PREDEFINED_PROMPTS = load_prompts()
 
 # Add the new query for company summary
 NEW_QUERY_TITLE = "Company Summary"
@@ -60,22 +53,8 @@ NEW_QUERY_PROMPT = (
 )
 PREDEFINED_PROMPTS.append((NEW_QUERY_TITLE, NEW_QUERY_PROMPT))
 
-# Initialize default prompts and meta instructions if the file is empty
-if not META_INSTRUCTIONS or not PREDEFINED_PROMPTS:
-    META_INSTRUCTIONS = (
-        "You are an expert AI specializing in detailed analysis. Generate responses in markdown format "
-        "with bullet points, focusing on specific companies, markets, and actionable insights."
-    )
-    PREDEFINED_PROMPTS = [
-        ("Summary", "Summarize the content: \n{content}"),
-        ("Themes Analysis", "Analyze the key themes in the content: \n{content}"),
-        ("Critical Evaluation", "Provide a critical evaluation: \n{content}"),
-        ("Actionable Insights", "Extract actionable insights: \n{content}"),
-        ("Challenges and Solutions", "Identify challenges and solutions: \n{content}"),
-        ("Professional Response", "Compose a professional response: \n{content}"),
-        (NEW_QUERY_TITLE, NEW_QUERY_PROMPT)
-    ]
-    save_prompts_and_meta(META_INSTRUCTIONS, PREDEFINED_PROMPTS)
+# Save the updated prompts back to the file
+save_prompts(PREDEFINED_PROMPTS)
 
 async def call_openai_api(prompt):
     """Asynchronous function to call OpenAI API with a prompt."""
@@ -122,7 +101,10 @@ def home():
     user_query = ""
     uploaded_files_content = ""
     status_messages = []
-    meta_instructions = META_INSTRUCTIONS
+    meta_instructions = (
+        "You are an expert AI specializing in detailed analysis. Generate responses in markdown format "
+        "with bullet points, focusing on specific companies, markets, and actionable insights."
+    )  # Default meta instructions
 
     if request.method == 'POST':
         try:
