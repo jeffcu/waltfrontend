@@ -129,6 +129,11 @@ def home():
             if not PREDEFINED_PROMPTS:
                 raise ValueError("No prompts are defined for API calls.")
 
+            # Debug logs for inputs
+            print(f"Debug: Meta Instructions:\n{meta_instructions}")
+            print(f"Debug: User Query:\n{user_query}")
+            print(f"Debug: File Content:\n{file_content}")
+
             combined_content = [
                 {
                     "title": title,
@@ -136,6 +141,10 @@ def home():
                 }
                 for title, prompt in PREDEFINED_PROMPTS
             ]
+
+            # Debug logs for combined content
+            for item in combined_content:
+                print(f"Debug: Combined Content for {item['title']}\n{item['full_prompt']}")
 
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
