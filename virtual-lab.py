@@ -67,11 +67,15 @@ def home():
     api_response = ""
     error = ""
 
+    # Default text for inputs
+    default_meta_instructions = "You're an expert at understanding startup companies. You can summarize them quickly."
+    default_user_query = "Tell me about this company and its market. Summarize the company name and what other information you can determine from the provided passed information from their presentation."
+
     if request.method == 'POST':
         try:
             # Capture user inputs
-            meta_instructions = request.form['meta_instructions'].strip()
-            user_query = request.form['user_query'].strip()
+            meta_instructions = request.form.get('meta_instructions', default_meta_instructions).strip()
+            user_query = request.form.get('user_query', default_user_query).strip()
 
             # Handle uploaded files
             uploaded_files = request.files.getlist('uploaded_files')
@@ -107,7 +111,9 @@ def home():
             error = f"An error occurred: {str(e)}"
 
     return render_template('index.html', inputs=inputs, api_call_text=api_call_text,
-                           api_response=api_response, error=error, app_version=APP_VERSION)
+                           api_response=api_response, error=error, app_version=APP_VERSION,
+                           default_meta_instructions=default_meta_instructions,
+                           default_user_query=default_user_query)
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
