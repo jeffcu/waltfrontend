@@ -121,6 +121,9 @@
     <div class="container">
         <h1>Virtual Lab - Retro AI</h1>
         <form method="post" action="/" enctype="multipart/form-data" onsubmit="showLoading()">
+            <label for="meta_instructions">Meta Instructions:</label>
+            <textarea id="meta_instructions" name="meta_instructions" rows="4">{{ meta_instructions }}</textarea>
+
             <label for="user_query">Enter your query:</label>
             <textarea id="user_query" name="user_query">{{ user_query }}</textarea>
 
