@@ -109,40 +109,6 @@
             font-size: 14px;
             color: #777;
         }
-
-        /* Styling for PDF generation */
-        .pdf-header {
-            font-size: 24px;
-            font-weight: bold;
-            text-align: center;
-            margin-bottom: 20px;
-        }
-
-        .pdf-section {
-            margin-bottom: 20px;
-        }
-
-        .pdf-section h2 {
-            font-size: 18px;
-            font-weight: bold;
-            color: #333;
-            margin-bottom: 10px;
-        }
-
-        .pdf-section p {
-            font-size: 14px;
-            line-height: 1.6;
-            color: #555;
-        }
-
-        .pdf-section ul {
-            padding-left: 20px;
-        }
-
-        .pdf-section ul li {
-            margin-bottom: 10px;
-            list-style-type: disc;
-        }
     </style>
 </head>
 <body>
@@ -160,6 +126,13 @@
             <input type="file" id="uploaded_files" name="uploaded_files" multiple>
 
             <button type="submit">Analyze</button>
+        </form>
+
+        <form method="POST" action="/download">
+            <input type="hidden" name="meta_instructions" value="{{ inputs['Meta Instructions'] }}">
+            <input type="hidden" name="user_query" value="{{ inputs['User Query'] }}">
+            <input type="hidden" name="api_response" value="{{ api_response }}">
+            <button type="submit">Download PDF</button>
         </form>
 
         {% if inputs %}
@@ -185,13 +158,6 @@
             <div>{{ error }}</div>
         </div>
         {% endif %}
-
-        <form method="POST" action="/download">
-            <input type="hidden" name="meta_instructions" value="{{ inputs['Meta Instructions'] }}">
-            <input type="hidden" name="user_query" value="{{ inputs['User Query'] }}">
-            <input type="hidden" name="api_response" value="{{ api_response }}">
-            <button type="submit">Download PDF</button>
-        </form>
 
         <div class="footer">
             Version {{ app_version }}
