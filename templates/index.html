@@ -75,6 +75,34 @@
             word-wrap: break-word;
         }
 
+        .collapsible {
+            background-color: #0073e6;
+            color: white;
+            cursor: pointer;
+            padding: 10px;
+            width: 100%;
+            border: none;
+            text-align: left;
+            outline: none;
+            font-size: 16px;
+            border-radius: 4px;
+            margin-top: 10px;
+        }
+
+        .active, .collapsible:hover {
+            background-color: #005bb5;
+        }
+
+        .content {
+            padding: 0 18px;
+            display: none;
+            overflow: hidden;
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            margin-top: 10px;
+            border-radius: 4px;
+        }
+
         .footer {
             text-align: center;
             margin-top: 20px;
@@ -101,24 +129,14 @@
         </form>
 
         {% if inputs %}
-        <div class="output-box">
-            <strong>Meta Instructions:</strong>
-            <div>{{ inputs['Meta Instructions'] }}</div>
+        <button type="button" class="collapsible">Uploaded Content</button>
+        <div class="content">
+            <div class="output-box">{{ inputs['Uploaded Content'] }}</div>
         </div>
 
-        <div class="output-box">
-            <strong>User Query:</strong>
-            <div>{{ inputs['User Query'] }}</div>
-        </div>
-
-        <div class="output-box">
-            <strong>Uploaded Content:</strong>
-            <div>{{ inputs['Uploaded Content'] }}</div>
-        </div>
-
-        <div class="output-box">
-            <strong>API Call Text:</strong>
-            <div>{{ api_call_text }}</div>
+        <button type="button" class="collapsible">API Call Text</button>
+        <div class="content">
+            <div class="output-box">{{ api_call_text }}</div>
         </div>
 
         <div class="output-box">
@@ -145,5 +163,20 @@
             Version {{ app_version }}
         </div>
     </div>
+
+    <script>
+        const collapsibles = document.querySelectorAll(".collapsible");
+        collapsibles.forEach(collapsible => {
+            collapsible.addEventListener("click", function() {
+                this.classList.toggle("active");
+                const content = this.nextElementSibling;
+                if (content.style.display === "block") {
+                    content.style.display = "none";
+                } else {
+                    content.style.display = "block";
+                }
+            });
+        });
+    </script>
 </body>
 </html>
