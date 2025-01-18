@@ -26,18 +26,23 @@ def load_prompts_and_meta():
     if os.path.exists(PROMPTS_FILE):
         with open(PROMPTS_FILE, 'r') as f:
             lines = f.readlines()
-            meta_instructions = lines[0].strip()  # First line is the meta-instructions
+            if len(lines) > 0 and ',' in lines[0]:
+                meta_instructions = lines[0].strip().split(',', 1)[1].strip()  # Extract meta-instructions
+            else:
+                meta_instructions = ""
             for line in lines[1:]:
                 line = line.strip()
-                if line:
+                if ',' in line:  # Ensure the line has a comma
                     title, prompt = line.split(',', 1)
                     prompts.append((title.strip(), prompt.strip()))
+                else:
+                    print(f"Skipping invalid line in prompts file: {line}")
     return meta_instructions, prompts
 
 def save_prompts_and_meta(meta_instructions, prompts):
     """Save meta instructions and prompts to the PROMPTS_FILE."""
     with open(PROMPTS_FILE, 'w') as f:
-        f.write(f"{meta_instructions}\n")  # Write meta-instructions as the first line
+        f.write(f"Meta Instructions, {meta_instructions}\n")  # Write meta-instructions as the first line
         for title, prompt in prompts:
             f.write(f"{title}, {prompt}\n")
 
