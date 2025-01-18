@@ -1,6 +1,6 @@
 import os
 from flask import Flask, request, render_template
-from openai import OpenAI
+import openai
 from dotenv import load_dotenv
 from PyPDF2 import PdfReader
 import fitz  # PyMuPDF
@@ -8,8 +8,8 @@ import fitz  # PyMuPDF
 # Load the API key from .env file (for local testing)
 load_dotenv()
 
-# Initialize OpenAI client with API key from environment variable
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+# Set OpenAI API key
+openai.api_key = os.getenv("OPENAI_API_KEY")
 
 # Initialize Flask application
 app = Flask(__name__)
@@ -22,7 +22,7 @@ APP_VERSION = "0.0.10"
 def call_openai_api(prompt):
     """Function to call OpenAI API with a prompt."""
     try:
-        response = client.chat_completions.create(
+        response = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
             messages=[
                 {"role": "system", "content": "You are an expert assistant."},
