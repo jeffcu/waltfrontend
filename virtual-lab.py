@@ -20,8 +20,8 @@ os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 # Application version
 APP_VERSION = "0.0.9"
 
-async def call_openai_api(prompt):
-    """Asynchronous function to call OpenAI API with a prompt."""
+def call_openai_api(prompt):
+    """Function to call OpenAI API with a prompt."""
     try:
         response = client.completions.create(
             model="text-davinci-003",
@@ -99,7 +99,7 @@ def home():
             )
 
             # Call OpenAI API
-            api_response = await call_openai_api(api_call_text)
+            api_response = call_openai_api(api_call_text)
 
         except Exception as e:
             error = f"An error occurred: {str(e)}"
