@@ -17,7 +17,6 @@
             min-height: 100vh;
             box-sizing: border-box;
         }
-
         .container {
             width: 100%;
             max-width: 800px;
@@ -28,14 +27,12 @@
             padding: 20px;
             overflow: auto;
         }
-
         h1 {
             font-size: 2rem;
             text-align: center;
             color: #f9c74f;
             margin-bottom: 20px;
         }
-
         textarea, input[type="file"], input[type="submit"] {
             display: block;
             width: 100%;
@@ -48,23 +45,19 @@
             background-color: #00274d;
             color: #ffffff;
         }
-
         textarea {
             resize: vertical;
             height: 100px;
         }
-
         input[type="submit"] {
             background-color: #f9c74f;
             color: #00274d;
             cursor: pointer;
             font-weight: bold;
         }
-
         input[type="submit"]:hover {
             background-color: #d6a92c;
         }
-
         .output-container {
             margin-top: 20px;
             background-color: #00509e;
@@ -77,13 +70,11 @@
             overflow-y: auto;
             max-height: 200px;
         }
-
         .output-title {
             font-weight: bold;
             color: #f9c74f;
             margin-bottom: 5px;
         }
-
         .error {
             color: red;
             font-weight: bold;
@@ -97,9 +88,9 @@
         <h1>Jeff's AI Workshop - Debug Mode</h1>
         <p style="font-size: 0.9rem; color: #d6a92c; text-align: center;">Version {{ app_version }}</p>
 
-        <form method="post" action="/" enctype="multipart/form-data">
+        <form method="POST" action="/" enctype="multipart/form-data">
             <label for="meta_instructions">Meta Instructions:</label>
-            <textarea id="meta_instructions" name="meta_instructions" rows="4">{{ default_meta_instructions }}</textarea>
+            <textarea id="meta_instructions" name="meta_instructions">{{ default_meta_instructions }}</textarea>
 
             <label for="user_query">Enter your query:</label>
             <textarea id="user_query" name="user_query">{{ default_user_query }}</textarea>
@@ -144,6 +135,13 @@
                 <div>{{ api_response }}</div>
             </div>
         {% endif %}
+
+        <form method="POST" action="/download">
+            <input type="hidden" name="meta_instructions" value="{{ inputs['Meta Instructions'] }}">
+            <input type="hidden" name="user_query" value="{{ inputs['User Query'] }}">
+            <input type="hidden" name="api_response" value="{{ api_response }}">
+            <input type="submit" value="Download as PDF">
+        </form>
     </div>
 </body>
 </html>

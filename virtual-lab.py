@@ -1,16 +1,17 @@
 import os
 from flask import Flask, request, render_template
-from openai import OpenAI
-
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+import openai
 from dotenv import load_dotenv
 from PyPDF2 import PdfReader
 import fitz  # PyMuPDF
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
 
 # Load the API key from .env file (for local testing)
 load_dotenv()
 
 # Set OpenAI API key
+openai.api_key = os.getenv("OPENAI_API_KEY")
 
 # Initialize Flask application
 app = Flask(__name__)
@@ -18,19 +19,21 @@ app.config['UPLOAD_FOLDER'] = 'uploads'  # Folder to store uploaded files
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 # Application version
-APP_VERSION = "0.0.11"
+APP_VERSION = "0.0.13"
 
 def call_openai_api(prompt):
     """Function to call OpenAI API with the latest supported method."""
     try:
-        response = client.chat.completions.create(model="gpt-3.5-turbo",
-        messages=[
-            {"role": "system", "content": "You are an AI expert on technology startups."},
-            {"role": "user", "content": prompt}
-        ],
-        max_tokens=150,
-        temperature=0.7)
-        return response.choices[0].message.content.strip()
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": "You are an AI expert on startups."},
+                {"role": "user", "content": prompt}
+            ],
+            max_tokens=150,
+            temperature=0.7
+        )
+        return response.choices[0].message['content'].strip()
     except Exception as e:
         return f"Error: {str(e)}"
 
@@ -57,6 +60,27 @@ def extract_text_from_file(filepath):
                 return f.read()
         except Exception as e:
             return f"Error reading file: {str(e)}"
+
+def save_to_pdf(output_text, filename="output.pdf"):
+    """Saves given text to a PDF file."""
+    pdf_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    c = canvas.Canvas(pdf_path, pagesize=letter)
+    c.setFont("Helvetica", 12)
+    width, height = letter
+
+    # Split the text into lines to fit within the page width
+    lines = output_text.split("\n")
+    y_position = height - 40  # Start 40 points from the top
+    for line in lines:
+        if y_position < 40:  # Start a new page if there's no space
+            c.showPage()
+            c.setFont("Helvetica", 12)
+            y_position = height - 40
+        c.drawString(40, y_position, line)
+        y_position -= 14  # Move down 14 points for the next line
+
+    c.save()
+    return pdf_path
 
 @app.route('/', methods=['GET', 'POST'])
 def home():
@@ -113,6 +137,29 @@ def home():
                            api_response=api_response, error=error, app_version=APP_VERSION,
                            default_meta_instructions=default_meta_instructions,
                            default_user_query=default_user_query)
+
+@app.route('/download', methods=['POST'])
+def download_pdf():
+    """Generate and serve a PDF of the API response."""
+    try:
+        # Collect data from the form
+        meta_instructions = request.form['meta_instructions']
+        user_query = request.form['user_query']
+        api_response = request.form['api_response']
+
+        # Combine data into a formatted string
+        output_text = (
+            f"Meta Instructions:\n{meta_instructions}\n\n"
+            f"User Query:\n{user_query}\n\n"
+            f"API Response:\n{api_response}\n"
+        )
+
+        # Generate the PDF
+        pdf_path = save_to_pdf(output_text)
+
+        return f"PDF generated at: {pdf_path}"
+    except Exception as e:
+        return f"Error generating PDF: {str(e)}"
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))

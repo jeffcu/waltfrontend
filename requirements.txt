@@ -7,3 +7,4 @@ requests
 python-dotenv
 PyPDF2
 PyMuPDF
+reportlab
