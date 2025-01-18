@@ -152,9 +152,8 @@
         {% if responses %}
             {% for response in responses %}
                 <div class="response-container">
-                    <div class="response-title">{{ loop.index }}. {{ response.title }}</div>
-                    <div>Input Sent to API:</div>
-                    <pre>{{ response.response }}</pre>
+                    <div class="response-title">{{ response.title }}</div>
+                    <div>{{ response.response }}</div>
                 </div>
             {% endfor %}
         {% endif %}

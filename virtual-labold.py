@@ -18,7 +18,7 @@ app.config['UPLOAD_FOLDER'] = 'uploads'  # Folder to store uploaded files
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 # Application version
-APP_VERSION = "0.0.8"
+APP_VERSION = "0.0.7"
 
 # Load predefined prompts from a file
 PROMPTS_FILE = 'prompts.txt'
@@ -59,7 +59,13 @@ save_prompts(PREDEFINED_PROMPTS)
 async def call_openai_api(prompt):
     """Asynchronous function to call OpenAI API with a prompt."""
     try:
-        return prompt  # Return the input prompt instead of making an API call
+        response = client.completions.create(
+            model="gpt-3.5-turbo-instruct",
+            prompt=prompt,
+            max_tokens=150,
+            temperature=0.7
+        )
+        return response.choices[0].text.strip()
     except Exception as e:
         return f"Error: {str(e)}"
 
@@ -142,15 +148,15 @@ def home():
             tasks = [
                 call_openai_api(item["full_prompt"]) for item in combined_content
             ]
-            status_messages.append("Generating API input preview for all prompts.")
+            status_messages.append("Initiating API calls for all prompts.")
             results = loop.run_until_complete(asyncio.gather(*tasks))
             loop.close()
 
             responses = [
                 {"title": item["title"], "response": result}
-                for item, result in zip(combined_content, results)
+                for item, result in zip(combined_content, results) if result.strip()
             ]
-            status_messages.append("Input previews generated successfully.")
+            status_messages.append("API calls completed and responses formatted.")
 
         except ValueError as ve:
             error = str(ve)
