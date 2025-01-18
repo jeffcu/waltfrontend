@@ -18,7 +18,7 @@ app.config['UPLOAD_FOLDER'] = 'uploads'  # Folder to store uploaded files
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 # Application version
-APP_VERSION = "0.0.5"
+APP_VERSION = "0.0.6"
 
 # Load predefined prompts and meta instructions from a file
 PROMPTS_FILE = 'prompts.txt'
@@ -29,13 +29,14 @@ def load_prompts_and_meta():
     if os.path.exists(PROMPTS_FILE):
         with open(PROMPTS_FILE, 'r') as f:
             lines = f.readlines()
-            if len(lines) > 0 and ',' in lines[0]:
-                meta_instructions = lines[0].strip().split(',', 1)[1].strip()  # Extract meta-instructions
-            else:
-                meta_instructions = ""
+            if len(lines) > 0:
+                try:
+                    meta_instructions = lines[0].strip().split(',', 1)[1].strip()
+                except IndexError:
+                    raise ValueError("Meta instructions must be on the first line, separated by a comma.")
             for line in lines[1:]:
                 line = line.strip()
-                if ',' in line:  # Ensure the line has a comma
+                if ',' in line:
                     title, prompt = line.split(',', 1)
                     prompts.append((title.strip(), prompt.strip()))
                 else:
@@ -45,7 +46,7 @@ def load_prompts_and_meta():
 def save_prompts_and_meta(meta_instructions, prompts):
     """Save meta instructions and prompts to the PROMPTS_FILE."""
     with open(PROMPTS_FILE, 'w') as f:
-        f.write(f"Meta Instructions, {meta_instructions}\n")  # Write meta-instructions as the first line
+        f.write(f"Meta Instructions, {meta_instructions}\n")
         for title, prompt in prompts:
             f.write(f"{title}, {prompt}\n")
 
@@ -116,16 +117,15 @@ def extract_text_from_file(filepath):
 @app.route('/', methods=['GET', 'POST'])
 def home():
     """Renders the main page with the user query input and displays the responses."""
-    responses = None  # Ensure no responses are set initially
+    responses = None
     error = ""
     user_query = ""
     uploaded_files_content = ""
     status_messages = []
-    meta_instructions = META_INSTRUCTIONS  # Load the current meta-instructions
+    meta_instructions = META_INSTRUCTIONS
 
     if request.method == 'POST':
         try:
-            # Get user input and meta-instructions
             user_query = request.form['user_query'].encode('utf-8', errors='replace').decode('utf-8').strip()
             meta_instructions = request.form['meta_instructions'].strip()
             if not user_query:
@@ -133,8 +133,6 @@ def home():
             status_messages.append("User query and meta-instructions received.")
 
             uploaded_files = request.files.getlist('uploaded_files')
-
-            # Read content from uploaded files
             file_content = ""
             word_count = 0
             for file in uploaded_files:
@@ -155,25 +153,26 @@ def home():
             if not PREDEFINED_PROMPTS:
                 raise ValueError("No prompts are defined for API calls.")
 
-            # Combine meta-instructions, user query, and file content
-            combined_content = f"{meta_instructions}\n\nUser Query: {user_query}\n\nUploaded Content:\n{file_content}"
-            uploaded_files_content = file_content  # Preserve file content for UI display
-            status_messages.append("Combined user query, meta-instructions, and uploaded content for API calls.")
+            combined_content = [
+                {
+                    "title": title,
+                    "full_prompt": prompt.format(content=f"{meta_instructions}\n\nUser Query: {user_query}\n\nUploaded Content:\n{file_content}")
+                }
+                for title, prompt in PREDEFINED_PROMPTS
+            ]
 
-            # Generate prompts and make API calls
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
             tasks = [
-                call_openai_api(prompt.format(content=combined_content)) for _, prompt in PREDEFINED_PROMPTS
+                call_openai_api(item["full_prompt"]) for item in combined_content
             ]
             status_messages.append("Initiating API calls for all prompts.")
-            responses = loop.run_until_complete(asyncio.gather(*tasks))
+            results = loop.run_until_complete(asyncio.gather(*tasks))
             loop.close()
 
-            # Format responses with titles
             responses = [
-                {"title": title, "response": response}
-                for (title, _), response in zip(PREDEFINED_PROMPTS, responses)
+                {"title": item["title"], "response": result}
+                for item, result in zip(combined_content, results) if result.strip()
             ]
             status_messages.append("API calls completed and responses formatted.")
 
@@ -182,8 +181,9 @@ def home():
         except Exception as e:
             error = f"An error occurred: {str(e)}"
 
-    # Render template with user input preserved, meta-instructions, and status messages
-    return render_template('index.html', responses=responses, error=error, user_query=user_query, meta_instructions=meta_instructions, uploaded_files_content=uploaded_files_content, status_messages=status_messages, app_version=APP_VERSION)
+    return render_template('index.html', responses=responses, error=error, user_query=user_query,
+                           meta_instructions=meta_instructions, uploaded_files_content=uploaded_files_content,
+                           status_messages=status_messages, app_version=APP_VERSION)
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
