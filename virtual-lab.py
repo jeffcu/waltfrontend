@@ -17,15 +17,15 @@ app.config['UPLOAD_FOLDER'] = 'uploads'  # Folder to store uploaded files
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 # Application version
-APP_VERSION = "0.0.10"
+APP_VERSION = "0.0.11"
 
 def call_openai_api(prompt):
-    """Function to call OpenAI API with a prompt."""
+    """Function to call OpenAI API with the latest supported method."""
     try:
         response = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
             messages=[
-                {"role": "system", "content": "You are an expert assistant."},
+                {"role": "system", "content": "You are an AI expert on startups."},
                 {"role": "user", "content": prompt}
             ],
             max_tokens=150,
