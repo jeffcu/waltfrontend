@@ -1,5 +1,5 @@
 import os
-from flask import Flask, request, render_template
+from flask import Flask, request, render_template, send_file
 from openai import OpenAI
 from dotenv import load_dotenv
 from PyPDF2 import PdfReader
@@ -157,7 +157,8 @@ def download_pdf():
         # Generate the PDF
         pdf_path = save_to_pdf(output_text)
 
-        return f"PDF generated at: {pdf_path}"
+        # Serve the PDF as a downloadable file
+        return send_file(pdf_path, as_attachment=True, download_name="output.pdf")
     except Exception as e:
         return f"Error generating PDF: {str(e)}"
 
