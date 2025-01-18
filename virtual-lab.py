@@ -45,13 +45,11 @@ def save_prompts(prompts):
 
 PREDEFINED_PROMPTS = load_prompts()
 
-# Add the new query for company summary
-NEW_QUERY_TITLE = "Company Summary"
-NEW_QUERY_PROMPT = (
-    "Summarize the company, including the following details: "
-    "name, URL, investment terms, name of the CEO, and the market the company sells to."
-)
-PREDEFINED_PROMPTS.append((NEW_QUERY_TITLE, NEW_QUERY_PROMPT))
+# Remove duplicate entries by title
+unique_prompts = {}
+for title, prompt in PREDEFINED_PROMPTS:
+    unique_prompts[title] = prompt
+PREDEFINED_PROMPTS = list(unique_prompts.items())
 
 # Save the updated prompts back to the file
 save_prompts(PREDEFINED_PROMPTS)
