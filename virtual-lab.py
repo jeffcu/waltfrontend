@@ -1,3 +1,4 @@
+
 import os
 from flask import Flask, request, render_template
 from openai import OpenAI
@@ -48,6 +49,14 @@ def save_prompts_and_meta(meta_instructions, prompts):
 
 META_INSTRUCTIONS, PREDEFINED_PROMPTS = load_prompts_and_meta()
 
+# Add the new query for company summary
+NEW_QUERY_TITLE = "Company Summary"
+NEW_QUERY_PROMPT = (
+    "Summarize the company, including the following details: "
+    "name, URL, investment terms, name of the CEO, and the market the company sells to."
+)
+PREDEFINED_PROMPTS.append((NEW_QUERY_TITLE, NEW_QUERY_PROMPT))
+
 # Initialize default prompts and meta instructions if the file is empty
 if not META_INSTRUCTIONS or not PREDEFINED_PROMPTS:
     META_INSTRUCTIONS = (
@@ -60,7 +69,8 @@ if not META_INSTRUCTIONS or not PREDEFINED_PROMPTS:
         ("Critical Evaluation", "Provide a critical evaluation: \n{content}"),
         ("Actionable Insights", "Extract actionable insights: \n{content}"),
         ("Challenges and Solutions", "Identify challenges and solutions: \n{content}"),
-        ("Professional Response", "Compose a professional response: \n{content}")
+        ("Professional Response", "Compose a professional response: \n{content}"),
+        (NEW_QUERY_TITLE, NEW_QUERY_PROMPT)
     ]
     save_prompts_and_meta(META_INSTRUCTIONS, PREDEFINED_PROMPTS)
 
