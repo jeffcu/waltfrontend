@@ -19,7 +19,7 @@ app.config['UPLOAD_FOLDER'] = 'uploads'  # Folder to store uploaded files
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 # Application version
-APP_VERSION = "0.1.03"
+APP_VERSION = "0.1.04"
 
 def call_openai_api(prompt):
     """Function to call OpenAI API with the latest supported method."""
@@ -90,8 +90,18 @@ def save_to_pdf(output_text, filename="output.pdf"):
             y_position -= 20  # Add extra spacing after a bold line
         else:
             c.setFont("Helvetica", 12)
-            c.drawString(margin, y_position, line)
-            y_position -= 14
+            # Wrap text if it's too long for the page width
+            words = line.split()
+            line_text = ""
+            for word in words:
+                if c.stringWidth(line_text + word, "Helvetica", 12) > (width - 2 * margin):
+                    c.drawString(margin, y_position, line_text.strip())
+                    y_position -= 14
+                    line_text = ""
+                line_text += word + " "
+            if line_text.strip():
+                c.drawString(margin, y_position, line_text.strip())
+                y_position -= 14
 
         # Add page break if necessary
         if y_position < margin:
@@ -171,6 +181,11 @@ def download_pdf():
         user_query = request.form['user_query']
         api_response = request.form['api_response']
 
+        # Extract a default name from the user query (e.g., "Company Analysis")
+        default_filename = "output.pdf"
+        if user_query.strip():
+            default_filename = user_query.split()[0].capitalize() + "_Analysis.pdf"
+
         # Combine data into a formatted string
         output_text = (
             f"Meta Instructions:\n{meta_instructions}\n\n"
@@ -179,10 +194,10 @@ def download_pdf():
         )
 
         # Generate the PDF
-        pdf_path = save_to_pdf(output_text)
+        pdf_path = save_to_pdf(output_text, filename=default_filename)
 
         # Serve the PDF as a downloadable file
-        return send_file(pdf_path, as_attachment=True, download_name="output.pdf")
+        return send_file(pdf_path, as_attachment=True, download_name=default_filename)
     except Exception as e:
         return f"Error generating PDF: {str(e)}"
 

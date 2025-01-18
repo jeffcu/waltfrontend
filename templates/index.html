@@ -6,142 +6,144 @@
     <title>Jeff's AI Workshop</title>
     <style>
         body {
-            background-color: #00274d;
-            font-family: 'Courier New', Courier, monospace;
-            color: #ffffff;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+            font-family: Arial, sans-serif;
             margin: 0;
-            padding: 20px;
-            min-height: 100vh;
-            box-sizing: border-box;
+            padding: 0;
+            background-color: #f4f4f9;
+            color: #333;
         }
+
         .container {
-            width: 100%;
             max-width: 800px;
-            background-color: #003366;
-            border: 5px solid #f9c74f;
-            border-radius: 15px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+            margin: 50px auto;
             padding: 20px;
-            overflow: auto;
+            background: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
+
         h1 {
-            font-size: 2rem;
-            text-align: center;
-            color: #f9c74f;
+            font-size: 24px;
             margin-bottom: 20px;
+            text-align: center;
+            color: #0073e6;
         }
-        textarea, input[type="file"], input[type="submit"] {
+
+        label {
+            font-weight: bold;
+            margin-top: 10px;
             display: block;
+        }
+
+        input[type="text"], textarea {
             width: 100%;
             padding: 10px;
-            margin: 10px 0;
-            font-family: 'Courier New', Courier, monospace;
-            font-size: 1rem;
-            border: 2px solid #8d99ae;
-            border-radius: 5px;
-            background-color: #00274d;
-            color: #ffffff;
+            margin-top: 5px;
+            margin-bottom: 20px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
         }
-        textarea {
-            resize: vertical;
-            height: 100px;
+
+        input[type="file"] {
+            margin-top: 10px;
+            margin-bottom: 20px;
         }
-        input[type="submit"] {
-            background-color: #f9c74f;
-            color: #00274d;
+
+        button {
+            display: block;
+            width: 100%;
+            background-color: #0073e6;
+            color: white;
+            padding: 10px;
+            border: none;
+            border-radius: 4px;
             cursor: pointer;
-            font-weight: bold;
+            font-size: 16px;
         }
-        input[type="submit"]:hover {
-            background-color: #d6a92c;
+
+        button:hover {
+            background-color: #005bb5;
         }
-        .output-container {
-            margin-top: 20px;
-            background-color: #00509e;
-            border: 2px solid #f9c74f;
-            border-radius: 10px;
+
+        .output-box {
+            background: #f9f9f9;
+            border: 1px solid #ddd;
             padding: 15px;
-            color: #ffffff;
+            margin-top: 10px;
+            border-radius: 4px;
             white-space: pre-wrap;
             word-wrap: break-word;
-            overflow-y: auto;
-            max-height: 200px;
         }
-        .output-title {
-            font-weight: bold;
-            color: #f9c74f;
-            margin-bottom: 5px;
-        }
-        .error {
-            color: red;
-            font-weight: bold;
+
+        .footer {
             text-align: center;
-            margin-top: 10px;
+            margin-top: 20px;
+            font-size: 14px;
+            color: #777;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>Jeff's AI Workshop</h1>
-        <p style="font-size: 0.9rem; color: #d6a92c; text-align: center;">Version {{ app_version }}</p>
 
-        <form method="POST" action="/" enctype="multipart/form-data">
-            <label for="meta_instructions">Meta Instructions:</label>
-            <textarea id="meta_instructions" name="meta_instructions">{{ default_meta_instructions }}</textarea>
+        <form method="POST" enctype="multipart/form-data" action="/">
+            <label for="meta_instructions">Meta Instructions</label>
+            <textarea id="meta_instructions" name="meta_instructions" rows="4" placeholder="Enter meta instructions here..."></textarea>
 
-            <label for="user_query">Enter your query:</label>
-            <textarea id="user_query" name="user_query">{{ default_user_query }}</textarea>
+            <label for="user_query">User Query</label>
+            <textarea id="user_query" name="user_query" rows="4" placeholder="Enter your query here..."></textarea>
 
-            <label for="uploaded_files">Upload files (optional):</label>
-            <input id="uploaded_files" name="uploaded_files" type="file" multiple>
+            <label for="uploaded_files">Upload Files</label>
+            <input type="file" id="uploaded_files" name="uploaded_files" multiple>
 
-            <input type="submit" value="Analyze">
+            <button type="submit">Analyze</button>
         </form>
 
-        {% if error %}
-            <p class="error">Error: {{ error }}</p>
-        {% endif %}
-
         {% if inputs %}
-            <div class="output-container">
-                <div class="output-title">1. Meta Instructions:</div>
-                <div>{{ inputs["Meta Instructions"] }}</div>
-            </div>
+        <div class="output-box">
+            <strong>Meta Instructions:</strong>
+            <div>{{ inputs['Meta Instructions'] }}</div>
+        </div>
 
-            <div class="output-container">
-                <div class="output-title">2. User Query:</div>
-                <div>{{ inputs["User Query"] }}</div>
-            </div>
+        <div class="output-box">
+            <strong>User Query:</strong>
+            <div>{{ inputs['User Query'] }}</div>
+        </div>
 
-            <div class="output-container">
-                <div class="output-title">3. Uploaded Content:</div>
-                <div>{{ inputs["Uploaded Content"] }}</div>
-            </div>
+        <div class="output-box">
+            <strong>Uploaded Content:</strong>
+            <div>{{ inputs['Uploaded Content'] }}</div>
+        </div>
+
+        <div class="output-box">
+            <strong>API Call Text:</strong>
+            <div>{{ api_call_text }}</div>
+        </div>
+
+        <div class="output-box">
+            <strong>API Response:</strong>
+            <div>{{ api_response }}</div>
+        </div>
         {% endif %}
 
-        {% if api_call_text %}
-            <div class="output-container">
-                <div class="output-title">4. API Call Text:</div>
-                <div>{{ api_call_text }}</div>
-            </div>
-        {% endif %}
-
-        {% if api_response %}
-            <div class="output-container">
-                <div class="output-title">5. API Response:</div>
-                <div>{{ api_response }}</div>
-            </div>
+        {% if error %}
+        <div class="output-box" style="color: red;">
+            <strong>Error:</strong>
+            <div>{{ error }}</div>
+        </div>
         {% endif %}
 
         <form method="POST" action="/download">
             <input type="hidden" name="meta_instructions" value="{{ inputs['Meta Instructions'] }}">
             <input type="hidden" name="user_query" value="{{ inputs['User Query'] }}">
             <input type="hidden" name="api_response" value="{{ api_response }}">
-            <input type="submit" value="Download as PDF">
+            <button type="submit">Download PDF</button>
         </form>
+
+        <div class="footer">
+            Version {{ app_version }}
+        </div>
     </div>
 </body>
 </html>
