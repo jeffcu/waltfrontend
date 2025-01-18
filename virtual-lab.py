@@ -25,7 +25,7 @@ def call_openai_api(prompt):
     try:
         response = client.chat.completions.create(model="gpt-3.5-turbo",
         messages=[
-            {"role": "system", "content": "You are an AI expert on startups."},
+            {"role": "system", "content": "You are an AI expert on technology startups."},
             {"role": "user", "content": prompt}
         ],
         max_tokens=150,
