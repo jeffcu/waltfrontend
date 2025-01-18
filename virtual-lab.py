@@ -2,7 +2,6 @@ import os
 from flask import Flask, request, render_template
 from openai import OpenAI
 from dotenv import load_dotenv
-import asyncio
 from PyPDF2 import PdfReader
 import fitz  # PyMuPDF
 
@@ -18,18 +17,21 @@ app.config['UPLOAD_FOLDER'] = 'uploads'  # Folder to store uploaded files
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 # Application version
-APP_VERSION = "0.0.9"
+APP_VERSION = "0.0.10"
 
 def call_openai_api(prompt):
     """Function to call OpenAI API with a prompt."""
     try:
-        response = client.completions.create(
-            model="text-davinci-003",
-            prompt=prompt,
+        response = client.chat_completions.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": "You are an expert assistant."},
+                {"role": "user", "content": prompt}
+            ],
             max_tokens=150,
             temperature=0.7
         )
-        return response.choices[0].text.strip()
+        return response.choices[0].message['content'].strip()
     except Exception as e:
         return f"Error: {str(e)}"
 
