@@ -76,7 +76,7 @@
         }
 
         .collapsible {
-            background-color: #0073e6;
+            background-color: #555;
             color: white;
             cursor: pointer;
             padding: 10px;
@@ -84,20 +84,20 @@
             border: none;
             text-align: left;
             outline: none;
-            font-size: 16px;
+            font-size: 14px;
             border-radius: 4px;
             margin-top: 10px;
         }
 
         .active, .collapsible:hover {
-            background-color: #005bb5;
+            background-color: #333;
         }
 
         .content {
             padding: 0 18px;
             display: none;
             overflow: hidden;
-            background-color: #f9f9f9;
+            background-color: #f4f4f9;
             border: 1px solid #ddd;
             margin-top: 10px;
             border-radius: 4px;
@@ -129,6 +129,11 @@
         </form>
 
         {% if inputs %}
+        <div class="output-box">
+            <strong>API Response:</strong>
+            <div>{{ api_response }}</div>
+        </div>
+
         <button type="button" class="collapsible">Uploaded Content</button>
         <div class="content">
             <div class="output-box">{{ inputs['Uploaded Content'] }}</div>
@@ -137,11 +142,6 @@
         <button type="button" class="collapsible">API Call Text</button>
         <div class="content">
             <div class="output-box">{{ api_call_text }}</div>
-        </div>
-
-        <div class="output-box">
-            <strong>API Response:</strong>
-            <div>{{ api_response }}</div>
         </div>
         {% endif %}
 
