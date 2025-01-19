@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Jeff's Virtual Lab - Angel Investment Analysis</title>
+    <title>Jeff's Virtual Lab</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -22,15 +22,74 @@
         }
 
         main {
-            max-width: 800px;
+            max-width: 1200px;
             margin: 2rem auto;
             padding: 1rem;
-            background: white;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
         }
 
-        h1 {
+        .gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            justify-items: center;
+        }
+
+        .tile {
+            width: 200px;
+            height: 200px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            background-color: #fff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
             text-align: center;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .tile:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15);
+        }
+
+        .tile.inactive {
+            background-color: #ddd;
+            cursor: not-allowed;
+        }
+
+        .tile img {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 0.5rem;
+        }
+
+        .tile span {
+            font-size: 1rem;
+            font-weight: bold;
+        }
+
+        .nav {
+            margin-top: 1.5rem;
+        }
+
+        .nav a {
+            text-decoration: none;
+            color: #0073e6;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+
+        .nav a:hover {
+            text-decoration: underline;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 2rem;
+            font-size: 0.9rem;
+            color: #555;
         }
 
         .form-section {
@@ -65,10 +124,18 @@
             border-radius: 4px;
             cursor: pointer;
             font-size: 1rem;
+            margin-bottom: 1rem;
         }
 
         button:hover {
             background-color: #005bb5;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            justify-content: center;
         }
 
         .output {
@@ -78,37 +145,6 @@
             border: 1px solid #ddd;
             border-radius: 4px;
         }
-
-        .collapsible {
-            cursor: pointer;
-            padding: 0.5rem;
-            border: none;
-            text-align: left;
-            outline: none;
-            background-color: #f1f1f1;
-            font-size: 1rem;
-            margin-bottom: 0.5rem;
-        }
-
-        .collapsible:hover {
-            background-color: #ddd;
-        }
-
-        .content {
-            padding: 0 1rem;
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.2s ease-out;
-            background-color: #f9f9f9;
-            border: 1px solid #ddd;
-        }
-
-        footer {
-            text-align: center;
-            margin-top: 2rem;
-            font-size: 0.9rem;
-            color: #555;
-        }
     </style>
 </head>
 <body>
@@ -116,7 +152,10 @@
         <h1>Jeff's Virtual Lab</h1>
     </header>
     <main>
-        <h1>Angel Investment Analysis</h1>
+        <div class="nav">
+            <a href="/gallery">&larr; Back to Gallery</a>
+        </div>
+        <h2>Angel Investment Analysis</h2>
         <form method="POST" action="/angel-investment-analysis" enctype="multipart/form-data">
             <div class="form-section">
                 <label for="meta_instructions">Meta Instructions:</label>
@@ -130,7 +169,10 @@
                 <label for="file_upload">Upload File:</label>
                 <input type="file" id="file_upload" name="file_upload">
             </div>
-            <button type="submit">Analyze</button>
+            <div class="button-group">
+                <button type="submit">Step 1: Analyze</button>
+                <button formaction="/download" type="submit">Step 2: Generate Report</button>
+            </div>
         </form>
 
         {% if inputs %}
@@ -153,39 +195,9 @@
             <pre>{{ error }}</pre>
         </div>
         {% endif %}
-
-        <form method="POST" action="/download">
-            <input type="hidden" name="api_response" value="{{ api_response }}">
-            <button type="submit">Download PDF</button>
-        </form>
-
-        <button class="collapsible">Show Uploaded Content</button>
-        <div class="content">
-            <p>Uploaded content details will be shown here...</p>
-        </div>
-
-        <button class="collapsible">Show API Call Details</button>
-        <div class="content">
-            <p>API call details will be shown here...</p>
-        </div>
     </main>
     <footer>
         <p>Jeff's Virtual Lab &copy; 2025 | Version {{ app_version }}</p>
     </footer>
-
-    <script>
-        const collapsibles = document.querySelectorAll(".collapsible");
-        collapsibles.forEach(button => {
-            button.addEventListener("click", function () {
-                this.classList.toggle("active");
-                const content = this.nextElementSibling;
-                if (content.style.maxHeight) {
-                    content.style.maxHeight = null;
-                } else {
-                    content.style.maxHeight = content.scrollHeight + "px";
-                }
-            });
-        });
-    </script>
 </body>
 </html>
