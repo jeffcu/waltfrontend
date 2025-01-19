@@ -5,91 +5,38 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Jeff's Virtual Lab</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            line-height: 1.6;
-            margin: 0;
-            padding: 0;
-            background-color: #f4f4f9;
-            color: #333;
-        }
-
-        header {
-            background-color: #0073e6;
-            color: white;
-            padding: 1rem 0;
-            text-align: center;
-        }
-
-        main {
-            max-width: 1200px;
-            margin: 2rem auto;
-            padding: 1rem;
-        }
-
-        .gallery {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1.5rem;
-            justify-items: center;
-        }
-
+        /* Styling adjustments here */
         .tile {
+            position: relative;
             width: 200px;
             height: 200px;
+            background-color: #e9d8a6;
             border-radius: 10px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            background-color: #fff;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
             text-align: center;
-            cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
+            transition: transform 0.2s;
         }
-
-        .tile:hover {
-            transform: scale(1.05);
-            box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15);
-        }
-
-        .tile.inactive {
-            background-color: #ddd;
-            cursor: not-allowed;
-        }
-
         .tile img {
             width: 80px;
             height: 80px;
-            margin-bottom: 0.5rem;
+            margin-top: 20px;
         }
-
         .tile span {
-            font-size: 1rem;
+            display: block;
+            margin-top: 10px;
             font-weight: bold;
         }
-
-        .nav {
-            margin-top: 1.5rem;
-        }
-
-        .nav a {
-            text-decoration: none;
-            color: #0073e6;
-            font-weight: bold;
-            margin-right: 10px;
-        }
-
-        .nav a:hover {
-            text-decoration: underline;
-        }
-
-        footer {
-            text-align: center;
-            margin-top: 2rem;
+        .edit-button {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
             font-size: 0.9rem;
-            color: #555;
+            background-color: #94d2bd;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 5px 10px;
+            cursor: pointer;
         }
     </style>
 </head>
@@ -98,27 +45,24 @@
         <h1>Jeff's Virtual Lab</h1>
     </header>
     <main>
-        <div class="nav">
-            <a href="/gallery">&larr; Back to Gallery</a>
-        </div>
-        <h2>Application Gallery</h2>
         <div class="gallery">
-            <a href="/angel-investment-analysis" class="tile">
-                <img src="/static/icons/angel-investment-icon.png" alt="Angel Investment Icon">
-                <span>Angel Investment Analysis</span>
-            </a>
-            <div class="tile inactive">
-                <img src="/static/icons/coming-soon-icon.png" alt="Coming Soon Icon">
-                <span>Coming Soon</span>
+            {% for app_name, icon in icon_config.items() %}
+            <div class="tile">
+                <img src="{{ url_for('static', filename='icons/' ~ icon) }}" alt="Icon">
+                <span>{{ app_name }}</span>
+                <form method="POST" action="/gallery">
+                    <select name="icon_select">
+                        {% for available_icon in available_icons %}
+                        <option value="{{ available_icon }}" {% if available_icon == icon %}selected{% endif %}>
+                            {{ available_icon }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <input type="hidden" name="app_name" value="{{ app_name }}">
+                    <button type="submit" class="edit-button">Edit</button>
+                </form>
             </div>
-            <div class="tile inactive">
-                <img src="/static/icons/coming-soon-icon.png" alt="Coming Soon Icon">
-                <span>Coming Soon</span>
-            </div>
-            <div class="tile inactive">
-                <img src="/static/icons/coming-soon-icon.png" alt="Coming Soon Icon">
-                <span>Coming Soon</span>
-            </div>
+            {% endfor %}
         </div>
     </main>
     <footer>

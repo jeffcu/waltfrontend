@@ -1,90 +1,68 @@
-from flask import Flask, render_template, request, redirect, url_for, jsonify, send_file
+from flask import Flask, render_template, request, redirect, url_for, jsonify
 import os
+import json
 
-# Initialize the Flask app
+# Initialize Flask app
 app = Flask(__name__)
 
 # Application version
-APP_VERSION = "0.1.16"
+APP_VERSION = "0.1.17"
 
-# Directory for static icons
+# Directory for icons
 ICON_DIR = "static/icons"
 
-# Function to load icons dynamically
+# File to store icon selections
+ICON_CONFIG_FILE = "icon_config.json"
+
+# Load or initialize icon configuration
+def load_icon_config():
+    if os.path.exists(ICON_CONFIG_FILE):
+        with open(ICON_CONFIG_FILE, "r") as f:
+            return json.load(f)
+    return {}
+
+def save_icon_config(config):
+    with open(ICON_CONFIG_FILE, "w") as f:
+        json.dump(config, f)
+
+# Ensure directories exist
+os.makedirs(ICON_DIR, exist_ok=True)
+
+# Load available icons
 def load_icons():
     return [icon for icon in os.listdir(ICON_DIR) if icon.endswith(('.png', '.jpg', '.jpeg'))]
 
-# Root route to redirect to the gallery
+# Root route
 @app.route('/')
 def home():
     return redirect('/gallery')
 
 # Route for the gallery
-@app.route('/gallery')
+@app.route('/gallery', methods=["GET", "POST"])
 def gallery():
-    return render_template("gallery.html", app_version=APP_VERSION)
+    icon_config = load_icon_config()
+    available_icons = load_icons()
+
+    if request.method == "POST":
+        # Handle icon selection update
+        app_name = request.form.get("app_name")
+        selected_icon = request.form.get("icon_select")
+        if app_name and selected_icon:
+            icon_config[app_name] = selected_icon
+            save_icon_config(icon_config)
+
+    return render_template(
+        "gallery.html",
+        app_version=APP_VERSION,
+        available_icons=available_icons,
+        icon_config=icon_config
+    )
 
 # Route for Angel Investment Analysis
-@app.route('/angel-investment-analysis', methods=["GET", "POST"])
+@app.route('/angel-investment-analysis')
 def angel_investment_analysis():
-    if request.method == "POST":
-        # Collect inputs
-        meta_instructions = request.form.get("meta_instructions")
-        user_query = request.form.get("user_query")
-        selected_icon = request.form.get("icon_select")
+    return render_template("index.html", app_version=APP_VERSION)
 
-        # Handle file upload
-        uploaded_file = request.files.get("file_upload")
-        if uploaded_file:
-            file_path = os.path.join("uploads", uploaded_file.filename)
-            uploaded_file.save(file_path)
-        else:
-            file_path = None
-
-        # Debugging: Display inputs
-        print(f"Meta Instructions: {meta_instructions}")
-        print(f"User Query: {user_query}")
-        print(f"Selected Icon: {selected_icon}")
-        print(f"Uploaded File Path: {file_path}")
-
-        # Placeholder API response logic
-        api_response = f"Simulated API response for query: {user_query}"
-
-        # Render the template with results
-        return render_template(
-            "index.html",
-            app_version=APP_VERSION,
-            api_response=api_response,
-            available_icons=load_icons(),
-            selected_icon=selected_icon,
-            error=None
-        )
-    else:
-        # Render the initial page with icons
-        return render_template(
-            "index.html",
-            app_version=APP_VERSION,
-            available_icons=load_icons()
-        )
-
-# Route for downloading the report
-@app.route('/download', methods=["POST"])
-def download():
-    # Simulated report content
-    report_content = "Generated PDF content goes here."
-    report_path = "uploads/report.pdf"
-
-    # Write the report to a file
-    with open(report_path, "w") as report_file:
-        report_file.write(report_content)
-
-    # Return the generated file to the user
-    return send_file(report_path, as_attachment=True)
-
-# Ensure directories exist for uploads and icons
+# Run the app
 if __name__ == "__main__":
-    os.makedirs("uploads", exist_ok=True)
-    os.makedirs(ICON_DIR, exist_ok=True)
-
-    # Run the application
     app.run(debug=True)
