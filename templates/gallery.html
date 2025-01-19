@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Jeff's Virtual Lab</title>
     <style>
+        /* Hero Section and Gallery Styling */
         body {
             font-family: Arial, sans-serif;
             margin: 0;
@@ -16,7 +17,7 @@
         header {
             position: relative;
             width: 100%;
-            height: 60vh; /* Hero image takes 60% of the viewport height */
+            height: 60vh;
             overflow: hidden;
         }
 
@@ -107,7 +108,7 @@
         <h2>Explore Our Applications</h2>
         <div class="gallery">
             {% for app_name, icon in icon_config.items() %}
-            <div class="tile" onclick="location.href='{{ url_for(app_name|replace(' ', '_').lower()) }}';">
+            <div class="tile" onclick="location.href='{{ url_for(app_name.replace(' ', '_').lower()) }}';">
                 <img src="static/icons/{{ icon }}" alt="{{ app_name }}">
                 <p>{{ app_name }}</p>
             </div>
