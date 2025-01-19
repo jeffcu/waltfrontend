@@ -1,19 +1,26 @@
-from flask import Flask, render_template, request, redirect, url_for, jsonify
 import os
 import json
+import logging
+from flask import Flask, render_template, request, redirect, url_for, jsonify
 
+# Flask application setup
 app = Flask(__name__)
 
-# App version
+# Constants
 APP_VERSION = "0.1.15"
-
-# Paths
 ICON_CONFIG_PATH = "icon_config.json"
-STATIC_ICON_PATH = "static/icons/"
 
-# Ensure icon_config.json exists with default values
-def initialize_icon_config():
-    if not os.path.exists(ICON_CONFIG_PATH):
+# Initialize logging
+logging.basicConfig(level=logging.INFO)
+
+# Utility functions
+def load_icon_config():
+    """Load the icon configuration file. Create default config if invalid or missing."""
+    try:
+        with open(ICON_CONFIG_PATH, "r") as f:
+            return json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError) as e:
+        logging.warning(f"Error loading icon_config.json: {e}. Initializing with default config.")
         default_config = {
             "Angel Investment Analysis": "dewar-flask.jpeg",
             "Coming Soon App 1": "placeholder.png",
@@ -22,80 +29,65 @@ def initialize_icon_config():
         }
         with open(ICON_CONFIG_PATH, "w") as f:
             json.dump(default_config, f)
+        return default_config
 
-# Load icon configuration
-def load_icon_config():
-    with open(ICON_CONFIG_PATH, "r") as f:
-        return json.load(f)
-
-# Save icon configuration
 def save_icon_config(config):
-    with open(ICON_CONFIG_PATH, "w") as f:
-        json.dump(config, f, indent=4)
+    """Save the icon configuration to a file."""
+    try:
+        with open(ICON_CONFIG_PATH, "w") as f:
+            json.dump(config, f)
+        logging.info("Icon configuration saved successfully.")
+    except Exception as e:
+        logging.error(f"Error saving icon configuration: {e}")
 
-@app.route('/')
+# Routes
+@app.route("/")
 def home():
-    """Redirect to the gallery as the main page."""
-    return redirect(url_for('gallery'))
+    """Redirect to gallery as the default view."""
+    return redirect(url_for("gallery"))
 
-@app.route('/gallery')
+@app.route("/gallery", methods=["GET", "POST"])
 def gallery():
-    """Render the application gallery page."""
-    initialize_icon_config()
+    """Render the gallery page."""
     icon_config = load_icon_config()
-    return render_template("gallery.html", icon_config=icon_config, app_version=APP_VERSION)
 
-@app.route('/angel-investment-analysis', methods=['GET', 'POST'])
+    if request.method == "POST":
+        # Update icon configuration based on user input
+        app_name = request.form.get("app_name")
+        icon_name = request.form.get("icon_name")
+        if app_name and icon_name:
+            icon_config[app_name] = icon_name
+            save_icon_config(icon_config)
+        return redirect(url_for("gallery"))
+
+    return render_template("gallery.html", icons=icon_config, app_version=APP_VERSION)
+
+@app.route("/angel-investment-analysis", methods=["GET", "POST"])
 def angel_investment_analysis():
-    """Render and handle Angel Investment Analysis application."""
-    if request.method == 'POST':
+    """Render the Angel Investment Analysis application."""
+    if request.method == "POST":
         meta_instructions = request.form.get("meta_instructions", "")
         user_query = request.form.get("user_query", "")
-        uploaded_file = request.files.get("file_upload")
+        file = request.files.get("file_upload")
 
-        file_content = ""
-        if uploaded_file and uploaded_file.filename != "":
-            file_path = os.path.join("uploads", uploaded_file.filename)
-            uploaded_file.save(file_path)
-            with open(file_path, "r", encoding="utf-8") as f:
-                file_content = f.read()
-
-        # Placeholder: Simulate API call
+        # Placeholder for analysis logic
         api_response = {
-            "summary": f"Meta Instructions: {meta_instructions}\nUser Query: {user_query}\nFile Content: {file_content}"
+            "meta_instructions": meta_instructions,
+            "user_query": user_query,
+            "file_content": file.read().decode("utf-8") if file else "No file uploaded"
         }
 
         return render_template(
-            "angel-investment-analysis.html",
-            api_response=api_response,
+            "angel_investment_analysis.html",
+            api_response=json.dumps(api_response, indent=4),
             app_version=APP_VERSION
         )
 
-    return render_template("angel-investment-analysis.html", app_version=APP_VERSION)
+    return render_template("angel_investment_analysis.html", app_version=APP_VERSION)
 
-@app.route('/update-icon', methods=['POST'])
-def update_icon():
-    """Updates the icon for a specific application."""
-    data = request.get_json()
-    app_name = data.get("app_name")
-    new_icon = data.get("icon")
-
-    if app_name and new_icon:
-        icon_config = load_icon_config()
-        if app_name in icon_config:
-            icon_config[app_name] = new_icon
-            save_icon_config(icon_config)
-            return jsonify({"status": "success", "message": "Icon updated."}), 200
-        return jsonify({"status": "error", "message": "App not found."}), 400
-
-    return jsonify({"status": "error", "message": "Invalid request."}), 400
-
-# Create uploads directory if it doesn't exist
-if not os.path.exists("uploads"):
-    os.makedirs("uploads")
-
-# Initialize icon config
-initialize_icon_config()
-
+# Main entry point
 if __name__ == "__main__":
+    if not os.path.exists(ICON_CONFIG_PATH):
+        logging.info("Initializing icon_config.json with default values.")
+        save_icon_config(load_icon_config())
     app.run(debug=True)
