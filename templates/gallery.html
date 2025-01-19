@@ -28,7 +28,7 @@
 
         .hero-text {
             position: absolute;
-            top: 50%;
+            top: 40%;
             left: 50%;
             transform: translate(-50%, -50%);
             text-align: center;
@@ -48,27 +48,53 @@
             margin: 0.5rem 0 0;
         }
 
+        .gallery-wrapper {
+            position: relative;
+            top: -100px; /* Float the tiles over the hero image */
+            z-index: 2;
+        }
+
         .gallery {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
             gap: 1.5rem;
             padding: 2rem;
-            margin-top: 2rem;
+            margin: 0 auto;
+            max-width: 1200px;
         }
 
         .tile {
-            width: 100%;
-            aspect-ratio: 1;
-            border-radius: 10px;
+            position: relative;
+            overflow: hidden;
+            border-radius: 15px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            background-color: #e9d8a6;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            cursor: pointer;
             transition: transform 0.2s, box-shadow 0.2s;
+            cursor: pointer;
+        }
+
+        .tile img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.5s ease;
+        }
+
+        .tile:hover img {
+            transform: scale(1.1); /* Zoom in on hover */
+        }
+
+        .tile span {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 0.75rem;
+            text-align: center;
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: white;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 2;
         }
 
         .tile:hover {
@@ -76,20 +102,11 @@
             box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15);
         }
 
-        .tile.inactive {
-            background-color: #b7b7a4;
-            cursor: not-allowed;
-        }
-
-        .tile img {
-            width: 80px;
-            height: 80px;
-            margin-bottom: 0.5rem;
-        }
-
-        .tile span {
-            font-size: 1rem;
-            font-weight: bold;
+        footer {
+            text-align: center;
+            margin-top: 2rem;
+            font-size: 0.9rem;
+            color: #6b705c;
         }
     </style>
 </head>
@@ -107,16 +124,22 @@
     </div>
 
     <main>
-        <section class="gallery">
-            {% for app_name, icon in icon_config.items() %}
-            <div class="tile {% if loop.index == 1 %}active{% else %}inactive{% endif %}">
-                <a href="/{{ app_name }}">
-                    <img src="/static/icons/{{ icon }}" alt="{{ app_name }} Icon">
-                    <span>{{ app_name.replace('_', ' ').title() }}</span>
-                </a>
-            </div>
-            {% endfor %}
-        </section>
+        <div class="gallery-wrapper">
+            <section class="gallery">
+                {% for app_name, icon in icon_config.items() %}
+                <div class="tile">
+                    <a href="/{{ app_name }}">
+                        <img src="/static/icons/{{ icon }}" alt="{{ app_name }} Icon">
+                        <span>{{ app_name.replace('_', ' ').title() }}</span>
+                    </a>
+                </div>
+                {% endfor %}
+            </section>
+        </div>
     </main>
+
+    <footer>
+        <p>Jeff's Virtual Lab &copy; 2025</p>
+    </footer>
 </body>
 </html>
