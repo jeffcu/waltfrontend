@@ -5,29 +5,117 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Jeff's Virtual Lab</title>
     <style>
-        /* Styles omitted for brevity */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #fef9f3;
+            color: #4b3b2b;
+        }
+
+        header {
+            position: relative;
+            width: 100%;
+            height: 60vh; /* Hero image takes 60% of the viewport height */
+            overflow: hidden;
+        }
+
+        header img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .hero-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            text-align: center;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+        }
+
+        .hero-text h1 {
+            font-size: 3rem;
+            margin: 0;
+        }
+
+        .hero-text p {
+            font-size: 1.25rem;
+            margin: 0.5rem 0 0;
+        }
+
+        main {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 1rem;
+            text-align: center;
+        }
+
+        .gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            justify-items: center;
+        }
+
+        .tile {
+            width: 200px;
+            height: 200px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            background-color: #e9d8a6;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            transition: transform 0.2s, box-shadow 0.2s;
+            cursor: pointer;
+        }
+
+        .tile img {
+            width: 100%;
+            height: 100%;
+            border-radius: 10px;
+            object-fit: cover;
+        }
+
+        .tile:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15);
+        }
+
+        footer {
+            margin-top: 2rem;
+            text-align: center;
+            font-size: 0.9rem;
+            color: #6b705c;
+        }
     </style>
 </head>
 <body>
     <header>
-        <h1>Jeff's Virtual Lab</h1>
+        <img src="static/images/hero-image.jpg" alt="Hero Image">
+        <div class="hero-text">
+            <h1>Jeff's Virtual Lab</h1>
+            <p>A hub for exploring innovative tools and applications</p>
+        </div>
     </header>
-    <div class="hero">
-        <img src="/static/images/hero-image.jpg" alt="Hero Image">
-    </div>
     <main>
+        <h2>Explore Our Applications</h2>
         <div class="gallery">
-            <div class="tile">
-                <a href="/angel-investment-analysis">
-                    <img src="/static/icons/dewar-flask.jpeg" alt="Angel Investment Analysis">
-                    <span>Angel Investment Analysis</span>
-                </a>
+            {% for app_name, icon in icon_config.items() %}
+            <div class="tile" onclick="location.href='{{ url_for(app_name|replace(' ', '_').lower()) }}';">
+                <img src="static/icons/{{ icon }}" alt="{{ app_name }}">
+                <p>{{ app_name }}</p>
             </div>
-            <!-- Additional tiles can be added here -->
+            {% endfor %}
         </div>
     </main>
     <footer>
-        <p>Jeff's Virtual Lab &copy; 2025 | Version 0.1.0</p>
+        <p>Jeff's Virtual Lab &copy; 2025</p>
     </footer>
 </body>
 </html>
