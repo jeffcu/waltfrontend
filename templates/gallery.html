@@ -4,105 +4,119 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Jeff's Virtual Lab</title>
+    <link rel="stylesheet" href="/static/gallery.css">
     <style>
         body {
             font-family: Arial, sans-serif;
             margin: 0;
             padding: 0;
-            background-color: #f8f9fa;
+            background-color: #fef9f3;
         }
 
-        header {
+        .hero {
             position: relative;
-            background-image: url('/static/images/hero-image.jpg');
-            background-size: cover;
-            background-position: center;
-            color: white;
+            width: 100%;
+            height: 100vh; /* Full screen height */
+            overflow: hidden;
+        }
+
+        .hero img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover; /* Ensures the image covers the hero area */
+        }
+
+        .hero-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
             text-align: center;
-            padding: 4rem 1rem;
+            color: white;
+            background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent background */
+            padding: 1rem;
+            border-radius: 8px;
         }
 
-        header h1 {
-            font-size: 2.5rem;
+        .hero-text h1 {
+            font-size: 3rem;
             margin: 0;
-            text-shadow: 1px 1px 5px rgba(0, 0, 0, 0.7);
         }
 
-        header p {
+        .hero-text p {
             font-size: 1.2rem;
-            margin: 1rem 0 0 0;
-            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.7);
+            margin: 0.5rem 0 0;
         }
 
         .gallery {
-            max-width: 1200px;
-            margin: 2rem auto;
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
             gap: 1.5rem;
-            padding: 0 1rem;
+            padding: 2rem;
+            margin-top: 2rem;
         }
 
         .tile {
-            background-color: white;
-            border: 1px solid #ddd;
-            border-radius: 8px;
+            width: 100%;
+            aspect-ratio: 1;
+            border-radius: 10px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            background-color: #e9d8a6;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
             text-align: center;
-            padding: 1rem;
             cursor: pointer;
-            transition: transform 0.3s, box-shadow 0.3s;
+            transition: transform 0.2s, box-shadow 0.2s;
         }
 
         .tile:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+            transform: scale(1.05);
+            box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15);
+        }
+
+        .tile.inactive {
+            background-color: #b7b7a4;
+            cursor: not-allowed;
         }
 
         .tile img {
-            max-width: 100%;
-            height: auto;
+            width: 80px;
+            height: 80px;
             margin-bottom: 0.5rem;
-            border-radius: 5px;
         }
 
-        .tile h3 {
-            font-size: 1.2rem;
-            margin: 0.5rem 0 0 0;
-            color: #333;
-        }
-
-        footer {
-            text-align: center;
-            margin: 2rem 0;
-            font-size: 0.9rem;
-            color: #555;
+        .tile span {
+            font-size: 1rem;
+            font-weight: bold;
         }
     </style>
 </head>
 <body>
-    <!-- Hero Section -->
     <header>
-        <h1>Welcome to Jeff's Virtual Lab</h1>
-        <p>Explore a variety of tools and applications designed to empower your work.</p>
+        <h1 style="text-align: center; padding: 1rem 0; background: #005f73; color: white;">Jeff's Virtual Lab</h1>
     </header>
 
-    <!-- Application Gallery -->
-    <div class="gallery">
-        <!-- Application 1 -->
-        <div class="tile" onclick="window.location.href='/angel-investment-analysis';">
-            <img src="/static/icons/dewar-flask.jpeg" alt="Angel Investment Icon">
-            <h3>Angel Investment Analysis</h3>
-        </div>
-        <!-- Add more tiles here -->
-        <div class="tile inactive">
-            <img src="/static/icons/amber-button.jpeg" alt="Coming Soon">
-            <h3>Coming Soon</h3>
+    <div class="hero">
+        <img src="/static/images/hero-image.jpg" alt="Hero Image">
+        <div class="hero-text">
+            <h1>Explore the Lab</h1>
+            <p>Discover applications tailored for innovation and productivity.</p>
         </div>
     </div>
 
-    <footer>
-        <p>Jeff's Virtual Lab &copy; 2025</p>
-    </footer>
+    <main>
+        <section class="gallery">
+            {% for app_name, icon in icon_config.items() %}
+            <div class="tile {% if loop.index == 1 %}active{% else %}inactive{% endif %}">
+                <a href="/{{ app_name }}">
+                    <img src="/static/icons/{{ icon }}" alt="{{ app_name }} Icon">
+                    <span>{{ app_name.replace('_', ' ').title() }}</span>
+                </a>
+            </div>
+            {% endfor %}
+        </section>
+    </main>
 </body>
 </html>
