@@ -1,86 +1,121 @@
-from flask import Flask, render_template, request, redirect, url_for, jsonify
 import os
 import json
+from flask import Flask, render_template, request, redirect, url_for, jsonify
 
 app = Flask(__name__)
-APP_VERSION = "0.1.15"
 
-ICON_CONFIG_FILE = "icon_config.json"
+APP_VERSION = "0.1.15"
+ICON_CONFIG_PATH = "icon_config.json"
+STATIC_ICONS_PATH = "static/icons"
+
 
 def load_icon_config():
-    """Load icon configuration from a JSON file."""
-    try:
-        with open(ICON_CONFIG_FILE, "r") as f:
-            return json.load(f)
-    except (FileNotFoundError, json.JSONDecodeError):
-        # Create a default configuration if the file is missing or malformed
+    """Load the icon configuration file. Create a default if it doesn't exist."""
+    if not os.path.exists(ICON_CONFIG_PATH):
         default_config = {
-            "App 1": "amber-button.jpeg",
-            "App 2": "dewar-flask.jpeg",
-            "App 3": "red-button.jpeg",
+            "Angel Investment Analysis": "amber-button.jpeg",
+            "Coming Soon 1": "amber-button.jpeg",
+            "Coming Soon 2": "amber-button.jpeg",
+            "Coming Soon 3": "amber-button.jpeg"
         }
-        with open(ICON_CONFIG_FILE, "w") as f:
+        with open(ICON_CONFIG_PATH, "w") as f:
             json.dump(default_config, f)
         return default_config
+    else:
+        with open(ICON_CONFIG_PATH, "r") as f:
+            return json.load(f)
+
 
 def save_icon_config(config):
-    """Save the icon configuration to a JSON file."""
-    with open(ICON_CONFIG_FILE, "w") as f:
+    """Save the icon configuration to the JSON file."""
+    with open(ICON_CONFIG_PATH, "w") as f:
         json.dump(config, f)
 
-@app.route('/')
+
+@app.route("/")
 def home():
-    """Redirect to the gallery page."""
-    return redirect(url_for('gallery'))
+    """Redirect to gallery by default."""
+    return redirect(url_for("gallery"))
 
-@app.route('/gallery', methods=["GET", "POST"])
+
+@app.route("/gallery", methods=["GET", "POST"])
 def gallery():
-    """Display the application gallery."""
-    icon_config = load_icon_config()
+    """Render the gallery with available applications."""
+    try:
+        icon_config = load_icon_config()
+    except Exception as e:
+        return f"Error loading icon configuration: {e}"
+
     if request.method == "POST":
-        # Update icon configuration if changes are submitted
         app_name = request.form.get("app_name")
-        selected_icon = request.form.get("icon")
-        if app_name and selected_icon:
-            icon_config[app_name] = selected_icon
+        new_icon = request.form.get("icon")
+        if app_name and new_icon:
+            icon_config[app_name] = new_icon
             save_icon_config(icon_config)
-        return redirect(url_for('gallery'))
+            return redirect(url_for("gallery"))
 
-    return render_template('gallery.html', icon_config=icon_config, app_version=APP_VERSION)
+    available_icons = [
+        f for f in os.listdir(STATIC_ICONS_PATH) if f.lower().endswith((".png", ".jpg", ".jpeg"))
+    ]
 
-@app.route('/angel-investment-analysis', methods=["GET", "POST"])
+    return render_template(
+        "gallery.html",
+        app_version=APP_VERSION,
+        icon_config=icon_config,
+        available_icons=available_icons
+    )
+
+
+@app.route("/angel-investment-analysis", methods=["GET", "POST"])
 def angel_investment_analysis():
-    """Render the Angel Investment Analysis page."""
+    """Handle Angel Investment Analysis application."""
     if request.method == "POST":
         meta_instructions = request.form.get("meta_instructions", "")
         user_query = request.form.get("user_query", "")
-        uploaded_file = request.files.get("file_upload")
-        if uploaded_file:
-            file_path = os.path.join("uploads", uploaded_file.filename)
-            uploaded_file.save(file_path)
-        else:
-            file_path = None
+        file = request.files.get("file_upload")
 
-        # Debugging message to track data flow
+        # For debugging: check inputs
         print(f"Meta Instructions: {meta_instructions}")
         print(f"User Query: {user_query}")
-        print(f"Uploaded File Path: {file_path}")
 
-        # Mock API response for debugging
-        api_response = f"Analyzing with meta instructions: {meta_instructions} and user query: {user_query}."
+        # Save uploaded file (if any)
+        uploaded_file_path = None
+        if file:
+            uploaded_file_path = os.path.join("uploads", file.filename)
+            file.save(uploaded_file_path)
+
+        # Simulate API response
+        api_response = {
+            "company_name": "Example Startup, Inc.",
+            "market": "AI and Machine Learning",
+            "strengths": ["Innovative product", "Strong team", "Large market potential"],
+            "weaknesses": ["High competition", "Unproven revenue model", "Scalability concerns"]
+        }
 
         return render_template(
             "angel_investment_analysis.html",
+            app_version=APP_VERSION,
             meta_instructions=meta_instructions,
             user_query=user_query,
             api_response=api_response,
-            file_path=file_path,
-            app_version=APP_VERSION,
+            uploaded_file_path=uploaded_file_path
         )
+    return render_template(
+        "angel_investment_analysis.html",
+        app_version=APP_VERSION
+    )
 
-    return render_template('angel_investment_analysis.html', app_version=APP_VERSION)
+
+@app.route("/icon-preview/<icon_name>")
+def icon_preview(icon_name):
+    """Endpoint to serve icon previews."""
+    icon_path = os.path.join(STATIC_ICONS_PATH, icon_name)
+    if os.path.exists(icon_path):
+        return jsonify({"icon_url": url_for("static", filename=f"icons/{icon_name}")})
+    else:
+        return jsonify({"error": "Icon not found"}), 404
+
 
 if __name__ == "__main__":
-    # Ensure uploads directory exists
     os.makedirs("uploads", exist_ok=True)
     app.run(debug=True)
