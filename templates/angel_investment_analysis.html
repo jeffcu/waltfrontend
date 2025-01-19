@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Angel Investment Analysis</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <header>
+        <h1>Angel Investment Analysis</h1>
+    </header>
+    <main>
+        <form method="POST" action="/angel-investment-analysis" enctype="multipart/form-data">
+            <div>
+                <label for="meta_instructions">Meta Instructions:</label>
+                <textarea id="meta_instructions" name="meta_instructions">You're an expert at understanding startup companies. Summarize the provided information.</textarea>
+            </div>
+            <div>
+                <label for="user_query">User Query:</label>
+                <textarea id="user_query" name="user_query">Summarize this company and its market.</textarea>
+            </div>
+            <div>
+                <label for="file_upload">Upload File:</label>
+                <input type="file" id="file_upload" name="file_upload">
+            </div>
+            <button type="submit">Analyze</button>
+        </form>
+    </main>
+    <footer>
+        <p>Jeff's Virtual Lab &copy; 2025 | Version {{ app_version }}</p>
+    </footer>
+</body>
+</html>
