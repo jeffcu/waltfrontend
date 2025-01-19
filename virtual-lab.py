@@ -5,7 +5,7 @@ from flask import Flask, render_template, request, redirect, url_for
 app = Flask(__name__)
 
 # Version for the application
-APP_VERSION = "0.1.0"
+APP_VERSION = "0.1.1"
 
 # Icon configuration file
 ICON_CONFIG_FILE = "icon_config.json"
@@ -18,10 +18,10 @@ def save_icon_config(config):
 def load_icon_config():
     """
     Loads the icon configuration from the JSON file.
-    If the file does not exist, it creates one with default values.
+    If the file does not exist or is invalid, it creates one with default values.
     """
     if not os.path.exists(ICON_CONFIG_FILE):
-        # Initialize with default config
+        print("Icon configuration file not found. Creating a new one with default values.")
         initial_config = {
             "Angel Investment Analysis": "dewar-flask.jpeg",
             "Coming Soon App 1": "dewar-flask.jpeg",
@@ -29,8 +29,19 @@ def load_icon_config():
         }
         save_icon_config(initial_config)
         return initial_config
-    with open(ICON_CONFIG_FILE, "r") as f:
-        return json.load(f)
+
+    try:
+        with open(ICON_CONFIG_FILE, "r") as f:
+            return json.load(f)
+    except (json.JSONDecodeError, ValueError):
+        print("Invalid JSON in icon configuration file. Recreating with default values.")
+        initial_config = {
+            "Angel Investment Analysis": "dewar-flask.jpeg",
+            "Coming Soon App 1": "dewar-flask.jpeg",
+            "Coming Soon App 2": "dewar-flask.jpeg"
+        }
+        save_icon_config(initial_config)
+        return initial_config
 
 @app.route('/gallery', methods=["GET", "POST"])
 def gallery():
@@ -87,9 +98,11 @@ if __name__ == "__main__":
     # Ensure the static/icons directory exists
     if not os.path.exists("static/icons"):
         os.makedirs("static/icons")
+        print("Created static/icons directory.")
 
     # Ensure the icon config is initialized
-    load_icon_config()
+    config = load_icon_config()
+    print(f"Loaded icon configuration: {config}")
 
     # Run the Flask app
     app.run(debug=True)
