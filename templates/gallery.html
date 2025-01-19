@@ -3,143 +3,169 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Jeff's Virtual Lab</title>
-    <link rel="stylesheet" href="/static/gallery.css">
+    <title>Jeff's Virtual Lab - Gallery</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
             margin: 0;
-            padding: 0;
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
             background-color: #fef9f3;
+            color: #4b3b2b;
+        }
+
+        header {
+            text-align: center;
+            padding: 2rem;
+            background-color: #005f73;
+            color: white;
+        }
+
+        header h1 {
+            margin: 0;
         }
 
         .hero {
             position: relative;
-            width: 100%;
-            height: 100vh; /* Full screen height */
-            overflow: hidden;
+            text-align: center;
+            color: white;
         }
 
         .hero img {
             width: 100%;
-            height: 100%;
-            object-fit: cover; /* Ensures the image covers the hero area */
+            height: auto;
         }
 
         .hero-text {
             position: absolute;
-            top: 40%;
+            top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            text-align: center;
-            color: white;
-            background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent background */
-            padding: 1rem;
-            border-radius: 8px;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 1rem 2rem;
+            border-radius: 10px;
         }
 
-        .hero-text h1 {
-            font-size: 3rem;
+        .hero-text h2 {
             margin: 0;
+            font-size: 2rem;
         }
 
         .hero-text p {
-            font-size: 1.2rem;
             margin: 0.5rem 0 0;
-        }
-
-        .gallery-wrapper {
-            position: relative;
-            top: -100px; /* Float the tiles over the hero image */
-            z-index: 2;
+            font-size: 1.2rem;
         }
 
         .gallery {
+            margin-top: -5rem;
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 1.5rem;
-            padding: 2rem;
-            margin: 0 auto;
             max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
         }
 
         .tile {
-            position: relative;
-            overflow: hidden;
-            border-radius: 15px;
+            background-color: #94d2bd;
+            border-radius: 10px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            transition: transform 0.2s, box-shadow 0.2s;
-            cursor: pointer;
+            text-align: center;
+            transition: transform 0.3s, box-shadow 0.3s;
+            overflow: hidden;
+        }
+
+        .tile:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
         }
 
         .tile img {
             width: 100%;
-            height: 100%;
+            height: 150px;
             object-fit: cover;
-            transition: transform 0.5s ease;
-        }
-
-        .tile:hover img {
-            transform: scale(1.1); /* Zoom in on hover */
         }
 
         .tile span {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            padding: 0.75rem;
-            text-align: center;
-            font-size: 1.1rem;
+            display: block;
+            font-size: 1rem;
             font-weight: bold;
-            color: white;
-            background-color: rgba(0, 0, 0, 0.7);
-            z-index: 2;
-        }
-
-        .tile:hover {
-            transform: scale(1.05);
-            box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15);
+            padding: 1rem;
+            color: #005f73;
         }
 
         footer {
             text-align: center;
+            padding: 1rem;
+            background-color: #005f73;
+            color: white;
             margin-top: 2rem;
+        }
+
+        .edit-icon {
+            margin-top: 0.5rem;
             font-size: 0.9rem;
-            color: #6b705c;
+            color: #0077b6;
+            cursor: pointer;
+        }
+
+        .edit-icon:hover {
+            text-decoration: underline;
         }
     </style>
 </head>
 <body>
     <header>
-        <h1 style="text-align: center; padding: 1rem 0; background: #005f73; color: white;">Jeff's Virtual Lab</h1>
+        <h1>Jeff's Virtual Lab</h1>
     </header>
 
     <div class="hero">
         <img src="/static/images/hero-image.jpg" alt="Hero Image">
         <div class="hero-text">
-            <h1>Explore the Lab</h1>
-            <p>Discover applications tailored for innovation and productivity.</p>
+            <h2>Explore Cutting-Edge Applications</h2>
+            <p>Your gateway to innovative tools and insights.</p>
         </div>
     </div>
 
-    <main>
-        <div class="gallery-wrapper">
-            <section class="gallery">
-                {% for app_name, icon in icon_config.items() %}
+    <div class="gallery">
+        {% for app_name, icon in icon_config.items() %}
+        <div>
+            <a href="/{{ app_name }}">
                 <div class="tile">
-                    <a href="/{{ app_name }}">
-                        <img src="/static/icons/{{ icon }}" alt="{{ app_name }} Icon">
-                        <span>{{ app_name.replace('_', ' ').title() }}</span>
-                    </a>
+                    <img src="/static/icons/{{ icon }}" alt="{{ app_name }} Icon">
+                    <span>{{ app_name.replace('_', ' ').title() }}</span>
                 </div>
-                {% endfor %}
-            </section>
+            </a>
+            <span class="edit-icon" onclick="editIcon('{{ app_name }}')">Edit Icon</span>
         </div>
-    </main>
+        {% endfor %}
+    </div>
 
     <footer>
-        <p>Jeff's Virtual Lab &copy; 2025</p>
+        <p>&copy; 2025 Jeff's Virtual Lab | Version {{ app_version }}</p>
     </footer>
+
+    <script>
+        function editIcon(appName) {
+            const newIcon = prompt("Enter the filename of the new icon (must be in static/icons):");
+            if (newIcon) {
+                fetch('/update-icon', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ app_name: appName, icon_name: newIcon })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert("Icon updated successfully. Refreshing...");
+                        location.reload();
+                    } else {
+                        alert("Failed to update the icon.");
+                    }
+                });
+            }
+        }
+    </script>
 </body>
 </html>
