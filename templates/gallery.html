@@ -3,15 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Jeff's Virtual Lab - Gallery</title>
+    <title>Jeff's Virtual Lab</title>
     <style>
         body {
             font-family: Arial, sans-serif;
-            line-height: 1.6;
-            margin: 0;
-            padding: 0;
             background-color: #fef9f3;
             color: #4b3b2b;
+            margin: 0;
+            padding: 0;
         }
 
         header {
@@ -45,9 +44,9 @@
             align-items: center;
             justify-content: center;
             text-align: center;
-            position: relative;
-            cursor: pointer;
             transition: transform 0.2s, box-shadow 0.2s;
+            text-decoration: none;
+            color: #4b3b2b;
         }
 
         .tile:hover {
@@ -66,58 +65,6 @@
             font-weight: bold;
         }
 
-        .tile .edit-icon {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            font-size: 0.8rem;
-            color: #005f73;
-            text-decoration: underline;
-            cursor: pointer;
-        }
-
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
-            justify-content: center;
-            align-items: center;
-        }
-
-        .modal-content {
-            background-color: white;
-            padding: 2rem;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            text-align: center;
-        }
-
-        .modal-content label,
-        .modal-content select,
-        .modal-content button {
-            margin-bottom: 1rem;
-        }
-
-        .modal-content select {
-            width: 100%;
-            padding: 0.5rem;
-            font-size: 1rem;
-        }
-
-        .modal-content button {
-            background-color: #005f73;
-            color: white;
-            border: none;
-            padding: 0.75rem 1.5rem;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 1rem;
-        }
-
         footer {
             text-align: center;
             margin-top: 2rem;
@@ -128,53 +75,34 @@
 </head>
 <body>
     <header>
-        <h1>Jeff's Virtual Lab - Gallery</h1>
+        <h1>Jeff's Virtual Lab</h1>
     </header>
     <main>
+        <h2>Gallery of Applications</h2>
         <div class="gallery">
-            {% for app_name, icon in icon_config.items() %}
-            <div class="tile">
-                <img src="static/icons/{{ icon }}" alt="{{ app_name }}">
-                <span>{{ app_name }}</span>
-                <div class="edit-icon" onclick="openModal('{{ app_name }}')">Edit</div>
+            <!-- Active Application -->
+            <a href="/angel-investment-analysis" class="tile">
+                <img src="static/icons/dewar-flask.jpeg" alt="Angel Investment Analysis Icon">
+                <span>Angel Investment Analysis</span>
+            </a>
+
+            <!-- Inactive Applications -->
+            <div class="tile inactive">
+                <img src="static/icons/placeholder-icon.jpeg" alt="Coming Soon Icon">
+                <span>Coming Soon</span>
             </div>
-            {% endfor %}
+            <div class="tile inactive">
+                <img src="static/icons/placeholder-icon.jpeg" alt="Coming Soon Icon">
+                <span>Coming Soon</span>
+            </div>
+            <div class="tile inactive">
+                <img src="static/icons/placeholder-icon.jpeg" alt="Coming Soon Icon">
+                <span>Coming Soon</span>
+            </div>
         </div>
     </main>
     <footer>
-        <p>Jeff's Virtual Lab &copy; 2025 | Version {{ app_version }}</p>
+        <p>Jeff's Virtual Lab &copy; 2025 | Version 1.0.0</p>
     </footer>
-
-    <!-- Modal for icon selection -->
-    <div class="modal" id="iconModal">
-        <div class="modal-content">
-            <h2>Select Icon</h2>
-            <form method="POST" action="/gallery">
-                <input type="hidden" id="modalAppName" name="app_name">
-                <label for="icon">Choose an icon:</label>
-                <select id="icon" name="icon">
-                    <option value="amber-button.jpeg">Amber Button</option>
-                    <option value="dewar-flask.jpeg">Dewar Flask</option>
-                    <option value="red-button.jpeg">Red Button</option>
-                </select>
-                <br>
-                <button type="submit">Save</button>
-            </form>
-        </div>
-    </div>
-
-    <script>
-        function openModal(appName) {
-            document.getElementById("modalAppName").value = appName;
-            document.getElementById("iconModal").style.display = "flex";
-        }
-
-        window.onclick = function(event) {
-            const modal = document.getElementById("iconModal");
-            if (event.target === modal) {
-                modal.style.display = "none";
-            }
-        };
-    </script>
 </body>
 </html>
