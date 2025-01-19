@@ -1,12 +1,11 @@
-from flask import Flask, render_template, request, jsonify, send_file
+from flask import Flask, render_template, request, redirect, url_for, jsonify, send_file
 import os
-import json
 
 # Initialize the Flask app
 app = Flask(__name__)
 
 # Application version
-APP_VERSION = "0.1.15"
+APP_VERSION = "0.1.16"
 
 # Directory for static icons
 ICON_DIR = "static/icons"
@@ -14,6 +13,11 @@ ICON_DIR = "static/icons"
 # Function to load icons dynamically
 def load_icons():
     return [icon for icon in os.listdir(ICON_DIR) if icon.endswith(('.png', '.jpg', '.jpeg'))]
+
+# Root route to redirect to the gallery
+@app.route('/')
+def home():
+    return redirect('/gallery')
 
 # Route for the gallery
 @app.route('/gallery')
