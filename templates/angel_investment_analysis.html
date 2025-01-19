@@ -4,31 +4,160 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Angel Investment Analysis</title>
-    <link rel="stylesheet" href="/static/styles.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            color: #333;
+        }
+
+        header {
+            background-color: #e9d8a6;
+            text-align: center;
+            padding: 2rem 1rem;
+        }
+
+        header h1 {
+            font-size: 2rem;
+            margin: 0;
+            color: #005f73;
+        }
+
+        header p {
+            margin: 0.5rem 0 0;
+            font-size: 1.1rem;
+            color: #4b3b2b;
+        }
+
+        main {
+            max-width: 900px;
+            margin: 2rem auto;
+            padding: 1rem;
+            background-color: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .form-section {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: bold;
+            color: #4b3b2b;
+        }
+
+        textarea, input[type="file"] {
+            width: calc(100% - 10px);
+            padding: 0.75rem;
+            margin-left: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 1rem;
+            background-color: #fffdf9;
+        }
+
+        button {
+            display: block;
+            width: 100%;
+            background-color: #94d2bd;
+            color: #1b4332;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        button:hover {
+            background-color: #65a39f;
+        }
+
+        .button-group {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .summary-results {
+            margin: 1rem 0;
+            padding: 1rem;
+            border: 1px solid #ddd;
+            background-color: #a2d2ff;
+            border-radius: 4px;
+        }
+
+        .summary-results h3 {
+            margin: 0 0 0.5rem 0;
+            color: #005f73;
+        }
+
+        .back-to-gallery {
+            text-align: center;
+            margin-top: 2rem;
+        }
+
+        .back-to-gallery a {
+            text-decoration: none;
+            color: #005f73;
+            font-weight: bold;
+            font-size: 1rem;
+        }
+
+        .back-to-gallery a:hover {
+            text-decoration: underline;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 2rem;
+            font-size: 0.9rem;
+            color: #555;
+        }
+    </style>
 </head>
 <body>
     <header>
         <h1>Angel Investment Analysis</h1>
+        <p>Analyze startup companies with precision and generate insightful reports.</p>
     </header>
     <main>
         <form method="POST" action="/angel-investment-analysis" enctype="multipart/form-data">
-            <div>
+            <div class="form-section">
                 <label for="meta_instructions">Meta Instructions:</label>
-                <textarea id="meta_instructions" name="meta_instructions">You're an expert at understanding startup companies. Summarize the provided information.</textarea>
+                <textarea id="meta_instructions" name="meta_instructions">You're an expert at understanding startup companies. You can summarize them quickly.</textarea>
             </div>
-            <div>
+            <div class="form-section">
                 <label for="user_query">User Query:</label>
-                <textarea id="user_query" name="user_query">Summarize this company and its market.</textarea>
+                <textarea id="user_query" name="user_query">Tell me about this company and its market. Summarize the company name and what other information you can determine from the provided passed information from their presentation.</textarea>
             </div>
-            <div>
+            <div class="form-section">
                 <label for="file_upload">Upload File:</label>
                 <input type="file" id="file_upload" name="file_upload">
             </div>
-            <button type="submit">Analyze</button>
+
+            <div class="button-group">
+                <button type="submit">Step 1: Analyze</button>
+                <div class="summary-results">
+                    <h3>Summary Results:</h3>
+                    <p>(Results will display here after analysis)</p>
+                </div>
+                <button formaction="/download" type="submit">Step 2: Generate Report</button>
+            </div>
         </form>
+
+        <div class="back-to-gallery">
+            <a href="/gallery">&larr; Back to Gallery</a>
+        </div>
     </main>
     <footer>
-        <p>Jeff's Virtual Lab &copy; 2025 | Version {{ app_version }}</p>
+        <p>Jeff's Virtual Lab &copy; 2025</p>
     </footer>
 </body>
 </html>
