@@ -1,53 +1,63 @@
-from flask import Flask, render_template, redirect, request, jsonify
 import os
 import json
+from flask import Flask, render_template, request, redirect, url_for
 
 app = Flask(__name__)
 
-# Global variable for app version
-APP_VERSION = "0.2.0"
-
-# Load the icon configuration
-ICON_CONFIG_FILE = "icon_config.json"
+# Path to icon configuration JSON
+ICON_CONFIG_PATH = "static/icons/icon_config.json"
 
 def load_icon_config():
-    if not os.path.exists(ICON_CONFIG_FILE):
-        # Create a default config if none exists
+    """Load icon configuration from the JSON file."""
+    if not os.path.exists(ICON_CONFIG_PATH):
         default_config = {
             "Angel Investment Analysis": "dewar-flask.jpeg"
         }
-        with open(ICON_CONFIG_FILE, "w") as f:
+        with open(ICON_CONFIG_PATH, "w") as f:
             json.dump(default_config, f)
-    with open(ICON_CONFIG_FILE, "r") as f:
+        return default_config
+    with open(ICON_CONFIG_PATH, "r") as f:
         return json.load(f)
 
-def save_icon_config(config):
-    with open(ICON_CONFIG_FILE, "w") as f:
-        json.dump(config, f)
+def save_icon_config(icon_config):
+    """Save updated icon configuration to the JSON file."""
+    with open(ICON_CONFIG_PATH, "w") as f:
+        json.dump(icon_config, f)
 
-@app.route('/')
-def home():
-    # Redirect to the gallery as the default page
-    return redirect('/gallery')
-
-@app.route('/gallery', methods=["GET", "POST"])
+@app.route("/")
 def gallery():
+    """Display the gallery of applications."""
     icon_config = load_icon_config()
-    if request.method == "POST":
-        app_name = request.form.get("app_name")
-        icon = request.form.get("icon")
-        if app_name and icon:
-            icon_config[app_name] = icon
-            save_icon_config(icon_config)
-    return render_template('gallery.html', icon_config=icon_config, app_version=APP_VERSION)
+    return render_template("gallery.html", icon_config=icon_config)
 
-@app.route('/angel-investment-analysis')
+@app.route("/set-icon/<app_name>", methods=["POST"])
+def set_icon(app_name):
+    """Set a new icon for a given application."""
+    icon_config = load_icon_config()
+    new_icon = request.form.get("icon_select")
+    if app_name in icon_config and new_icon:
+        icon_config[app_name] = new_icon
+        save_icon_config(icon_config)
+    return redirect(url_for("gallery"))
+
+@app.route("/angel-investment-analysis", methods=["GET", "POST"])
 def angel_investment_analysis():
-    return render_template('angel_investment_analysis.html', app_version=APP_VERSION)
+    """Handle the Angel Investment Analysis application."""
+    if request.method == "POST":
+        meta_instructions = request.form.get("meta_instructions", "")
+        user_query = request.form.get("user_query", "")
+        uploaded_file = request.files.get("file_upload", None)
 
-@app.route('/static/<path:filename>')
-def static_files(filename):
-    return app.send_static_file(filename)
+        # Placeholder for processing logic
+        api_response = "Simulated API response based on input data."
+
+        return render_template(
+            "angel_investment_analysis.html",
+            api_response=api_response,
+            meta_instructions=meta_instructions,
+            user_query=user_query,
+        )
+    return render_template("angel_investment_analysis.html", api_response=None)
 
 if __name__ == "__main__":
     app.run(debug=True)
