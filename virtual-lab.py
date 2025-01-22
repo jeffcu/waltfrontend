@@ -4,6 +4,10 @@ import os
 from io import BytesIO
 from PyPDF2 import PdfReader
 import openai
+import logging
+
+# Setup logging
+logging.basicConfig(level=logging.DEBUG)
 
 app = Flask(__name__)
 
@@ -29,7 +33,7 @@ def angel_investment_analysis():
             return render_template('angel_investment_analysis.html', analysis_result="No content provided")
 
         try:
-            client = openai.OpenAI()
+            client = openai.Client()
             response = client.chat.completions.create(
                 model="gpt-3.5-turbo",
                 messages=[
@@ -39,6 +43,7 @@ def angel_investment_analysis():
             )
             analysis_result = response.choices[0].message.content.strip()
         except Exception as e:
+            logging.error(f"API call failed: {str(e)}")
             analysis_result = f"API call failed: {str(e)}"
 
         return render_template('angel_investment_analysis.html', analysis_result=analysis_result)
@@ -61,7 +66,7 @@ def analyze():
         return jsonify({"Analysis Summary": "No content provided"})
 
     try:
-        client = openai.OpenAI()
+        client = openai.Client()
         response = client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
@@ -70,7 +75,9 @@ def analyze():
             ]
         )
         analysis_result = response.choices[0].message.content.strip()
+        logging.info(f"API Response: {analysis_result}")
     except Exception as e:
+        logging.error(f"API call failed: {str(e)}")
         analysis_result = f"API call failed: {str(e)}"
 
     return jsonify({"Analysis Summary": analysis_result})
