@@ -40,17 +40,45 @@
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
 
+        .form-section {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            font-weight: bold;
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+
+        textarea, input[type="file"] {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+
         .summary-results {
-            margin: 1rem 0;
+            margin-top: 1.5rem;
             padding: 1rem;
             border: 1px solid #ddd;
             background-color: #a2d2ff;
             border-radius: 4px;
         }
 
-        .summary-results h3 {
-            margin: 0 0 0.5rem 0;
-            color: #005f73;
+        button {
+            width: 100%;
+            padding: 0.75rem;
+            background-color: #94d2bd;
+            border: none;
+            border-radius: 4px;
+            color: #1b4332;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #65a39f;
         }
     </style>
 </head>
@@ -63,20 +91,23 @@
         <form method="POST" action="/angel_investment_analysis" enctype="multipart/form-data">
             <div class="form-section">
                 <label for="meta_instructions">Meta Instructions:</label>
-                <textarea id="meta_instructions" name="meta_instructions">You're an expert at understanding startup companies. You can summarize them quickly.</textarea>
+                <textarea id="meta_instructions" name="meta_instructions">You're an expert at understanding startup companies.</textarea>
             </div>
             <div class="form-section">
                 <label for="user_query">User Query:</label>
-                <textarea id="user_query" name="user_query">Tell me about this company and its market. Summarize the company name and what other information you can determine from their presentation.</textarea>
+                <textarea id="user_query" name="user_query">Tell me about this company and its market.</textarea>
             </div>
-            <div class="summary-results">
-                <h3>Summary Results:</h3>
-                <div id="summaryResults">
-                    <p>(Results will display here after analysis)</p>
-                </div>
+            <div class="form-section">
+                <label for="file_upload">Upload File:</label>
+                <input type="file" id="file_upload" name="file_upload">
             </div>
             <button id="analyzeButton" type="button">Analyze</button>
         </form>
+
+        <div class="summary-results" id="summaryResults">
+            <h3>Summary Results:</h3>
+            <p>(Results will display here after analysis)</p>
+        </div>
 
         <form method="POST" action="/download_report">
             <input type="hidden" id="summaryData" name="summaryData">
@@ -85,9 +116,11 @@
     </main>
     <script>
         document.getElementById("analyzeButton").addEventListener("click", function() {
+            let userInput = document.getElementById("meta_instructions").value + " " +
+                            document.getElementById("user_query").value;
             fetch("/analyze", {
                 method: "POST",
-                body: JSON.stringify({ userInput: document.getElementById("user_query").value }),
+                body: JSON.stringify({ userInput: userInput }),
                 headers: { "Content-Type": "application/json" }
             })
             .then(response => response.json())

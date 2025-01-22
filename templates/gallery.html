@@ -30,14 +30,12 @@
         }
 
         .gallery {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
             gap: 20px;
         }
 
         .project-tile {
-            width: 300px;
             border: 1px solid #ddd;
             border-radius: 8px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
@@ -92,12 +90,14 @@
                 <p>Analyze startup companies and generate insightful reports.</p>
                 <a href="/angel_investment_analysis">Launch Project</a>
             </div>
+            {% for i in range(15) %}
             <div class="project-tile">
-                <img src="static/images/other_project.jpg" alt="Other Project">
-                <h3>Other Project</h3>
-                <p>A placeholder for future exciting projects.</p>
-                <a href="/other_project">Coming Soon</a>
+                <img src="static/images/placeholder.jpg" alt="Placeholder Project">
+                <h3>Placeholder Project {{ i + 2 }}</h3>
+                <p>Future exciting projects coming soon.</p>
+                <a href="#">Coming Soon</a>
             </div>
+            {% endfor %}
         </div>
     </div>
 </body>
