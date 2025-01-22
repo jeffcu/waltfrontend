@@ -61,6 +61,10 @@
     </header>
     <main>
         <form method="POST" action="/angel_investment_analysis" enctype="multipart/form-data">
+            <div class="form-section">
+                <label for="userInput">User Query:</label>
+                <input type="text" id="userInput" placeholder="Enter your query here">
+            </div>
             <div class="summary-results">
                 <h3>Summary Results:</h3>
                 <div id="summaryResults">
@@ -77,9 +81,10 @@
     </main>
     <script>
         document.getElementById("analyzeButton").addEventListener("click", function() {
+            let userInputValue = document.getElementById("userInput").value;
             fetch("/analyze", {
                 method: "POST",
-                body: JSON.stringify({ userInput: document.getElementById("meta_instructions").value }),
+                body: JSON.stringify({ userInput: userInputValue }),
                 headers: { "Content-Type": "application/json" }
             })
             .then(response => response.json())
