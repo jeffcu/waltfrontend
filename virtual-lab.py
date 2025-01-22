@@ -29,14 +29,15 @@ def angel_investment_analysis():
             return render_template('angel_investment_analysis.html', analysis_result="No content provided")
 
         try:
-            response = openai.ChatCompletion.create(
+            client = openai.OpenAI()
+            response = client.chat.completions.create(
                 model="gpt-3.5-turbo",
                 messages=[
                     {"role": "system", "content": "You are an expert on startup investment analysis."},
                     {"role": "user", "content": user_input}
                 ]
             )
-            analysis_result = response['choices'][0]['message']['content']
+            analysis_result = response.choices[0].message.content.strip()
         except Exception as e:
             analysis_result = f"API call failed: {str(e)}"
 
@@ -60,14 +61,15 @@ def analyze():
         return jsonify({"Analysis Summary": "No content provided"})
 
     try:
-        response = openai.ChatCompletion.create(
+        client = openai.OpenAI()
+        response = client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
                 {"role": "system", "content": "You are an expert on startup investment analysis."},
                 {"role": "user", "content": user_input}
             ]
         )
-        analysis_result = response['choices'][0]['message']['content']
+        analysis_result = response.choices[0].message.content.strip()
     except Exception as e:
         analysis_result = f"API call failed: {str(e)}"
 
