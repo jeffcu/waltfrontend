@@ -24,12 +24,9 @@ def angel_investment_analysis():
             extracted_text = " ".join([page.extract_text() for page in reader.pages if page.extract_text()])
             user_input += " " + extracted_text
 
-        # Simulated analysis logic
+        # Simulated API call with only response data shown in results
         analysis_result = {
-            "Company Name": f"Analyzed {user_input}",
-            "Market Analysis": "Strong market presence with high growth potential.",
-            "Risk Factors": "Medium risk due to competition.",
-            "Recommendation": "Consider further due diligence before investing."
+            "Analysis Summary": "Analysis completed successfully."
         }
 
         return render_template('angel_investment_analysis.html', analysis_result=analysis_result)
@@ -48,11 +45,9 @@ def analyze():
         extracted_text = " ".join([page.extract_text() for page in reader.pages if page.extract_text()])
         user_input += " " + extracted_text
 
+    # API response excluding inputs
     analysis_result = {
-        "Company Name": f"Analyzed {user_input}",
-        "Market Analysis": "Strong market presence with high growth potential.",
-        "Risk Factors": "Medium risk due to competition.",
-        "Recommendation": "Consider further due diligence before investing."
+        "Analysis Summary": "Analysis completed successfully."
     }
 
     return jsonify(analysis_result)
