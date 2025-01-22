@@ -26,7 +26,7 @@ def angel_investment_analysis():
             user_input += " " + extracted_text
 
         if not user_input.strip():
-            return render_template('angel_investment_analysis.html', analysis_result={"Error": "No content provided"})
+            return render_template('angel_investment_analysis.html', analysis_result="No content provided")
 
         try:
             response = openai.ChatCompletion.create(
@@ -38,7 +38,7 @@ def angel_investment_analysis():
             )
             analysis_result = response['choices'][0]['message']['content']
         except Exception as e:
-            analysis_result = {"Error": f"API call failed: {str(e)}"}
+            analysis_result = f"API call failed: {str(e)}"
 
         return render_template('angel_investment_analysis.html', analysis_result=analysis_result)
 
@@ -57,7 +57,7 @@ def analyze():
         user_input += " " + extracted_text
 
     if not user_input.strip():
-        return jsonify({"Error": "No content provided"})
+        return jsonify({"Analysis Summary": "No content provided"})
 
     try:
         response = openai.ChatCompletion.create(
@@ -69,7 +69,7 @@ def analyze():
         )
         analysis_result = response['choices'][0]['message']['content']
     except Exception as e:
-        analysis_result = {"Error": f"API call failed: {str(e)}"}
+        analysis_result = f"API call failed: {str(e)}"
 
     return jsonify({"Analysis Summary": analysis_result})
 

@@ -127,19 +127,16 @@
             })
             .then(response => response.json())
             .then(data => {
-                document.getElementById("summaryResults").innerHTML = formatResults(data);
+                if (data["Analysis Summary"]) {
+                    document.getElementById("summaryResults").innerHTML = `<p>${data["Analysis Summary"]}</p>`;
+                } else {
+                    document.getElementById("summaryResults").innerHTML = `<p>Error processing request</p>`;
+                }
             })
-            .catch(error => console.error("Error:", error));
+            .catch(error => {
+                document.getElementById("summaryResults").innerHTML = `<p>API request failed: ${error}</p>`;
+            });
         });
-
-        function formatResults(data) {
-            let formattedText = "<ul>";
-            for (const key in data) {
-                formattedText += `<li><strong>${key}:</strong> ${data[key]}</li>`;
-            }
-            formattedText += "</ul>";
-            return formattedText;
-        }
 
         function prepareReport() {
             document.getElementById("summaryData").value = document.getElementById("summaryResults").innerHTML;
