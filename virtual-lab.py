@@ -3,6 +3,7 @@ import weasyprint
 import os
 from io import BytesIO
 from PyPDF2 import PdfReader
+import openai
 
 app = Flask(__name__)
 
@@ -24,10 +25,20 @@ def angel_investment_analysis():
             extracted_text = " ".join([page.extract_text() for page in reader.pages if page.extract_text()])
             user_input += " " + extracted_text
 
-        # Simulated API call with only response data shown in results
-        analysis_result = {
-            "Analysis Summary": "Analysis completed successfully."
-        }
+        if not user_input.strip():
+            return render_template('angel_investment_analysis.html', analysis_result={"Error": "No content provided"})
+
+        try:
+            response = openai.ChatCompletion.create(
+                model="gpt-3.5-turbo",
+                messages=[
+                    {"role": "system", "content": "You are an expert on startup investment analysis."},
+                    {"role": "user", "content": user_input}
+                ]
+            )
+            analysis_result = response['choices'][0]['message']['content']
+        except Exception as e:
+            analysis_result = {"Error": f"API call failed: {str(e)}"}
 
         return render_template('angel_investment_analysis.html', analysis_result=analysis_result)
 
@@ -45,12 +56,22 @@ def analyze():
         extracted_text = " ".join([page.extract_text() for page in reader.pages if page.extract_text()])
         user_input += " " + extracted_text
 
-    # API response excluding inputs
-    analysis_result = {
-        "Analysis Summary": "Analysis completed successfully."
-    }
+    if not user_input.strip():
+        return jsonify({"Error": "No content provided"})
 
-    return jsonify(analysis_result)
+    try:
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": "You are an expert on startup investment analysis."},
+                {"role": "user", "content": user_input}
+            ]
+        )
+        analysis_result = response['choices'][0]['message']['content']
+    except Exception as e:
+        analysis_result = {"Error": f"API call failed: {str(e)}"}
+
+    return jsonify({"Analysis Summary": analysis_result})
 
 # Route to generate and download PDF report
 @app.route('/download_report', methods=['POST'])
