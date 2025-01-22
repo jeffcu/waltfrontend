@@ -1,91 +1,149 @@
-from flask import Flask, request, jsonify, render_template, send_file
-import weasyprint
-import os
-from io import BytesIO
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Angel Investment Analysis</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            color: #333;
+        }
 
-app = Flask(__name__)
+        header {
+            position: relative;
+            height: 300px;
+            background: url("static/images/hero-image.jpg") no-repeat center center/cover;
+            color: white;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
 
-# Home route redirecting to the gallery page
-@app.route('/')
-def home():
-    return render_template('gallery.html')
+        header h1 {
+            font-size: 2.5rem;
+            margin: 0;
+            text-shadow: 1px 1px 6px rgba(0, 0, 0, 0.8);
+        }
 
-# Route to render the angel investment analysis page
-@app.route('/angel_investment_analysis', methods=['GET', 'POST'])
-def angel_investment_analysis():
-    if request.method == 'POST':
-        user_input = request.form.get('meta_instructions')
-        if not user_input:
-            return render_template('angel_investment_analysis.html', analysis_result="No input provided")
+        main {
+            max-width: 900px;
+            margin: 2rem auto;
+            padding: 1rem;
+            background-color: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
 
-        # Simulated analysis logic
-        analysis_result = f"Analysis for input: {user_input}"
+        .form-section {
+            margin-bottom: 1.5rem;
+        }
 
-        return render_template('angel_investment_analysis.html', analysis_result=analysis_result)
+        label {
+            font-weight: bold;
+            display: block;
+            margin-bottom: 0.5rem;
+        }
 
-    return render_template('angel_investment_analysis.html', analysis_result=None)
+        textarea, input[type="file"] {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 1rem;
+        }
 
-# Route to handle AJAX API call for analysis
-@app.route('/analyze', methods=['POST'])
-def analyze():
-    data = request.get_json()
-    user_input = data.get('userInput')
+        .summary-results {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            border: 1px solid #ddd;
+            background-color: #a2d2ff;
+            border-radius: 4px;
+        }
 
-    if not user_input:
-        return jsonify({"error": "No input provided"}), 400
+        button {
+            width: 100%;
+            padding: 0.75rem;
+            background-color: #94d2bd;
+            border: none;
+            border-radius: 4px;
+            color: #1b4332;
+            font-size: 1rem;
+            cursor: pointer;
+        }
 
-    # Simulated response for the provided input
-    analysis_result = {
-        "Company Name": f"Analyzed {user_input}",
-        "Market Analysis": "Strong market presence with high growth potential.",
-        "Risk Factors": "Medium risk due to competition.",
-        "Recommendation": "Consider further due diligence before investing."
-    }
+        button:hover {
+            background-color: #65a39f;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Angel Investment Analysis</h1>
+        <p>Analyze startup companies with precision and generate insightful reports.</p>
+    </header>
+    <main>
+        <form id="analysisForm" enctype="multipart/form-data">
+            <div class="form-section">
+                <label for="meta_instructions">Meta Instructions:</label>
+                <textarea id="meta_instructions" name="meta_instructions">You're an expert at understanding startup companies.</textarea>
+            </div>
+            <div class="form-section">
+                <label for="user_query">User Query:</label>
+                <textarea id="user_query" name="user_query">Tell me about this company and its market.</textarea>
+            </div>
+            <div class="form-section">
+                <label for="file_upload">Upload File:</label>
+                <input type="file" id="file_upload" name="file_upload">
+            </div>
+            <button id="analyzeButton" type="button">Analyze</button>
+        </form>
 
-    return jsonify(analysis_result)
+        <div class="summary-results" id="summaryResults">
+            <h3>Summary Results:</h3>
+            <p>(Results will display here after analysis)</p>
+        </div>
 
-# Route to generate and download PDF report
-@app.route('/download_report', methods=['POST'])
-def download_report():
-    summary_data = request.form.get('summaryData')
+        <form method="POST" action="/download_report">
+            <input type="hidden" id="summaryData" name="summaryData">
+            <button type="submit" onclick="prepareReport()">Download Report</button>
+        </form>
+    </main>
+    <script>
+        document.getElementById("analyzeButton").addEventListener("click", function() {
+            let formData = new FormData();
+            formData.append("meta_instructions", document.getElementById("meta_instructions").value);
+            formData.append("user_query", document.getElementById("user_query").value);
+            formData.append("file_upload", document.getElementById("file_upload").files[0]);
 
-    if not summary_data:
-        return "No summary data provided", 400
+            fetch("/analyze", {
+                method: "POST",
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById("summaryResults").innerHTML = formatResults(data);
+            })
+            .catch(error => console.error("Error:", error));
+        });
 
-    # Generate PDF using WeasyPrint
-    html_content = f"""
-    <html>
-        <head><title>Investment Report</title></head>
-        <body>
-            <h1>Angel Investment Analysis Report</h1>
-            <div>{summary_data}</div>
-        </body>
-    </html>
-    """
-    pdf = weasyprint.HTML(string=html_content).write_pdf()
-    pdf_stream = BytesIO(pdf)
+        function formatResults(data) {
+            let formattedText = "<ul>";
+            for (const key in data) {
+                formattedText += `<li><strong>${key}:</strong> ${data[key]}</li>`;
+            }
+            formattedText += "</ul>";
+            return formattedText;
+        }
 
-    return send_file(
-        pdf_stream,
-        as_attachment=True,
-        download_name="investment_report.pdf",
-        mimetype='application/pdf'
-    )
-
-# File upload processing
-@app.route('/upload', methods=['POST'])
-def upload_file():
-    if 'file_upload' not in request.files:
-        return jsonify({"error": "No file uploaded"}), 400
-
-    file = request.files['file_upload']
-    if file.filename == '':
-        return jsonify({"error": "Empty filename"}), 400
-
-    file_path = os.path.join("uploads", file.filename)
-    file.save(file_path)
-    return jsonify({"success": f"File {file.filename} uploaded successfully"})
-
-# Run the Flask app
-if __name__ == '__main__':
-    app.run(debug=True)
+        function prepareReport() {
+            document.getElementById("summaryData").value = document.getElementById("summaryResults").innerHTML;
+        }
+    </script>
+</body>
+</html>
