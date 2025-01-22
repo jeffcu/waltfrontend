@@ -56,15 +56,16 @@ def angel_investment_analysis():
             except UnicodeDecodeError:
                 try:
                     file_content = uploaded_file.read().decode("ISO-8859-1")
-                except Exception as e:
+                except Exception:
                     file_content = "Error reading file content."
 
         # Prepare input for OpenAI API
         input_text = f"{meta_instructions}\n\nUser Query: {user_query}\n\nFile Content:\n{file_content}"
 
         try:
-            # Call OpenAI API
-            response = openai.ChatCompletion.create(
+            # Updated API call for openai>=1.0.0
+            client = openai.OpenAI()
+            response = client.chat.completions.create(
                 model="gpt-3.5-turbo",
                 messages=[
                     {"role": "system", "content": meta_instructions},
@@ -74,7 +75,7 @@ def angel_investment_analysis():
                 temperature=0.7
             )
 
-            analysis_result = response.choices[0].message['content']
+            analysis_result = response.choices[0].message.content
         except Exception as e:
             analysis_result = f"Error: {str(e)}"
 
