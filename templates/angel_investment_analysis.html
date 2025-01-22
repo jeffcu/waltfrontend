@@ -133,14 +133,14 @@
         <p>Analyze startup companies with precision and generate insightful reports.</p>
     </header>
     <main>
-        <form method="POST" action="/angel-investment-analysis" enctype="multipart/form-data">
+        <form method="POST" action="/angel_investment_analysis" enctype="multipart/form-data">
             <div class="form-section">
                 <label for="meta_instructions">Meta Instructions:</label>
-                <textarea id="meta_instructions" name="meta_instructions">You're an expert at understanding startup companies. You can summarize them quickly.</textarea>
+                <textarea id="meta_instructions" name="meta_instructions">{{ meta_instructions if meta_instructions else "You're an expert at understanding startup companies. You can summarize them quickly." }}</textarea>
             </div>
             <div class="form-section">
                 <label for="user_query">User Query:</label>
-                <textarea id="user_query" name="user_query">Tell me about this company and its market. Summarize the company name and what other information you can determine from the provided passed information from their presentation.</textarea>
+                <textarea id="user_query" name="user_query">{{ user_query if user_query else "Tell me about this company and its market. Summarize the company name and what other information you can determine from the provided passed information from their presentation." }}</textarea>
             </div>
             <div class="form-section">
                 <label for="file_upload">Upload File:</label>
@@ -151,9 +151,13 @@
                 <button type="submit">Step 1: Analyze</button>
                 <div class="summary-results">
                     <h3>Summary Results:</h3>
-                    <p>(Results will display here after analysis)</p>
+                    {% if analysis_result %}
+                        <p>{{ analysis_result | safe }}</p>
+                    {% else %}
+                        <p>(Results will display here after analysis)</p>
+                    {% endif %}
                 </div>
-                <button formaction="/download" type="submit">Step 2: Generate Report</button>
+                <button formaction="/download_report" type="submit">Step 2: Generate Report</button>
             </div>
         </form>
 
