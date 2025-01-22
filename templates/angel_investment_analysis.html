@@ -62,8 +62,12 @@
     <main>
         <form method="POST" action="/angel_investment_analysis" enctype="multipart/form-data">
             <div class="form-section">
-                <label for="userInput">User Query:</label>
-                <input type="text" id="userInput" placeholder="Enter your query here">
+                <label for="meta_instructions">Meta Instructions:</label>
+                <textarea id="meta_instructions" name="meta_instructions">You're an expert at understanding startup companies. You can summarize them quickly.</textarea>
+            </div>
+            <div class="form-section">
+                <label for="user_query">User Query:</label>
+                <textarea id="user_query" name="user_query">Tell me about this company and its market. Summarize the company name and what other information you can determine from their presentation.</textarea>
             </div>
             <div class="summary-results">
                 <h3>Summary Results:</h3>
@@ -81,10 +85,9 @@
     </main>
     <script>
         document.getElementById("analyzeButton").addEventListener("click", function() {
-            let userInputValue = document.getElementById("userInput").value;
             fetch("/analyze", {
                 method: "POST",
-                body: JSON.stringify({ userInput: userInputValue }),
+                body: JSON.stringify({ userInput: document.getElementById("user_query").value }),
                 headers: { "Content-Type": "application/json" }
             })
             .then(response => response.json())

@@ -14,7 +14,7 @@ def home():
 @app.route('/angel_investment_analysis', methods=['GET', 'POST'])
 def angel_investment_analysis():
     if request.method == 'POST':
-        user_input = request.form.get('userInput')
+        user_input = request.form.get('meta_instructions')
         if not user_input:
             return render_template('angel_investment_analysis.html', analysis_result="No input provided")
 

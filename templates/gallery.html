@@ -14,58 +14,91 @@
         }
 
         .container {
-            max-width: 900px;
+            max-width: 1200px;
             margin: 2rem auto;
             padding: 1rem;
             background-color: white;
             border: 1px solid #ddd;
             border-radius: 8px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            text-align: center;
         }
 
         h1 {
-            text-align: center;
             color: #005f73;
+            font-size: 2rem;
         }
 
-        .project-list {
-            list-style: none;
-            padding: 0;
+        .gallery {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 20px;
         }
 
-        .project-list li {
-            margin: 1rem 0;
-            padding: 1rem;
-            background-color: #a2d2ff;
-            border-radius: 4px;
+        .project-tile {
+            width: 300px;
             border: 1px solid #ddd;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            transition: transform 0.3s;
+            background-color: #ffffff;
         }
 
-        .project-list a {
-            text-decoration: none;
-            font-size: 1.2rem;
+        .project-tile:hover {
+            transform: scale(1.05);
+        }
+
+        .project-tile img {
+            width: 100%;
+            height: auto;
+        }
+
+        .project-tile h3 {
+            margin: 0;
+            padding: 15px;
+            background-color: #a2d2ff;
+            color: #005f73;
+            font-size: 1.5rem;
+        }
+
+        .project-tile p {
+            padding: 10px;
+            color: #333;
+        }
+
+        .project-tile a {
+            display: block;
+            padding: 15px;
+            background-color: #94d2bd;
             color: #1b4332;
+            text-decoration: none;
             font-weight: bold;
         }
 
-        .project-list a:hover {
-            text-decoration: underline;
+        .project-tile a:hover {
+            background-color: #65a39f;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>My Project Gallery</h1>
-        <ul class="project-list">
-            <li>
-                <a href="/angel_investment_analysis">Angel Investment Analysis</a>
+        <div class="gallery">
+            <div class="project-tile">
+                <img src="static/images/angel_investment.jpg" alt="Angel Investment Analysis">
+                <h3>Angel Investment Analysis</h3>
                 <p>Analyze startup companies and generate insightful reports.</p>
-            </li>
-            <li>
-                <a href="/other_project">Other Project</a>
-                <p>Placeholder for another future project.</p>
-            </li>
-        </ul>
+                <a href="/angel_investment_analysis">Launch Project</a>
+            </div>
+            <div class="project-tile">
+                <img src="static/images/other_project.jpg" alt="Other Project">
+                <h3>Other Project</h3>
+                <p>A placeholder for future exciting projects.</p>
+                <a href="/other_project">Coming Soon</a>
+            </div>
+        </div>
     </div>
 </body>
 </html>
