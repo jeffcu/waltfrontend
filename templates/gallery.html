@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Jeff's Virtual Lab</title>
     <style>
-        /* Hero Section and Gallery Styling */
         body {
             font-family: Arial, sans-serif;
             margin: 0;
@@ -94,11 +93,30 @@
             font-size: 0.9rem;
             color: #6b705c;
         }
+
+        .tile p {
+            margin: 0.5rem 0 0;
+            font-size: 1.1rem;
+            font-weight: bold;
+        }
+
+        .edit-icon {
+            display: inline-block;
+            margin-top: 0.5rem;
+            font-size: 0.9rem;
+            color: #005f73;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+
+        .edit-icon:hover {
+            color: #003d4c;
+        }
     </style>
 </head>
 <body>
     <header>
-        <img src="static/images/hero-image.jpg" alt="Hero Image">
+        <img src="{{ url_for('static', filename='images/hero-image.jpg') }}" alt="Hero Image">
         <div class="hero-text">
             <h1>Jeff's Virtual Lab</h1>
             <p>A hub for exploring innovative tools and applications</p>
@@ -108,9 +126,12 @@
         <h2>Explore Our Applications</h2>
         <div class="gallery">
             {% for app_name, icon in icon_config.items() %}
-            <div class="tile" onclick="location.href='{{ url_for(app_name.replace(' ', '_').lower()) }}';">
-                <img src="static/icons/{{ icon }}" alt="{{ app_name }}">
+            <div class="tile">
+                <a href="{{ url_for(app_name.replace(' ', '_').lower()) }}">
+                    <img src="{{ url_for('static', filename='icons/' + icon) }}" alt="{{ app_name }}">
+                </a>
                 <p>{{ app_name }}</p>
+                <span class="edit-icon" onclick="showIconModal('{{ app_name }}')">Edit Icon</span>
             </div>
             {% endfor %}
         </div>
@@ -118,5 +139,11 @@
     <footer>
         <p>Jeff's Virtual Lab &copy; 2025</p>
     </footer>
+
+    <script>
+        function showIconModal(appName) {
+            alert("Feature to change the icon for " + appName + " is coming soon!");
+        }
+    </script>
 </body>
 </html>

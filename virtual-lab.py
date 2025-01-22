@@ -10,7 +10,7 @@ app = Flask(__name__)
 ICON_CONFIG_FILE = "icon-config.json"
 
 default_icon_config = {
-    "Angel Investment Analysis": "amber-button.jpeg"
+    "angel_investment_analysis": "amber-button.jpeg"
 }
 
 def load_icon_config():
@@ -72,12 +72,12 @@ def angel_investment_analysis():
         except Exception as e:
             analysis_result = f"Error: {str(e)}"
 
-        return render_template('angel_investment_analysis.html',
+        return render_template('index.html',
                                meta_instructions=meta_instructions,
                                user_query=user_query,
                                analysis_result=analysis_result)
 
-    return render_template('angel_investment_analysis.html')
+    return render_template('index.html')
 
 @app.route('/download_report')
 def download_report():
