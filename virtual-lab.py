@@ -10,7 +10,7 @@ app = Flask(__name__)
 ICON_CONFIG_FILE = "icon-config.json"
 
 default_icon_config = {
-    "angel_investment_analysis": "amber-button.jpeg"
+    "Angel Investment Analysis": "amber-button.jpeg"
 }
 
 def load_icon_config():
@@ -46,12 +46,18 @@ def angel_investment_analysis():
     if request.method == 'POST':
         meta_instructions = request.form.get('meta_instructions')
         user_query = request.form.get('user_query')
-        uploaded_file = request.files['file_upload']
+        uploaded_file = request.files.get('file_upload')
 
-        # Read the uploaded file if provided
+        # Read the uploaded file safely
         file_content = ""
         if uploaded_file and uploaded_file.filename != '':
-            file_content = uploaded_file.read().decode("utf-8")
+            try:
+                file_content = uploaded_file.read().decode("utf-8")
+            except UnicodeDecodeError:
+                try:
+                    file_content = uploaded_file.read().decode("ISO-8859-1")
+                except Exception as e:
+                    file_content = "Error reading file content."
 
         # Prepare input for OpenAI API
         input_text = f"{meta_instructions}\n\nUser Query: {user_query}\n\nFile Content:\n{file_content}"
