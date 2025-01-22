@@ -88,7 +88,7 @@
         <p>Analyze startup companies with precision and generate insightful reports.</p>
     </header>
     <main>
-        <form method="POST" action="/angel_investment_analysis" enctype="multipart/form-data">
+        <form id="analysisForm" enctype="multipart/form-data">
             <div class="form-section">
                 <label for="meta_instructions">Meta Instructions:</label>
                 <textarea id="meta_instructions" name="meta_instructions">You're an expert at understanding startup companies.</textarea>
@@ -116,17 +116,18 @@
     </main>
     <script>
         document.getElementById("analyzeButton").addEventListener("click", function() {
-            let userInput = document.getElementById("meta_instructions").value + " " +
-                            document.getElementById("user_query").value;
+            let formData = new FormData();
+            formData.append("meta_instructions", document.getElementById("meta_instructions").value);
+            formData.append("user_query", document.getElementById("user_query").value);
+            formData.append("file_upload", document.getElementById("file_upload").files[0]);
+
             fetch("/analyze", {
                 method: "POST",
-                body: JSON.stringify({ userInput: userInput }),
-                headers: { "Content-Type": "application/json" }
+                body: formData
             })
             .then(response => response.json())
             .then(data => {
-                const summaryBox = document.getElementById("summaryResults");
-                summaryBox.innerHTML = formatResults(data);
+                document.getElementById("summaryResults").innerHTML = formatResults(data);
             })
             .catch(error => console.error("Error:", error));
         });
