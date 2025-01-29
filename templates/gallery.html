@@ -78,7 +78,64 @@
         .project-tile a:hover {
             background-color: #65a39f;
         }
+
+        .test-button {
+            margin: 20px;
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #94d2bd;
+            color: #1b4332;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .test-button:hover {
+            background-color: #65a39f;
+        }
     </style>
+    <script>
+        let newWindow;
+
+        function openTestWindow() {
+            newWindow = window.open("", "TestWindow", "width=400,height=300");
+            if (newWindow) {
+                newWindow.document.write(`
+                    <html>
+                    <head>
+                        <title>Test Window</title>
+                        <style>
+                            body {
+                                font-family: Arial, sans-serif;
+                                text-align: center;
+                                margin-top: 50px;
+                            }
+                            button {
+                                padding: 10px 15px;
+                                font-size: 14px;
+                                cursor: pointer;
+                                background-color: #94d2bd;
+                                color: #1b4332;
+                                border: none;
+                                border-radius: 5px;
+                            }
+                            button:hover {
+                                background-color: #65a39f;
+                            }
+                        </style>
+                    </head>
+                    <body>
+                        <h2>Hello World</h2>
+                        <button onclick="window.close()">Close</button>
+                    </body>
+                    </html>
+                `);
+                newWindow.document.close();
+            } else {
+                alert("Popup blocked! Please allow popups for this site.");
+            }
+        }
+    </script>
 </head>
 <body>
     <div class="container">
@@ -99,6 +156,9 @@
             </div>
             {% endfor %}
         </div>
+
+        <!-- New Test Button -->
+        <button class="test-button" onclick="openTestWindow()">Test</button>
     </div>
 </body>
 </html>
