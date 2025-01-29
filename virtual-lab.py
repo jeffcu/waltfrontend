@@ -82,6 +82,35 @@ def analyze():
 
     return jsonify({"Analysis Summary": analysis_result})
 
+# Route for the API test functionality
+@app.route('/api_test', methods=['POST'])
+def api_test():
+    """
+    Handles OpenAI API requests for the API Test popup.
+    """
+    data = request.json  # Parse JSON data from the request
+    user_query = data.get('query', 'Who invented velcro?')  # Default query if not provided
+
+    if not user_query.strip():
+        return jsonify({"response": "Error: Query is empty"}), 400
+
+    try:
+        # OpenAI API call
+        client = openai.Client()
+        response = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": "You are an API testing assistant."},
+                {"role": "user", "content": user_query}
+            ]
+        )
+        # Extract the API response content
+        api_response = response.choices[0].message.content.strip()
+        return jsonify({"response": api_response})
+    except Exception as e:
+        logging.error(f"OpenAI API call failed: {str(e)}")
+        return jsonify({"response": f"Error: {str(e)}"}), 500
+
 # Route to generate and download PDF report
 @app.route('/download_report', methods=['POST'])
 def download_report():

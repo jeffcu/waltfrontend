@@ -79,11 +79,10 @@
         .project-tile a:hover {
             background-color: #65a39f;
         }
-
     </style>
     <script>
         function openTestWindow() {
-            let newWindow = window.open("", "TestWindow", "width=400,height=300");
+            let newWindow = window.open("", "TestWindow", "width=500,height=500");
             if (newWindow) {
                 newWindow.document.write(`
                     <html>
@@ -93,11 +92,17 @@
                             body {
                                 font-family: Arial, sans-serif;
                                 text-align: center;
-                                margin-top: 50px;
+                                margin-top: 20px;
+                            }
+                            input {
+                                width: 80%;
+                                padding: 8px;
+                                margin-bottom: 10px;
+                                font-size: 16px;
                             }
                             button {
                                 padding: 10px 15px;
-                                font-size: 14px;
+                                font-size: 16px;
                                 cursor: pointer;
                                 background-color: #94d2bd;
                                 color: #1b4332;
@@ -107,11 +112,46 @@
                             button:hover {
                                 background-color: #65a39f;
                             }
+                            #output {
+                                width: 90%;
+                                height: 250px;
+                                margin-top: 10px;
+                                border: 1px solid #ccc;
+                                overflow-y: auto;
+                                background: #f8f8f8;
+                                text-align: left;
+                                padding: 5px;
+                                font-size: 14px;
+                                white-space: pre-wrap;
+                            }
                         </style>
+                        <script>
+                            function callOpenAI() {
+                                let inputText = document.getElementById("query").value;
+                                let outputBox = document.getElementById("output");
+
+                                fetch("/api_test", {
+                                    method: "POST",
+                                    headers: { "Content-Type": "application/json" },
+                                    body: JSON.stringify({ query: inputText })
+                                })
+                                .then(response => response.json())
+                                .then(data => {
+                                    outputBox.innerHTML += "\\n> " + inputText + "\\n" + data.response + "\\n";
+                                    outputBox.scrollTop = outputBox.scrollHeight;
+                                })
+                                .catch(error => {
+                                    outputBox.innerHTML += "\\nError: " + error.message + "\\n";
+                                });
+                            }
+                        </script>
                     </head>
                     <body>
-                        <h2>API Test Window</h2>
-                        <p>Testing API connection...</p>
+                        <h2>API Test</h2>
+                        <input type="text" id="query" value="Who invented velcro?">
+                        <button onclick="callOpenAI()">Run API</button>
+                        <div id="output"></div>
+                        <br>
                         <button onclick="window.close()">Close</button>
                     </body>
                     </html>
@@ -127,7 +167,7 @@
     <div class="container">
         <h1>My Project Gallery</h1>
         <div class="gallery">
-            <!-- Existing Angel Investment Analysis Tile -->
+            <!-- Angel Investment Analysis -->
             <div class="project-tile">
                 <img src="static/icons/green-button.jpeg" alt="Active Application">
                 <h3>Angel Investment Analysis</h3>
@@ -135,23 +175,13 @@
                 <a href="/angel_investment_analysis">Launch Project</a>
             </div>
 
-            <!-- API Test Tile (Previously Placeholder Project 2) -->
+            <!-- API Test -->
             <div class="project-tile">
                 <img src="static/icons/amber-button.jpeg" alt="API Test">
                 <h3>API Test</h3>
                 <p>Check API connection and response.</p>
                 <a onclick="openTestWindow()">API Test</a>
             </div>
-
-            <!-- Other Placeholder Projects -->
-            {% for i in range(14) %}
-            <div class="project-tile">
-                <img src="static/icons/black-off-button.jpeg" alt="Placeholder Project">
-                <h3>Placeholder Project {{ i + 3 }}</h3>
-                <p>Future exciting projects coming soon.</p>
-                <a href="#">Coming Soon</a>
-            </div>
-            {% endfor %}
         </div>
     </div>
 </body>
