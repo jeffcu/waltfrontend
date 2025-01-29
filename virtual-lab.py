@@ -17,7 +17,7 @@ def home():
     return render_template('gallery.html')
 
 # Route to render the angel investment analysis page
-@app.route('/angel_investment_analysis', methods=['GET', 'POST'])
+@app.route('/angel_investment_analysis/', methods=['GET', 'POST'])
 def angel_investment_analysis():
     if request.method == 'POST':
         user_input = request.form.get('meta_instructions', '') + " " + request.form.get('user_query', '')
