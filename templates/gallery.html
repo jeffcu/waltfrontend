@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Project Gallery</title>
+    <title>Jeff Virtual Lab</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
         * {
@@ -16,16 +16,18 @@
             padding: 20px;
             background-color: #1E2A38;
             color: #E5E5E5;
+            display: flex;
+            justify-content: flex-start; /* Align content to the left */
         }
 
         .container {
+            width: 100%;
             max-width: 900px;
-            margin: auto;
             padding: 20px;
             background: #2A3D55;
             border-radius: 12px;
             box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
-            text-align: left; /* Left-aligned content */
+            text-align: left;
         }
 
         h1 {
@@ -33,6 +35,7 @@
             font-size: 28px;
             color: #2D9CDB;
             text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.2);
+            margin-left: 10px; /* Aligns title to the left */
         }
 
         .gallery {
@@ -99,101 +102,10 @@
             }
         }
     </style>
-    <script>
-        function openTestWindow() {
-            let newWindow = window.open("", "TestWindow", "width=500,height=500");
-
-            if (newWindow) {
-                newWindow.document.write(`
-                    <html>
-                    <head>
-                        <title>API Test</title>
-                        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
-                        <style>
-                            body {
-                                font-family: 'Inter', sans-serif;
-                                text-align: center;
-                                margin-top: 20px;
-                                background-color: #1E2A38;
-                                color: #E5E5E5;
-                                padding: 20px;
-                            }
-                            input {
-                                width: 80%;
-                                padding: 8px;
-                                margin-bottom: 10px;
-                                font-size: 16px;
-                                background: #1E2A38;
-                                border: 1px solid #4C657E;
-                                color: white;
-                                border-radius: 6px;
-                            }
-                            button {
-                                padding: 10px 15px;
-                                font-size: 16px;
-                                cursor: pointer;
-                                background-color: #27AE60;
-                                color: white;
-                                border: none;
-                                border-radius: 5px;
-                            }
-                            button:hover {
-                                background-color: #1F8A4C;
-                            }
-                            #output {
-                                width: 90%;
-                                height: 250px;
-                                margin-top: 10px;
-                                border: 1px solid #ccc;
-                                overflow-y: auto;
-                                background: #2A3D55;
-                                text-align: left;
-                                padding: 5px;
-                                font-size: 14px;
-                                white-space: pre-wrap;
-                            }
-                        </style>
-                        <script>
-                            function callOpenAI() {
-                                let inputText = document.getElementById("query").value;
-                                let outputBox = document.getElementById("output");
-
-                                fetch("/api_test", {
-                                    method: "POST",
-                                    headers: { "Content-Type": "application/json" },
-                                    body: JSON.stringify({ query: inputText })
-                                })
-                                .then(response => response.json())
-                                .then(data => {
-                                    outputBox.innerHTML += "\\n> " + inputText + "\\n" + data.response + "\\n";
-                                    outputBox.scrollTop = outputBox.scrollHeight;
-                                })
-                                .catch(error => {
-                                    outputBox.innerHTML += "\\nError: " + error.message + "\\n";
-                                });
-                            }
-                        <\/script>
-                    </head>
-                    <body>
-                        <h2>API Test</h2>
-                        <input type="text" id="query" value="Who invented velcro?">
-                        <button onclick="callOpenAI()">Run API</button>
-                        <div id="output"></div>
-                        <br>
-                        <button onclick="window.close()">Close</button>
-                    </body>
-                    </html>
-                `);
-                newWindow.document.close();
-            } else {
-                alert("Popup blocked! Please allow popups for this site.");
-            }
-        }
-    </script>
 </head>
 <body>
     <div class="container">
-        <h1>My Project Gallery</h1>
+        <h1>Jeff Virtual Lab</h1>
         <div class="gallery">
             <!-- Angel Investment Analysis -->
             <div class="project-tile">
