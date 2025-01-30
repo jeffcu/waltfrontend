@@ -1,3 +1,13 @@
+"""
+Filename: virtual-lab.py
+Location: Root directory of the Flask project.
+
+Purpose:
+- Main Flask application file.
+- Handles routes for UI rendering, OpenAI API calls, and file uploads.
+- Generates and formats PDF reports.
+"""
+
 from flask import Flask, request, jsonify, render_template, send_file
 import weasyprint
 import os
@@ -41,7 +51,7 @@ def angel_investment_analysis():
                     {"role": "user", "content": user_input}
                 ]
             )
-            analysis_result = response.choices[0].message.content.strip()
+            analysis_result = format_response(response.choices[0].message.content.strip())
         except Exception as e:
             logging.error(f"API call failed: {str(e)}")
             analysis_result = f"API call failed: {str(e)}"
@@ -74,7 +84,7 @@ def analyze():
                 {"role": "user", "content": user_input}
             ]
         )
-        analysis_result = response.choices[0].message.content.strip()
+        analysis_result = format_response(response.choices[0].message.content.strip())
         logging.info(f"API Response: {analysis_result}")
     except Exception as e:
         logging.error(f"API call failed: {str(e)}")
@@ -88,14 +98,13 @@ def api_test():
     """
     Handles OpenAI API requests for the API Test popup.
     """
-    data = request.json  # Parse JSON data from the request
-    user_query = data.get('query', 'Who invented velcro?')  # Default query if not provided
+    data = request.json
+    user_query = data.get('query', 'Who invented velcro?')
 
     if not user_query.strip():
         return jsonify({"response": "Error: Query is empty"}), 400
 
     try:
-        # OpenAI API call
         client = openai.Client()
         response = client.chat.completions.create(
             model="gpt-3.5-turbo",
@@ -104,8 +113,7 @@ def api_test():
                 {"role": "user", "content": user_query}
             ]
         )
-        # Extract the API response content
-        api_response = response.choices[0].message.content.strip()
+        api_response = format_response(response.choices[0].message.content.strip())
         return jsonify({"response": api_response})
     except Exception as e:
         logging.error(f"OpenAI API call failed: {str(e)}")
@@ -119,13 +127,24 @@ def download_report():
     if not summary_data:
         return "No summary data provided", 400
 
+    formatted_summary = format_pdf_content(summary_data)
+
     # Generate PDF using WeasyPrint
     html_content = f"""
     <html>
-        <head><title>Investment Report</title></head>
+        <head>
+            <title>Investment Report</title>
+            <style>
+                body {{ font-family: 'Arial', sans-serif; padding: 20px; }}
+                h1 {{ color: #2D9CDB; font-size: 22px; }}
+                h2 {{ color: #27AE60; font-size: 18px; }}
+                ul {{ margin-left: 20px; }}
+                li {{ margin-bottom: 8px; }}
+            </style>
+        </head>
         <body>
             <h1>Angel Investment Analysis Report</h1>
-            <div>{summary_data}</div>
+            {formatted_summary}
         </body>
     </html>
     """
@@ -138,6 +157,22 @@ def download_report():
         download_name="investment_report.pdf",
         mimetype='application/pdf'
     )
+
+# Utility function for formatting API responses
+def format_response(response_text):
+    """Format API response for structured readability in the web UI."""
+    formatted_text = response_text.replace("**", "").replace("\n", "<br>")
+    formatted_text = formatted_text.replace("- ", "<li>") + "</li>"
+    formatted_text = formatted_text.replace("1. ", "<li><strong>1.</strong> ") + "</li>"
+    return f"<strong>Analysis Results:</strong><br><ul>{formatted_text}</ul>"
+
+# Utility function for formatting PDF content
+def format_pdf_content(summary_data):
+    """Format response for structured readability in the PDF."""
+    formatted_text = summary_data.replace("**", "").replace("\n", "<br>")
+    formatted_text = formatted_text.replace("- ", "<li>") + "</li>"
+    formatted_text = formatted_text.replace("1. ", "<li><strong>1.</strong> ") + "</li>"
+    return f"<h2>Investment Summary:</h2><ul>{formatted_text}</ul>"
 
 # File upload processing
 @app.route('/upload', methods=['POST'])

@@ -1,21 +1,38 @@
+from flask import Blueprint, request, jsonify
 import openai
-import os
+import logging
 
-# Create an OpenAI client with the API key
-client = openai.Client(api_key=os.getenv("OPENAI_API_KEY"))
+api_test_bp = Blueprint('api_test', __name__)
+logging.basicConfig(level=logging.DEBUG)
 
-try:
-    # Test the API by making a simple request
-    response = client.chat.completions.create(
-        model="gpt-3.5-turbo",
-        messages=[
-            {"role": "system", "content": "Test if OpenAI API is working."},
-            {"role": "user", "content": "Hello, are you working?"}
-        ]
-    )
-    print("✅ Success! API is working.")
-    print("🔹 Response:", response.choices[0].message.content)
-except openai.AuthenticationError:
-    print("❌ Authentication failed! Check your API key.")
-except Exception as e:
-    print(f"⚠️ API Error: {e}")
+def format_api_response(response_text):
+    """Format response for structured readability."""
+    formatted_text = response_text.replace("**", "")  # Remove double asterisks
+    formatted_text = formatted_text.replace("\n", "<br>")  # Line breaks
+    formatted_text = formatted_text.replace("- ", "<li>") + "</li>"  # Bullets
+    formatted_text = formatted_text.replace("1. ", "<li><strong>1.</strong> ") + "</li>"  # Numbering
+    return f"<strong>Analysis Report:</strong><br><ul>{formatted_text}</ul>"
+
+@api_test_bp.route('/api_test', methods=['POST'])
+def api_test():
+    """Handles OpenAI API requests for the API Test popup."""
+    data = request.json
+    user_query = data.get('query', 'Who invented velcro?')
+
+    if not user_query.strip():
+        return jsonify({"response": "Error: Query is empty"}), 400
+
+    try:
+        client = openai.Client()
+        response = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": "You are an API testing assistant."},
+                {"role": "user", "content": user_query}
+            ]
+        )
+        api_response = response.choices[0].message.content.strip()
+        return jsonify({"response": format_api_response(api_response)})  # Apply formatting
+    except Exception as e:
+        logging.error(f"OpenAI API call failed: {str(e)}")
+        return jsonify({"response": f"Error: {str(e)}"}), 500
