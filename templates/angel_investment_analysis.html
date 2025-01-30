@@ -4,143 +4,154 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Angel Investment Analysis</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
+        * {
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Inter', sans-serif;
             margin: 0;
-            padding: 0;
-            background-color: #f8f9fa;
-            color: #333;
+            padding: 10px;
+            background-color: #1E2A38;
+            color: #E5E5E5;
         }
 
-        header {
-            position: relative;
-            height: 300px;
-            background: url("static/images/hero-image.jpg") no-repeat center center/cover;
-            color: white;
-            text-align: center;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-        }
-
-        header h1 {
-            font-size: 2.5rem;
-            margin: 0;
-            text-shadow: 1px 1px 6px rgba(0, 0, 0, 0.8);
-        }
-
-        main {
+        .container {
             max-width: 900px;
-            margin: 2rem auto;
-            padding: 1rem;
-            background-color: white;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            margin: auto;
+            padding: 15px;
+            background: #2A3D55;
+            border-radius: 12px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
         }
 
-        .form-section {
-            margin-bottom: 1.5rem;
+        h1 {
+            text-align: center;
+            font-weight: 600;
+            font-size: 28px;
+            color: #2D9CDB;
+            text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .subtitle {
+            text-align: center;
+            font-size: 14px;
+            color: #AEBCCF;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
         }
 
         label {
-            font-weight: bold;
+            font-weight: 400;
+            color: #D9E1EC;
             display: block;
-            margin-bottom: 0.5rem;
+            margin-bottom: 5px;
+            font-size: 14px;
         }
 
-        textarea, input[type="file"] {
+        textarea, input {
             width: 100%;
-            padding: 0.75rem;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            font-size: 1rem;
+            padding: 10px;
+            border: 1px solid #4C657E;
+            border-radius: 6px;
+            background-color: #1E2A38;
+            color: #E5E5E5;
+            font-size: 14px;
         }
 
-        .summary-results {
-            margin-top: 1.5rem;
-            padding: 1rem;
-            border: 1px solid #ddd;
-            background-color: #a2d2ff;
-            border-radius: 4px;
+        textarea:focus, input:focus {
+            outline: none;
+            border-color: #2D9CDB;
+            box-shadow: 0 0 8px rgba(45, 156, 219, 0.5);
         }
 
-        button {
+        .button {
             width: 100%;
-            padding: 0.75rem;
-            background-color: #94d2bd;
+            padding: 12px;
+            background-color: #27AE60;
             border: none;
-            border-radius: 4px;
-            color: #1b4332;
-            font-size: 1rem;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            color: white;
             cursor: pointer;
+            transition: all 0.3s ease;
         }
 
-        button:hover {
-            background-color: #65a39f;
+        .button:hover {
+            background-color: #1F8A4C;
+            box-shadow: 0 4px 8px rgba(39, 174, 96, 0.4);
+        }
+
+        .results {
+            background: #2D9CDB;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 15px;
+            color: white;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        .results p {
+            margin: 0;
+            font-size: 14px;
+        }
+
+        .download {
+            background-color: #27AE60;
+            text-align: center;
+            margin-top: 10px;
+        }
+
+        .download:hover {
+            background-color: #1F8A4C;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                width: 100%;
+                padding: 10px;
+            }
         }
     </style>
 </head>
 <body>
-    <header>
-        <h1>Angel Investment Analysis</h1>
-        <p>Analyze startup companies with precision and generate insightful reports.</p>
-    </header>
-    <main>
-        <form id="analysisForm" enctype="multipart/form-data">
-            <div class="form-section">
-                <label for="meta_instructions">Meta Instructions:</label>
-                <textarea id="meta_instructions" name="meta_instructions">You're an expert at understanding startup companies.</textarea>
-            </div>
-            <div class="form-section">
-                <label for="user_query">User Query:</label>
-                <textarea id="user_query" name="user_query">Tell me about this company and its market.</textarea>
-            </div>
-            <div class="form-section">
-                <label for="file_upload">Upload File:</label>
-                <input type="file" id="file_upload" name="file_upload">
-            </div>
-            <button id="analyzeButton" type="button">Analyze</button>
-        </form>
 
-        <div class="summary-results" id="summaryResults">
-            <h3>Summary Results:</h3>
+    <div class="container">
+        <h1>Angel Investment Analysis</h1>
+        <p class="subtitle">Analyze startup companies with precision and generate insightful reports.</p>
+
+        <div class="form-group">
+            <label for="meta_instructions">Meta Instructions:</label>
+            <textarea id="meta_instructions" placeholder="You're an expert at understanding startup companies."></textarea>
+        </div>
+
+        <div class="form-group">
+            <label for="user_query">User Query:</label>
+            <textarea id="user_query" placeholder="Tell me about this company and its market."></textarea>
+        </div>
+
+        <div class="form-group">
+            <label for="file_upload">Upload File:</label>
+            <input type="file" id="file_upload">
+        </div>
+
+        <button class="button">Analyze</button>
+
+        <div class="results">
+            <p><strong>Summary Results:</strong></p>
             <p>(Results will display here after analysis)</p>
         </div>
 
-        <form method="POST" action="/download_report">
-            <input type="hidden" id="summaryData" name="summaryData">
-            <button type="submit" onclick="prepareReport()">Download Report</button>
-        </form>
-    </main>
-    <script>
-        document.getElementById("analyzeButton").addEventListener("click", function() {
-            let formData = new FormData();
-            formData.append("meta_instructions", document.getElementById("meta_instructions").value);
-            formData.append("user_query", document.getElementById("user_query").value);
-            formData.append("file_upload", document.getElementById("file_upload").files[0]);
+        <button class="button download">Download Report</button>
+    </div>
 
-            fetch("/analyze", {
-                method: "POST",
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data["Analysis Summary"]) {
-                    document.getElementById("summaryResults").innerHTML = `<p>${data["Analysis Summary"]}</p>`;
-                } else {
-                    document.getElementById("summaryResults").innerHTML = `<p>Error processing request</p>`;
-                }
-            })
-            .catch(error => {
-                document.getElementById("summaryResults").innerHTML = `<p>API request failed: ${error}</p>`;
-            });
-        });
-
-        function prepareReport() {
-            document.getElementById("summaryData").value = document.getElementById("summaryResults").innerHTML;
-        }
-    </script>
 </body>
 </html>
