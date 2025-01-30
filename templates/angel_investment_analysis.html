@@ -127,7 +127,7 @@
             let outputBox = document.getElementById("results");
             let fileInput = document.getElementById("file_upload").files[0];
 
-            outputBox.innerHTML = "<strong>Calling API...</strong>"; // Step 1: Acknowledge API Call
+            outputBox.innerHTML = "<strong>Calling API...</strong>";
 
             let formData = new FormData();
             formData.append("meta_instructions", instructions);
@@ -137,7 +137,7 @@
             }
 
             try {
-                outputBox.innerHTML = "<strong>Waiting for response...</strong>"; // Step 2: Show waiting message
+                outputBox.innerHTML = "<strong>Waiting for response...</strong>";
 
                 let response = await fetch("/analyze", {
                     method: "POST",
@@ -146,13 +146,22 @@
 
                 let data = await response.json();
                 if (response.ok) {
-                    outputBox.innerHTML = `<strong>Results:</strong><br>${data["Analysis Summary"]}`; // Step 3: Display results
+                    outputBox.innerHTML = formatResponse(data["Analysis Summary"]);
                 } else {
-                    outputBox.innerHTML = `<strong>Error:</strong> ${data["Analysis Summary"]}`; // Handle API errors
+                    outputBox.innerHTML = `<strong>Error:</strong> ${data["Analysis Summary"]}`;
                 }
             } catch (error) {
-                outputBox.innerHTML = `<strong>API Error:</strong> ${error.message}`; // Step 4: Show any fetch errors
+                outputBox.innerHTML = `<strong>API Error:</strong> ${error.message}`;
             }
+        }
+
+        function formatResponse(responseText) {
+            let formattedText = responseText
+                .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")  // Convert **bold** to <strong>
+                .replace(/\n/g, "<br>")  // Convert new lines to <br>
+                .replace(/- (.*?)/g, "<li>$1</li>")  // Convert bullet points to <li>
+                .replace(/(\d+\.) (.*?)/g, "<li><strong>$1</strong> $2</li>"); // Numbered bullets
+            return `<strong>Analysis Results:</strong><br><ul>${formattedText}</ul>`;
         }
     </script>
 </head>
