@@ -5,7 +5,7 @@ Location: Root directory of the Flask project.
 Purpose:
 - Main Flask application file.
 - Handles routes for UI rendering, OpenAI API calls, and file uploads.
-- Generates and formats PDF reports.
+- Generates and formats PDF reports with proper numbering and spacing.
 """
 
 from flask import Flask, request, jsonify, render_template, send_file
@@ -122,6 +122,11 @@ def api_test():
 # Route to generate and download PDF report
 @app.route('/download_report', methods=['POST'])
 def download_report():
+    """
+    Generate a well-formatted PDF report from the analysis summary.
+    - Uses bold section titles and numbered formatting.
+    - Ensures proper spacing and clean layout.
+    """
     summary_data = request.form.get('summaryData')
 
     if not summary_data:
@@ -138,8 +143,9 @@ def download_report():
                 body {{ font-family: 'Arial', sans-serif; padding: 20px; }}
                 h1 {{ color: #2D9CDB; font-size: 22px; }}
                 h2 {{ color: #27AE60; font-size: 18px; }}
-                ul {{ margin-left: 20px; }}
-                li {{ margin-bottom: 8px; }}
+                .section-number {{ font-weight: bold; font-size: 16px; }}
+                .subtitle {{ font-weight: bold; color: #222; }}
+                p {{ margin-bottom: 10px; }}
             </style>
         </head>
         <body>
@@ -162,31 +168,27 @@ def download_report():
 def format_response(response_text):
     """Format API response for structured readability in the web UI."""
     formatted_text = response_text.replace("**", "").replace("\n", "<br>")
-    formatted_text = formatted_text.replace("- ", "<li>") + "</li>"
-    formatted_text = formatted_text.replace("1. ", "<li><strong>1.</strong> ") + "</li>"
-    return f"<strong>Analysis Results:</strong><br><ul>{formatted_text}</ul>"
+    formatted_text = formatted_text.replace("- ", "<br>")  # Remove bullets
+    formatted_text = formatted_text.replace("1. ", "<strong>1.</strong> ")
+    formatted_text = formatted_text.replace("2. ", "<strong>2.</strong> ")
+    formatted_text = formatted_text.replace("3. ", "<strong>3.</strong> ")
+    formatted_text = formatted_text.replace("4. ", "<strong>4.</strong> ")
+    formatted_text = formatted_text.replace("5. ", "<strong>5.</strong> ")
+
+    return f"<strong>Analysis Report:</strong><br>{formatted_text}"
 
 # Utility function for formatting PDF content
 def format_pdf_content(summary_data):
     """Format response for structured readability in the PDF."""
     formatted_text = summary_data.replace("**", "").replace("\n", "<br>")
-    formatted_text = formatted_text.replace("- ", "<li>") + "</li>"
-    formatted_text = formatted_text.replace("1. ", "<li><strong>1.</strong> ") + "</li>"
-    return f"<h2>Investment Summary:</h2><ul>{formatted_text}</ul>"
+    formatted_text = formatted_text.replace("- ", "<br>")  # Remove bullets
+    formatted_text = formatted_text.replace("1. ", "<strong class='section-number'>1.</strong> ")
+    formatted_text = formatted_text.replace("2. ", "<strong class='section-number'>2.</strong> ")
+    formatted_text = formatted_text.replace("3. ", "<strong class='section-number'>3.</strong> ")
+    formatted_text = formatted_text.replace("4. ", "<strong class='section-number'>4.</strong> ")
+    formatted_text = formatted_text.replace("5. ", "<strong class='section-number'>5.</strong> ")
 
-# File upload processing
-@app.route('/upload', methods=['POST'])
-def upload_file():
-    if 'file_upload' not in request.files:
-        return jsonify({"error": "No file uploaded"}), 400
-
-    file = request.files['file_upload']
-    if file.filename == '':
-        return jsonify({"error": "Empty filename"}), 400
-
-    file_path = os.path.join("uploads", file.filename)
-    file.save(file_path)
-    return jsonify({"success": f"File {file.filename} uploaded successfully"})
+    return formatted_text
 
 # Run the Flask app
 if __name__ == '__main__':
