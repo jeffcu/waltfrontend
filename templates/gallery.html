@@ -22,7 +22,7 @@
 
         .container {
             width: 100%;
-            max-width: 900px;
+            max-width: 1200px;
             padding: 20px;
             background: #2A3D55;
             border-radius: 12px;
@@ -40,7 +40,7 @@
 
         .gallery {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            grid-template-columns: repeat(4, 1fr); /* Ensures 4 tiles per row */
             gap: 20px;
             margin-top: 20px;
         }
@@ -87,6 +87,7 @@
             font-weight: 600;
             color: white;
             text-decoration: none;
+            cursor: pointer;
             transition: all 0.3s ease;
         }
 
@@ -95,19 +96,120 @@
             box-shadow: 0 4px 8px rgba(39, 174, 96, 0.4);
         }
 
+        @media (max-width: 1024px) {
+            .gallery {
+                grid-template-columns: repeat(3, 1fr); /* Adjust to 3 columns on smaller screens */
+            }
+        }
+
         @media (max-width: 768px) {
-            .container {
-                width: 100%;
-                padding: 15px;
+            .gallery {
+                grid-template-columns: repeat(2, 1fr); /* Adjust to 2 columns for tablets */
+            }
+        }
+
+        @media (max-width: 480px) {
+            .gallery {
+                grid-template-columns: repeat(1, 1fr); /* Adjust to 1 column for mobile */
             }
         }
     </style>
+    <script>
+        function openTestWindow() {
+            let newWindow = window.open("", "TestWindow", "width=500,height=500");
+
+            if (newWindow) {
+                newWindow.document.write(`
+                    <html>
+                    <head>
+                        <title>API Test</title>
+                        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+                        <style>
+                            body {
+                                font-family: 'Inter', sans-serif;
+                                text-align: center;
+                                margin-top: 20px;
+                                background-color: #1E2A38;
+                                color: #E5E5E5;
+                                padding: 20px;
+                            }
+                            input {
+                                width: 80%;
+                                padding: 8px;
+                                margin-bottom: 10px;
+                                font-size: 16px;
+                                background: #1E2A38;
+                                border: 1px solid #4C657E;
+                                color: white;
+                                border-radius: 6px;
+                            }
+                            button {
+                                padding: 10px 15px;
+                                font-size: 16px;
+                                cursor: pointer;
+                                background-color: #27AE60;
+                                color: white;
+                                border: none;
+                                border-radius: 5px;
+                            }
+                            button:hover {
+                                background-color: #1F8A4C;
+                            }
+                            #output {
+                                width: 90%;
+                                height: 250px;
+                                margin-top: 10px;
+                                border: 1px solid #ccc;
+                                overflow-y: auto;
+                                background: #2A3D55;
+                                text-align: left;
+                                padding: 5px;
+                                font-size: 14px;
+                                white-space: pre-wrap;
+                            }
+                        </style>
+                        <script>
+                            function callOpenAI() {
+                                let inputText = document.getElementById("query").value;
+                                let outputBox = document.getElementById("output");
+
+                                fetch("/api_test", {
+                                    method: "POST",
+                                    headers: { "Content-Type": "application/json" },
+                                    body: JSON.stringify({ query: inputText })
+                                })
+                                .then(response => response.json())
+                                .then(data => {
+                                    outputBox.innerHTML += "\\n> " + inputText + "\\n" + data.response + "\\n";
+                                    outputBox.scrollTop = outputBox.scrollHeight;
+                                })
+                                .catch(error => {
+                                    outputBox.innerHTML += "\\nError: " + error.message + "\\n";
+                                });
+                            }
+                        <\/script>
+                    </head>
+                    <body>
+                        <h2>API Test</h2>
+                        <input type="text" id="query" value="Who invented velcro?">
+                        <button onclick="callOpenAI()">Run API</button>
+                        <div id="output"></div>
+                        <br>
+                        <button onclick="window.close()">Close</button>
+                    </body>
+                    </html>
+                `);
+                newWindow.document.close();
+            } else {
+                alert("Popup blocked! Please allow popups for this site.");
+            }
+        }
+    </script>
 </head>
 <body>
     <div class="container">
         <h1>Jeff Virtual Lab</h1>
         <div class="gallery">
-            <!-- Angel Investment Analysis -->
             <div class="project-tile">
                 <img src="static/icons/green-button.jpeg" alt="Active Application">
                 <h3>Angel Investment Analysis</h3>
@@ -115,15 +217,13 @@
                 <a href="/angel_investment_analysis">Launch Project</a>
             </div>
 
-            <!-- API Test -->
             <div class="project-tile">
                 <img src="static/icons/amber-button.jpeg" alt="API Test">
                 <h3>API Test</h3>
                 <p>Check API connection and response.</p>
-                <a onclick="openTestWindow()">API Test</a>
+                <a href="#" onclick="openTestWindow()">API Test</a>
             </div>
 
-            <!-- Placeholder Projects (Now with Red Buttons) -->
             {% for i in range(14) %}
             <div class="project-tile">
                 <img src="static/icons/red-button.jpeg" alt="Placeholder Project">
