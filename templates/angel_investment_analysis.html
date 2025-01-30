@@ -19,7 +19,7 @@
         }
 
         .container {
-            max-width: 800px; /* Fixed width for controlled alignment */
+            max-width: 800px;
             padding: 20px;
             background: #2A3D55;
             border-radius: 12px;
@@ -120,6 +120,41 @@
             }
         }
     </style>
+    <script>
+        async function analyze() {
+            let instructions = document.getElementById("meta_instructions").value;
+            let query = document.getElementById("user_query").value;
+            let outputBox = document.getElementById("results");
+            let fileInput = document.getElementById("file_upload").files[0];
+
+            outputBox.innerHTML = "<strong>Calling API...</strong>"; // Step 1: Acknowledge API Call
+
+            let formData = new FormData();
+            formData.append("meta_instructions", instructions);
+            formData.append("user_query", query);
+            if (fileInput) {
+                formData.append("file_upload", fileInput);
+            }
+
+            try {
+                outputBox.innerHTML = "<strong>Waiting for response...</strong>"; // Step 2: Show waiting message
+
+                let response = await fetch("/analyze", {
+                    method: "POST",
+                    body: formData
+                });
+
+                let data = await response.json();
+                if (response.ok) {
+                    outputBox.innerHTML = `<strong>Results:</strong><br>${data["Analysis Summary"]}`; // Step 3: Display results
+                } else {
+                    outputBox.innerHTML = `<strong>Error:</strong> ${data["Analysis Summary"]}`; // Handle API errors
+                }
+            } catch (error) {
+                outputBox.innerHTML = `<strong>API Error:</strong> ${error.message}`; // Step 4: Show any fetch errors
+            }
+        }
+    </script>
 </head>
 <body>
 
@@ -142,9 +177,9 @@
             <input type="file" id="file_upload">
         </div>
 
-        <button class="button">Analyze</button>
+        <button class="button" onclick="analyze()">Analyze</button>
 
-        <div class="results">
+        <div class="results" id="results">
             <p><strong>Summary Results:</strong></p>
             <p>(Results will display here after analysis)</p>
         </div>
