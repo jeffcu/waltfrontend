@@ -5,8 +5,8 @@ Location: Root directory of the Flask project.
 Purpose:
 - Main Flask application file.
 - Handles routes for UI rendering, OpenAI API calls, and file uploads.
-- Generates and formats PDF reports with proper numbering and spacing.
-- Fixes WeasyPrint issues and ensures Heroku compatibility.
+- Generates and formats PDF reports with structured numbering and spacing.
+- Fixes WeasyPrint formatting issues and ensures proper Heroku compatibility.
 """
 
 from flask import Flask, request, jsonify, render_template, send_file
@@ -61,7 +61,7 @@ def angel_investment_analysis():
 
     return render_template('angel_investment_analysis.html', analysis_result=None)
 
-# Route to handle AJAX API call for analysis
+# Route for handling AJAX API call
 @app.route('/analyze', methods=['POST'])
 def analyze():
     user_input = request.form.get('meta_instructions', '') + " " + request.form.get('user_query', '')
@@ -93,40 +93,13 @@ def analyze():
 
     return jsonify({"Analysis Summary": analysis_result})
 
-# Route for the API test functionality
-@app.route('/api_test', methods=['POST'])
-def api_test():
-    """
-    Handles OpenAI API requests for the API Test popup.
-    """
-    data = request.json
-    user_query = data.get('query', 'Who invented velcro?')
-
-    if not user_query.strip():
-        return jsonify({"response": "Error: Query is empty"}), 400
-
-    try:
-        client = openai.Client()
-        response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {"role": "system", "content": "You are an API testing assistant."},
-                {"role": "user", "content": user_query}
-            ]
-        )
-        api_response = format_response(response.choices[0].message.content.strip())
-        return jsonify({"response": api_response})
-    except Exception as e:
-        logging.error(f"OpenAI API call failed: {str(e)}")
-        return jsonify({"response": f"Error: {str(e)}"}), 500
-
 # Route to generate and download PDF report
 @app.route('/download_report', methods=['POST'])
 def download_report():
     """
-    Generate a well-formatted PDF report from the analysis summary.
-    - Uses bold section titles and numbered formatting.
-    - Ensures proper spacing and clean layout.
+    Generate a properly formatted PDF report.
+    - Uses numbered sections (1., 2., 3.) with bold subtitles.
+    - Sections are clearly separated for readability.
     """
     summary_data = request.form.get('summaryData')
 
@@ -134,7 +107,7 @@ def download_report():
         logging.error("No summary data received for PDF generation.")
         return "No summary data provided", 400
 
-    logging.info(f"Generating PDF with summary: {summary_data[:200]}...")  # Log first 200 chars
+    logging.info(f"Generating PDF with summary: {summary_data[:200]}...")
 
     formatted_summary = format_pdf_content(summary_data)
 
@@ -144,11 +117,12 @@ def download_report():
             <title>Investment Report</title>
             <style>
                 body {{ font-family: 'Arial', sans-serif; padding: 20px; }}
-                h1 {{ color: #2D9CDB; font-size: 22px; }}
-                h2 {{ color: #27AE60; font-size: 18px; }}
-                .section-number {{ font-weight: bold; font-size: 16px; }}
-                .subtitle {{ font-weight: bold; color: #222; }}
-                p {{ margin-bottom: 10px; }}
+                h1 {{ color: #2D9CDB; font-size: 24px; text-align: center; }}
+                h2 {{ color: #27AE60; font-size: 18px; margin-bottom: 5px; }}
+                .section {{ margin-bottom: 15px; }}
+                .section-number {{ font-size: 18px; font-weight: bold; color: #333; }}
+                .subtitle {{ font-size: 16px; font-weight: bold; color: #555; }}
+                .content {{ font-size: 14px; margin-top: 5px; }}
             </style>
         </head>
         <body>
@@ -168,18 +142,39 @@ def download_report():
         mimetype='application/pdf'
     )
 
-# Utility function for formatting API responses
+# Utility function for formatting API responses for web UI
 def format_response(response_text):
-    """Format API response for structured readability in the web UI."""
-    formatted_text = response_text.replace("**", "").replace("\n", "<br>")
-    formatted_text = formatted_text.replace("- ", "<br>")  # Remove bullets
-    formatted_text = formatted_text.replace("1. ", "<strong>1.</strong> ")
-    formatted_text = formatted_text.replace("2. ", "<strong>2.</strong> ")
-    formatted_text = formatted_text.replace("3. ", "<strong>3.</strong> ")
-    formatted_text = formatted_text.replace("4. ", "<strong>4.</strong> ")
-    formatted_text = formatted_text.replace("5. ", "<strong>5.</strong> ")
+    """
+    Format API response for readability in the web UI.
+    - Uses numbered sections (1., 2., 3.).
+    - Each section has a subtitle, then a line break, then the content.
+    """
+    formatted_text = response_text.replace("**", "").replace("\n", "<br><br>")
+    formatted_text = formatted_text.replace("1. ", "<strong>1. </strong>")
+    formatted_text = formatted_text.replace("2. ", "<strong>2. </strong>")
+    formatted_text = formatted_text.replace("3. ", "<strong>3. </strong>")
+    formatted_text = formatted_text.replace("4. ", "<strong>4. </strong>")
+    formatted_text = formatted_text.replace("5. ", "<strong>5. </strong>")
 
     return f"<strong>Analysis Report:</strong><br>{formatted_text}"
+
+# Utility function for formatting PDF content properly
+def format_pdf_content(summary_data):
+    """
+    Format content for structured PDF output.
+    - Uses numbered sections (1., 2., 3.).
+    - Ensures section numbers are followed by subtitles and content.
+    - Sections are spaced out for readability.
+    """
+    formatted_text = summary_data.replace("**", "")
+    formatted_text = formatted_text.replace("\n\n", "<br><br>")
+    formatted_text = formatted_text.replace("1. ", "<div class='section'><span class='section-number'>1.</span> <span class='subtitle'>Introduction</span><br><div class='content'>")
+    formatted_text = formatted_text.replace("2. ", "</div><div class='section'><span class='section-number'>2.</span> <span class='subtitle'>Market Analysis</span><br><div class='content'>")
+    formatted_text = formatted_text.replace("3. ", "</div><div class='section'><span class='section-number'>3.</span> <span class='subtitle'>Financial Overview</span><br><div class='content'>")
+    formatted_text = formatted_text.replace("4. ", "</div><div class='section'><span class='section-number'>4.</span> <span class='subtitle'>Competitive Landscape</span><br><div class='content'>")
+    formatted_text = formatted_text.replace("5. ", "</div><div class='section'><span class='section-number'>5.</span> <span class='subtitle'>Conclusion</span><br><div class='content'>")
+
+    return formatted_text + "</div>"
 
 # Fix for Heroku: Bind to PORT
 if __name__ == '__main__':
