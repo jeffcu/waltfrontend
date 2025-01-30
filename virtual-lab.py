@@ -6,6 +6,7 @@ Purpose:
 - Main Flask application file.
 - Handles routes for UI rendering, OpenAI API calls, and file uploads.
 - Generates and formats PDF reports with proper numbering and spacing.
+- Fixes WeasyPrint issues and ensures Heroku compatibility.
 """
 
 from flask import Flask, request, jsonify, render_template, send_file
@@ -117,4 +118,70 @@ def api_test():
         return jsonify({"response": api_response})
     except Exception as e:
         logging.error(f"OpenAI API call failed: {str(e)}")
-        return jsonify({"response": f"Error: {str
+        return jsonify({"response": f"Error: {str(e)}"}), 500
+
+# Route to generate and download PDF report
+@app.route('/download_report', methods=['POST'])
+def download_report():
+    """
+    Generate a well-formatted PDF report from the analysis summary.
+    - Uses bold section titles and numbered formatting.
+    - Ensures proper spacing and clean layout.
+    """
+    summary_data = request.form.get('summaryData')
+
+    if not summary_data:
+        logging.error("No summary data received for PDF generation.")
+        return "No summary data provided", 400
+
+    logging.info(f"Generating PDF with summary: {summary_data[:200]}...")  # Log first 200 chars
+
+    formatted_summary = format_pdf_content(summary_data)
+
+    html_content = f"""
+    <html>
+        <head>
+            <title>Investment Report</title>
+            <style>
+                body {{ font-family: 'Arial', sans-serif; padding: 20px; }}
+                h1 {{ color: #2D9CDB; font-size: 22px; }}
+                h2 {{ color: #27AE60; font-size: 18px; }}
+                .section-number {{ font-weight: bold; font-size: 16px; }}
+                .subtitle {{ font-weight: bold; color: #222; }}
+                p {{ margin-bottom: 10px; }}
+            </style>
+        </head>
+        <body>
+            <h1>Angel Investment Analysis Report</h1>
+            {formatted_summary}
+        </body>
+    </html>
+    """
+
+    pdf = weasyprint.HTML(string=html_content).write_pdf()
+    pdf_stream = BytesIO(pdf)
+
+    return send_file(
+        pdf_stream,
+        as_attachment=True,
+        download_name="investment_report.pdf",
+        mimetype='application/pdf'
+    )
+
+# Utility function for formatting API responses
+def format_response(response_text):
+    """Format API response for structured readability in the web UI."""
+    formatted_text = response_text.replace("**", "").replace("\n", "<br>")
+    formatted_text = formatted_text.replace("- ", "<br>")  # Remove bullets
+    formatted_text = formatted_text.replace("1. ", "<strong>1.</strong> ")
+    formatted_text = formatted_text.replace("2. ", "<strong>2.</strong> ")
+    formatted_text = formatted_text.replace("3. ", "<strong>3.</strong> ")
+    formatted_text = formatted_text.replace("4. ", "<strong>4.</strong> ")
+    formatted_text = formatted_text.replace("5. ", "<strong>5.</strong> ")
+
+    return f"<strong>Analysis Report:</strong><br>{formatted_text}"
+
+# Fix for Heroku: Bind to PORT
+if __name__ == '__main__':
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
