@@ -25,7 +25,7 @@
             background: #2A3D55;
             border-radius: 12px;
             box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
-            text-align: center;
+            text-align: left; /* Left-aligned content */
         }
 
         h1 {
@@ -211,10 +211,10 @@
                 <a onclick="openTestWindow()">API Test</a>
             </div>
 
-            <!-- Placeholder Projects -->
+            <!-- Placeholder Projects (Now with Red Buttons) -->
             {% for i in range(14) %}
             <div class="project-tile">
-                <img src="static/icons/black-off-button.jpeg" alt="Placeholder Project">
+                <img src="static/icons/red-button.jpeg" alt="Placeholder Project">
                 <h3>Placeholder Project {{ i + 3 }}</h3>
                 <p>Future exciting projects coming soon.</p>
                 <a href="#">Coming Soon</a>
