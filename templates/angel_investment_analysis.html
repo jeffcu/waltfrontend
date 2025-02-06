@@ -9,6 +9,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <!-- CSRF Token -->
     <style>
+        /* (Your existing CSS styles - keep these) */
         * {
             box-sizing: border-box;
         }
@@ -114,12 +115,20 @@
         .results ul {
             padding-left: 20px;
             margin-bottom: 10px;
-            list-style-type: decimal; /* Use numbers for the list */
+            list-style-type: decimal;
+            /* Use numbers for the list */
         }
 
         .results li {
             margin-bottom: 5px;
-            color: white; /* Ensure list items are white */
+            color: white;
+            /* Ensure list items are white */
+        }
+
+        /* Add a class to isolate list items */
+        .results li .result-content {
+            color: white;
+            /* Ensure content inside list items is white */
         }
 
         .download {
@@ -217,23 +226,25 @@
 
                     let li = document.createElement("li");
                     li.style.marginBottom = "15px";
-                    li.style.color = "white"; // Make sure text is white
 
-                    let h2 = document.createElement("h2");
-                    h2.textContent = sectionNumber + sectionTitle;
-                    li.appendChild(h2);
+                    // Isolate content in a span with a specific class
+                    let contentSpan = document.createElement("span");
+                    contentSpan.className = "result-content";
+                    contentSpan.style.color = "white"; // Force white color
+                    contentSpan.innerHTML = `<h2>${sectionNumber + sectionTitle}</h2><p>${sectionContent}</p>`; // Use innerHTML (with caution)
 
-                    let p = document.createElement("p");
-                    p.textContent = sectionContent;
-                    li.appendChild(p);
-
+                    li.appendChild(contentSpan);
                     ol.appendChild(li);
                 } else {
                     let li = document.createElement("li");
-                    li.style.color = "white"; // Make sure text is white
-                    let p = document.createElement("p");
-                    p.textContent = section;
-                    li.appendChild(p);
+
+                    // Isolate content in a span with a specific class
+                    let contentSpan = document.createElement("span");
+                    contentSpan.className = "result-content";
+                    contentSpan.style.color = "white"; // Force white color
+                    contentSpan.textContent = section;
+
+                    li.appendChild(contentSpan);
                     ol.appendChild(li);
                 }
             });
@@ -274,8 +285,8 @@
 
             let csrfInput = document.createElement('input');
             csrfInput.type = 'hidden';
-            csrfInput.name = 'csrf_token';
-            csrfInput.value = csrfToken;
+            input.name = 'csrf_token';
+            input.value = csrfToken;
 
 
             // Add the input field to the form
