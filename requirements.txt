@@ -1,6 +1,7 @@
 gunicorn
 openai>=1.0.0
 Flask
+flask-wtf
 python-dotenv
 PyPDF2
 weasyprint
