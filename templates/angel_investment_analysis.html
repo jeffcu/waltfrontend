@@ -228,24 +228,31 @@
                     let li = document.createElement("li");
                     li.style.marginBottom = "15px";
 
-                    // Isolate content in a span with a specific class
-                    let contentSpan = document.createElement("span");
-                    contentSpan.className = "result-content";
-                    contentSpan.style.color = "white"; // Force white color
-                    contentSpan.innerHTML = `<h2>${sectionNumber + sectionTitle}</h2><p>${sectionContent}</p>`; // Use innerHTML (with caution)
+                    // Isolate content in a div with a specific class
+                    let contentDiv = document.createElement("div"); // Changed to a div for isolation
+                    contentDiv.className = "result-content";
+                    contentDiv.style.color = "white"; // Force white color
 
-                    li.appendChild(contentSpan);
+                    let h2 = document.createElement("h2");
+                    h2.textContent = sectionNumber + sectionTitle;
+                    contentDiv.appendChild(h2);  // Append h2 to the div
+
+                    let p = document.createElement("p");
+                    p.textContent = sectionContent;
+                    contentDiv.appendChild(p);  // Append p to the div
+
+                    li.appendChild(contentDiv);  // Append the div to the li
                     ol.appendChild(li);
                 } else {
                     let li = document.createElement("li");
 
-                    // Isolate content in a span with a specific class
-                    let contentSpan = document.createElement("span");
-                    contentSpan.className = "result-content";
-                    contentSpan.style.color = "white"; // Force white color
-                    contentSpan.textContent = section;
+                    // Isolate content in a div with a specific class
+                    let contentDiv = document.createElement("div");  // Changed to a div for isolation
+                    contentDiv.className = "result-content";
+                    contentDiv.style.color = "white"; // Force white color
+                    contentDiv.textContent = section;
 
-                    li.appendChild(contentSpan);
+                    li.appendChild(contentDiv);  // Append the div to the li
                     ol.appendChild(li);
                 }
             });
