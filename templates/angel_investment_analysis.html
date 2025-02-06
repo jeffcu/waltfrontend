@@ -101,11 +101,29 @@
             color: white;
             font-size: 14px;
             text-align: left;
+            /* Add these styles */
+            font-family: 'Arial', sans-serif;
+            /* Use a readable font */
+            line-height: 1.6;
+            /* Improve line spacing */
         }
 
-        .results p {
-            margin: 0;
-            font-size: 14px;
+        .results h2 {
+            /* Style for section headings */
+            color: #27AE60;
+            font-size: 18px;
+            margin-bottom: 5px;
+        }
+
+        .results ul {
+            /* Style for lists */
+            padding-left: 20px;
+            margin-bottom: 10px;
+        }
+
+        .results li {
+            /* Style for list items */
+            margin-bottom: 5px;
         }
 
         .download {
@@ -185,40 +203,54 @@
             let outputBox = document.getElementById("results");
             outputBox.innerHTML = ""; // Clear the previous content
 
+            // Split the response into sections based on common patterns for sections
+            let sections = responseText.split(/(?=\n*\d+\.\s)/);
+
             // Create an ordered list to display the results
             let ol = document.createElement("ol");
             ol.style.textAlign = "left";
 
-            // Split the response into sections based on line breaks
-            let sections = responseText.split(/\r?\n/);
-
             sections.forEach(section => {
-                // Create a list item for each section
-                let li = document.createElement("li");
-                li.style.marginBottom = "8px";
+                section = section.trim(); // Remove leading/trailing whitespace
 
-                // Check if the section starts with a number and a period (e.g., "1. Introduction")
-                let match = section.match(/^(\d+\.\s+)(.*)/);
+                if (!section) return; // Skip empty sections
+
+                // Extract section number and title using a regular expression
+                const match = section.match(/^(\d+\.\s+)(.*)/);
+
                 if (match) {
-                    // If it's a numbered section, make the number bold
-                    let number = match[1];
-                    let content = match[2];
+                    const sectionNumber = match[1];
+                    const sectionTitle = match[2].split('\n')[0]; // Get the first line as the title
+                    const sectionContent = match[2].substring(sectionTitle.length).trim(); // Get the rest as content
 
-                    let strong = document.createElement("strong");
-                    strong.textContent = number;
+                    // Create a list item for each section
+                    let li = document.createElement("li");
+                    li.style.marginBottom = "15px";
 
-                    li.appendChild(strong);
-                    li.appendChild(document.createTextNode(" " + content));
+                    // Create a heading for the section title
+                    let h2 = document.createElement("h2");
+                    h2.textContent = sectionNumber + sectionTitle;
+                    li.appendChild(h2);
+
+                    // Create a paragraph for the section content
+                    let p = document.createElement("p");
+                    p.textContent = sectionContent;
+                    li.appendChild(p);
+
+                    ol.appendChild(li);
                 } else {
-                    // If it's not a numbered section, just add the text
-                    li.textContent = section;
+                    // If it's not a numbered section, just add the text in a paragraph
+                    let li = document.createElement("li");
+                    let p = document.createElement("p");
+                    p.textContent = section;
+                    li.appendChild(p);
+                    ol.appendChild(li);
                 }
-
-                ol.appendChild(li);
             });
 
             outputBox.appendChild(ol);
         }
+
 
         // Function to escape HTML characters
         function escapeHTML(str) {

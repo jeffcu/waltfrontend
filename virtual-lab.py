@@ -4,10 +4,10 @@ import logging
 import weasyprint
 from io import BytesIO
 from investment_analysis.services import InvestmentAnalysisService
-from investment_analysis.utils import format_response, format_pdf_content
+from investment_analysis.utils import format_pdf_content
 from dotenv import load_dotenv
 from PyPDF2 import PdfReader
-from werkzeug.utils import secure_filename # for secure file uploads
+from werkzeug.utils import secure_filename  # for secure file uploads
 from flask_wtf.csrf import CSRFProtect  # Import CSRFProtect
 
 # Load environment variables
@@ -37,16 +37,20 @@ if not openai_api_key:
 
 analysis_service = InvestmentAnalysisService(openai_api_key=openai_api_key)
 
+
 # Home route redirecting to the gallery page
 @app.route('/')
 def home():
     return render_template('gallery.html')
 
-ALLOWED_EXTENSIONS = {'pdf'} #only allow pdf files
+
+ALLOWED_EXTENSIONS = {'pdf'}  # only allow pdf files
+
 
 def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
 
 def extract_text_from_pdf(file):
     try:
@@ -68,7 +72,8 @@ def angel_investment_analysis():
 
             if file and file.filename != '':
                 if not allowed_file(file.filename):
-                    return render_template('angel_investment_analysis.html', analysis_result="Invalid file type. Only PDF files are allowed.")
+                    return render_template('angel_investment_analysis.html',
+                                           analysis_result="Invalid file type. Only PDF files are allowed.")
 
                 extracted_text = extract_text_from_pdf(file)
                 user_input += " " + extracted_text
@@ -77,7 +82,6 @@ def angel_investment_analysis():
                 return render_template('angel_investment_analysis.html', analysis_result="No content provided")
 
             analysis_result = analysis_service.analyze_investment(user_input)
-            analysis_result = format_response(analysis_result)
 
             return render_template('angel_investment_analysis.html', analysis_result=analysis_result)
 
@@ -86,9 +90,11 @@ def angel_investment_analysis():
             return render_template('angel_investment_analysis.html', analysis_result=str(e))
         except Exception as e:
             logging.error(f"Unexpected Error: {e}")
-            return render_template('angel_investment_analysis.html', analysis_result=f"An unexpected error occurred: {str(e)}")
+            return render_template('angel_investment_analysis.html',
+                                   analysis_result=f"An unexpected error occurred: {str(e)}")
 
     return render_template('angel_investment_analysis.html', analysis_result=None)
+
 
 # Route for handling AJAX API call
 @app.route('/analyze', methods=['POST'])
@@ -99,7 +105,7 @@ def analyze():
 
         if file and file.filename != '':
             if not allowed_file(file.filename):
-                 return jsonify({"Analysis Summary": "Invalid file type. Only PDF files are allowed."})
+                return jsonify({"Analysis Summary": "Invalid file type. Only PDF files are allowed."})
 
             extracted_text = extract_text_from_pdf(file)
             user_input += " " + extracted_text
@@ -108,7 +114,7 @@ def analyze():
             return jsonify({"Analysis Summary": "No content provided"})
 
         analysis_result = analysis_service.analyze_investment(user_input)
-        analysis_result = format_response(analysis_result)
+        #analysis_result = format_response(analysis_result) # Take out legacy formating
         logging.info(f"API Response: {analysis_result}")
         return jsonify({"Analysis Summary": analysis_result})
 
@@ -119,6 +125,7 @@ def analyze():
     except Exception as e:
         logging.error(f"Unexpected Error: {e}")
         return jsonify({"Analysis Summary": f"An unexpected error occurred: {str(e)}"})
+
 
 # Route to generate and download PDF report
 @app.route('/download_report', methods=['POST'])
@@ -156,7 +163,7 @@ def download_report():
     """
 
     try:
-        pdf = BytesIO(weasyprint.HTML(string=html_content).write_pdf()) #using BytesIO to handle binary data
+        pdf = BytesIO(weasyprint.HTML(string=html_content).write_pdf())  # using BytesIO to handle binary data
         return send_file(
             pdf,
             as_attachment=True,
@@ -167,21 +174,25 @@ def download_report():
         logging.error(f"PDF generation failed: {str(e)}")
         abort(500, description=f"PDF generation failed: {str(e)}")
 
-#New route to serve static API testing window
+
+# New route to serve static API testing window
 @app.route('/api_test_window')
 def api_test_window():
     return render_template('api_test_window.html')
+
 
 # Error handlers
 @app.errorhandler(400)
 def bad_request(e):
     return jsonify(error=str(e)), 400
 
+
 @app.errorhandler(500)
 def internal_server_error(e):
     return jsonify(error=str(e)), 500
 
+
 # Fix for Heroku: Bind to PORT
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port, debug=True) # Debug mode for development
+    app.run(host="0.0.0.0", port=port, debug=True)  # Debug mode for development
