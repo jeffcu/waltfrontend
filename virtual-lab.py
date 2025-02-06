@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify, render_template, send_file, abort
 import os
 import logging
+import weasyprint
 from io import BytesIO
 from investment_analysis.services import InvestmentAnalysisService
 from investment_analysis.utils import format_response, format_pdf_content
