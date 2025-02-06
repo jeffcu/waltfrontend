@@ -101,29 +101,25 @@
             color: white;
             font-size: 14px;
             text-align: left;
-            /* Add these styles */
             font-family: 'Arial', sans-serif;
-            /* Use a readable font */
             line-height: 1.6;
-            /* Improve line spacing */
         }
 
         .results h2 {
-            /* Style for section headings */
             color: #27AE60;
             font-size: 18px;
             margin-bottom: 5px;
         }
 
         .results ul {
-            /* Style for lists */
             padding-left: 20px;
             margin-bottom: 10px;
+            list-style-type: decimal; /* Use numbers for the list */
         }
 
         .results li {
-            /* Style for list items */
             margin-bottom: 5px;
+            color: white; /* Ensure list items are white */
         }
 
         .download {
@@ -136,7 +132,6 @@
             color: white;
             text-decoration: none;
             display: block;
-            /* Ensures the whole button is clickable */
         }
 
         .download:hover {
@@ -157,7 +152,6 @@
             let outputBox = document.getElementById("results");
             let fileInput = document.getElementById("file_upload").files[0];
             let csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content'); // Get CSRF token
-
 
             if (!csrfToken) {
                 console.error("CSRF token not found!");
@@ -203,44 +197,40 @@
             let outputBox = document.getElementById("results");
             outputBox.innerHTML = ""; // Clear the previous content
 
-            // Split the response into sections based on common patterns for sections
-            let sections = responseText.split(/(?=\n*\d+\.\s)/);
-
             // Create an ordered list to display the results
-            let ol = document.createElement("ol");
+            let ol = document.createElement("ul"); // change to <ul>
             ol.style.textAlign = "left";
 
+            let sections = responseText.split(/(?=\n*\d+\.\s)/);
+
             sections.forEach(section => {
-                section = section.trim(); // Remove leading/trailing whitespace
+                section = section.trim();
 
-                if (!section) return; // Skip empty sections
+                if (!section) return;
 
-                // Extract section number and title using a regular expression
                 const match = section.match(/^(\d+\.\s+)(.*)/);
 
                 if (match) {
                     const sectionNumber = match[1];
-                    const sectionTitle = match[2].split('\n')[0]; // Get the first line as the title
-                    const sectionContent = match[2].substring(sectionTitle.length).trim(); // Get the rest as content
+                    const sectionTitle = match[2].split('\n')[0];
+                    const sectionContent = match[2].substring(sectionTitle.length).trim();
 
-                    // Create a list item for each section
                     let li = document.createElement("li");
                     li.style.marginBottom = "15px";
+                    li.style.color = "white"; // Make sure text is white
 
-                    // Create a heading for the section title
                     let h2 = document.createElement("h2");
                     h2.textContent = sectionNumber + sectionTitle;
                     li.appendChild(h2);
 
-                    // Create a paragraph for the section content
                     let p = document.createElement("p");
                     p.textContent = sectionContent;
                     li.appendChild(p);
 
                     ol.appendChild(li);
                 } else {
-                    // If it's not a numbered section, just add the text in a paragraph
                     let li = document.createElement("li");
+                    li.style.color = "white"; // Make sure text is white
                     let p = document.createElement("p");
                     p.textContent = section;
                     li.appendChild(p);
@@ -250,6 +240,7 @@
 
             outputBox.appendChild(ol);
         }
+
 
 
         // Function to escape HTML characters
