@@ -1,12 +1,9 @@
 gunicorn
 openai>=1.0.0
-flask
-pip
-setuptools
-openai
-requests
+Flask
 python-dotenv
 PyPDF2
-PyMuPDF
-reportlab
 weasyprint
+pytest
+pytest-mock
+werkzeug

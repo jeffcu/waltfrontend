@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Angel Investment Analysis</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <meta name="csrf-token" content="{{ csrf_token() }}">  <!-- CSRF Token -->
     <style>
         * {
             box-sizing: border-box;
@@ -107,6 +108,12 @@
             background-color: #27AE60;
             text-align: center;
             margin-top: 10px;
+            cursor: pointer;
+            padding: 12px;
+            border-radius: 6px;
+            color: white;
+            text-decoration: none;
+            display: block; /* Ensures the whole button is clickable */
         }
 
         .download:hover {
@@ -126,6 +133,7 @@
             let query = document.getElementById("user_query").value;
             let outputBox = document.getElementById("results");
             let fileInput = document.getElementById("file_upload").files[0];
+            let csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');  // Get CSRF token
 
             outputBox.innerHTML = "<strong>Calling API...</strong>";
 
@@ -135,6 +143,7 @@
             if (fileInput) {
                 formData.append("file_upload", fileInput);
             }
+            formData.append("csrf_token", csrfToken);  // Append CSRF token to form data
 
             try {
                 outputBox.innerHTML = "<strong>Waiting for response...</strong>";
@@ -146,23 +155,109 @@
 
                 let data = await response.json();
                 if (response.ok) {
-                    outputBox.innerHTML = formatResponse(data["Analysis Summary"]);
+                    displayAnalysisResults(data["Analysis Summary"]); // Use the new function
+                    // Store the analysis results for download
+                    sessionStorage.setItem('analysisResults', data["Analysis Summary"]);
+                    document.getElementById("downloadButton").style.display = "block"; // Show the download button
                 } else {
-                    outputBox.innerHTML = `<strong>Error:</strong> ${data["Analysis Summary"]}`;
+                    outputBox.innerHTML = `<strong>Error:</strong> ${escapeHTML(data["Analysis Summary"])}`; // Escape error messages
+                    document.getElementById("downloadButton").style.display = "none"; // hide the download button
                 }
             } catch (error) {
-                outputBox.innerHTML = `<strong>API Error:</strong> ${error.message}`;
+                outputBox.innerHTML = `<strong>API Error:</strong> ${escapeHTML(error.message)}`; // Escape error messages
+                document.getElementById("downloadButton").style.display = "none"; // hide the download button
             }
         }
 
-        function formatResponse(responseText) {
-            let formattedText = responseText
-                .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")  // Convert **bold** to <strong>
-                .replace(/\n/g, "<br>")  // Convert new lines to <br>
-                .replace(/- (.*?)/g, "<li>$1</li>")  // Convert bullet points to <li>
-                .replace(/(\d+\.) (.*?)/g, "<li><strong>$1</strong> $2</li>"); // Numbered bullets
-            return `<strong>Analysis Results:</strong><br><ul>${formattedText}</ul>`;
+        function displayAnalysisResults(responseText) {
+            let outputBox = document.getElementById("results");
+            outputBox.innerHTML = ""; // Clear the previous content
+
+            // Create an ordered list to display the results
+            let ol = document.createElement("ol");
+            ol.style.textAlign = "left";
+
+            // Split the response into sections based on line breaks
+            let sections = responseText.split(/\r?\n/);
+
+            sections.forEach(section => {
+                // Create a list item for each section
+                let li = document.createElement("li");
+                li.style.marginBottom = "8px";
+
+                // Check if the section starts with a number and a period (e.g., "1. Introduction")
+                let match = section.match(/^(\d+\.\s+)(.*)/);
+                if (match) {
+                    // If it's a numbered section, make the number bold
+                    let number = match[1];
+                    let content = match[2];
+
+                    let strong = document.createElement("strong");
+                    strong.textContent = number;
+
+                    li.appendChild(strong);
+                    li.appendChild(document.createTextNode(" " + content));
+                } else {
+                    // If it's not a numbered section, just add the text
+                    li.textContent = section;
+                }
+
+                ol.appendChild(li);
+            });
+
+            outputBox.appendChild(ol);
         }
+
+        // Function to escape HTML characters
+        function escapeHTML(str) {
+            let div = document.createElement('div');
+            div.appendChild(document.createTextNode(str));
+            return div.innerHTML;
+        }
+
+
+        function downloadReport() {
+            let summaryData = sessionStorage.getItem('analysisResults');
+
+            if (!summaryData) {
+                alert("No analysis results available to download.");
+                return;
+            }
+
+            // Create a form to submit the data
+            let form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '/download_report';
+            form.style.display = 'none';
+
+            // Create an input field for the summary data
+            let input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'summaryData';
+            input.value = summaryData;
+
+            // Add the input field to the form
+            form.appendChild(input);
+
+            // Add the form to the document and submit it
+            document.body.appendChild(form);
+            form.submit();
+
+            // Remove the form from the document after submission
+            document.body.removeChild(form);
+        }
+
+        window.onload = function() {
+            // Get the download button
+            let downloadButton = document.getElementById("downloadButton");
+
+            // Initially hide the download button
+            downloadButton.style.display = "none";
+
+            // Attach the downloadReport function to the button's click event
+            downloadButton.addEventListener('click', downloadReport);
+        };
+
     </script>
 </head>
 <body>
@@ -193,7 +288,7 @@
             <p>(Results will display here after analysis)</p>
         </div>
 
-        <button class="button download">Download Report</button>
+        <a id="downloadButton" class="download">Download Report</a>
     </div>
 
 </body>

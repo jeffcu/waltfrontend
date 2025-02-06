@@ -1,117 +1,139 @@
-"""
-Filename: virtual-lab.py
-Location: Root directory of the Flask project.
-
-Purpose:
-- Main Flask application file.
-- Handles routes for UI rendering, OpenAI API calls, and file uploads.
-- Generates and formats PDF reports with structured numbering and spacing.
-- Fixes WeasyPrint formatting issues and ensures proper Heroku compatibility.
-"""
-
-from flask import Flask, request, jsonify, render_template, send_file
-import weasyprint
+from flask import Flask, request, jsonify, render_template, send_file, abort
 import os
-from io import BytesIO
-from PyPDF2 import PdfReader
-import openai
 import logging
+from io import BytesIO
+from investment_analysis.services import InvestmentAnalysisService
+from investment_analysis.utils import format_response, format_pdf_content
+from dotenv import load_dotenv
+from PyPDF2 import PdfReader
+from werkzeug.utils import secure_filename # for secure file uploads
+from flask_wtf.csrf import CSRFProtect  # Import CSRFProtect
+
+# Load environment variables
+load_dotenv()
 
 # Setup logging
 logging.basicConfig(level=logging.DEBUG)
 
 app = Flask(__name__)
+app.config['UPLOAD_FOLDER'] = 'uploads'  # Create an uploads folder
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max upload size
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'a_very_secret_key')  # Set a secret key for CSRF
+
+# Create the uploads folder if it doesn't exist
+if not os.path.exists(app.config['UPLOAD_FOLDER']):
+    os.makedirs(app.config['UPLOAD_FOLDER'])
+
+# Initialize CSRF protection
+csrf = CSRFProtect()
+csrf.init_app(app)
+
+# Initialize InvestmentAnalysisService (pass API key)
+openai_api_key = os.environ.get("OPENAI_API_KEY")
+if not openai_api_key:
+    logging.error("OPENAI_API_KEY not set in environment variables.")
+    raise ValueError("OPENAI_API_KEY not set.  Please configure.")
+
+analysis_service = InvestmentAnalysisService(openai_api_key=openai_api_key)
 
 # Home route redirecting to the gallery page
 @app.route('/')
 def home():
     return render_template('gallery.html')
 
+ALLOWED_EXTENSIONS = {'pdf'} #only allow pdf files
+
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+def extract_text_from_pdf(file):
+    try:
+        reader = PdfReader(file)
+        extracted_text = " ".join([page.extract_text() for page in reader.pages if page.extract_text()])
+        return extracted_text
+    except Exception as e:
+        logging.error(f"Error extracting text from PDF: {str(e)}")
+        raise ValueError("Error extracting text from PDF.  Ensure it's a valid PDF.") from e
+
+
 # Route to render the angel investment analysis page
 @app.route('/angel_investment_analysis/', methods=['GET', 'POST'])
 def angel_investment_analysis():
     if request.method == 'POST':
-        user_input = request.form.get('meta_instructions', '') + " " + request.form.get('user_query', '')
-        file = request.files.get('file_upload')
-
-        extracted_text = ""
-        if file and file.filename != '':
-            reader = PdfReader(file)
-            extracted_text = " ".join([page.extract_text() for page in reader.pages if page.extract_text()])
-            user_input += " " + extracted_text
-
-        if not user_input.strip():
-            return render_template('angel_investment_analysis.html', analysis_result="No content provided")
-
         try:
-            client = openai.Client()
-            response = client.chat.completions.create(
-                model="gpt-3.5-turbo",
-                messages=[
-                    {"role": "system", "content": "You are an expert on startup investment analysis."},
-                    {"role": "user", "content": user_input}
-                ]
-            )
-            analysis_result = format_response(response.choices[0].message.content.strip())
-        except Exception as e:
-            logging.error(f"API call failed: {str(e)}")
-            analysis_result = f"API call failed: {str(e)}"
+            user_input = request.form.get('meta_instructions', '') + " " + request.form.get('user_query', '')
+            file = request.files.get('file_upload')
 
-        return render_template('angel_investment_analysis.html', analysis_result=analysis_result)
+            if file and file.filename != '':
+                if not allowed_file(file.filename):
+                    return render_template('angel_investment_analysis.html', analysis_result="Invalid file type. Only PDF files are allowed.")
+
+                extracted_text = extract_text_from_pdf(file)
+                user_input += " " + extracted_text
+
+            if not user_input.strip():
+                return render_template('angel_investment_analysis.html', analysis_result="No content provided")
+
+            analysis_result = analysis_service.analyze_investment(user_input)
+            analysis_result = format_response(analysis_result)
+
+            return render_template('angel_investment_analysis.html', analysis_result=analysis_result)
+
+        except ValueError as e:
+            logging.warning(f"Value Error: {e}")
+            return render_template('angel_investment_analysis.html', analysis_result=str(e))
+        except Exception as e:
+            logging.error(f"Unexpected Error: {e}")
+            return render_template('angel_investment_analysis.html', analysis_result=f"An unexpected error occurred: {str(e)}")
 
     return render_template('angel_investment_analysis.html', analysis_result=None)
 
 # Route for handling AJAX API call
 @app.route('/analyze', methods=['POST'])
 def analyze():
-    user_input = request.form.get('meta_instructions', '') + " " + request.form.get('user_query', '')
-    file = request.files.get('file_upload')
-
-    extracted_text = ""
-    if file and file.filename != '':
-        reader = PdfReader(file)
-        extracted_text = " ".join([page.extract_text() for page in reader.pages if page.extract_text()])
-        user_input += " " + extracted_text
-
-    if not user_input.strip():
-        return jsonify({"Analysis Summary": "No content provided"})
-
     try:
-        client = openai.Client()
-        response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {"role": "system", "content": "You are an expert on startup investment analysis."},
-                {"role": "user", "content": user_input}
-            ]
-        )
-        analysis_result = format_response(response.choices[0].message.content.strip())
-        logging.info(f"API Response: {analysis_result}")
-    except Exception as e:
-        logging.error(f"API call failed: {str(e)}")
-        analysis_result = f"API call failed: {str(e)}"
+        user_input = request.form.get('meta_instructions', '') + " " + request.form.get('user_query', '')
+        file = request.files.get('file_upload')
 
-    return jsonify({"Analysis Summary": analysis_result})
+        if file and file.filename != '':
+            if not allowed_file(file.filename):
+                 return jsonify({"Analysis Summary": "Invalid file type. Only PDF files are allowed."})
+
+            extracted_text = extract_text_from_pdf(file)
+            user_input += " " + extracted_text
+
+        if not user_input.strip():
+            return jsonify({"Analysis Summary": "No content provided"})
+
+        analysis_result = analysis_service.analyze_investment(user_input)
+        analysis_result = format_response(analysis_result)
+        logging.info(f"API Response: {analysis_result}")
+        return jsonify({"Analysis Summary": analysis_result})
+
+    except ValueError as e:
+        logging.warning(f"Value Error: {e}")
+        return jsonify({"Analysis Summary": str(e)})
+
+    except Exception as e:
+        logging.error(f"Unexpected Error: {e}")
+        return jsonify({"Analysis Summary": f"An unexpected error occurred: {str(e)}"})
 
 # Route to generate and download PDF report
 @app.route('/download_report', methods=['POST'])
 def download_report():
-    """
-    Generate a properly formatted PDF report.
-    - Uses numbered sections (1., 2., 3.) with bold subtitles.
-    - Sections are clearly separated for readability.
-    """
     summary_data = request.form.get('summaryData')
 
     if not summary_data:
         logging.error("No summary data received for PDF generation.")
-        return "No summary data provided", 400
+        abort(400, description="No summary data provided")
 
     logging.info(f"Generating PDF with summary: {summary_data[:200]}...")
 
     formatted_summary = format_pdf_content(summary_data)
 
     html_content = f"""
+    <!DOCTYPE html>
     <html>
         <head>
             <title>Investment Report</title>
@@ -132,51 +154,33 @@ def download_report():
     </html>
     """
 
-    pdf = weasyprint.HTML(string=html_content).write_pdf()
-    pdf_stream = BytesIO(pdf)
+    try:
+        pdf = BytesIO(weasyprint.HTML(string=html_content).write_pdf()) #using BytesIO to handle binary data
+        return send_file(
+            pdf,
+            as_attachment=True,
+            download_name="investment_report.pdf",
+            mimetype='application/pdf'
+        )
+    except Exception as e:
+        logging.error(f"PDF generation failed: {str(e)}")
+        abort(500, description=f"PDF generation failed: {str(e)}")
 
-    return send_file(
-        pdf_stream,
-        as_attachment=True,
-        download_name="investment_report.pdf",
-        mimetype='application/pdf'
-    )
+#New route to serve static API testing window
+@app.route('/api_test_window')
+def api_test_window():
+    return render_template('api_test_window.html')
 
-# Utility function for formatting API responses for web UI
-def format_response(response_text):
-    """
-    Format API response for readability in the web UI.
-    - Uses numbered sections (1., 2., 3.).
-    - Each section has a subtitle, then a line break, then the content.
-    """
-    formatted_text = response_text.replace("**", "").replace("\n", "<br><br>")
-    formatted_text = formatted_text.replace("1. ", "<strong>1. </strong>")
-    formatted_text = formatted_text.replace("2. ", "<strong>2. </strong>")
-    formatted_text = formatted_text.replace("3. ", "<strong>3. </strong>")
-    formatted_text = formatted_text.replace("4. ", "<strong>4. </strong>")
-    formatted_text = formatted_text.replace("5. ", "<strong>5. </strong>")
+# Error handlers
+@app.errorhandler(400)
+def bad_request(e):
+    return jsonify(error=str(e)), 400
 
-    return f"<strong>Analysis Report:</strong><br>{formatted_text}"
-
-# Utility function for formatting PDF content properly
-def format_pdf_content(summary_data):
-    """
-    Format content for structured PDF output.
-    - Uses numbered sections (1., 2., 3.).
-    - Ensures section numbers are followed by subtitles and content.
-    - Sections are spaced out for readability.
-    """
-    formatted_text = summary_data.replace("**", "")
-    formatted_text = formatted_text.replace("\n\n", "<br><br>")
-    formatted_text = formatted_text.replace("1. ", "<div class='section'><span class='section-number'>1.</span> <span class='subtitle'>Introduction</span><br><div class='content'>")
-    formatted_text = formatted_text.replace("2. ", "</div><div class='section'><span class='section-number'>2.</span> <span class='subtitle'>Market Analysis</span><br><div class='content'>")
-    formatted_text = formatted_text.replace("3. ", "</div><div class='section'><span class='section-number'>3.</span> <span class='subtitle'>Financial Overview</span><br><div class='content'>")
-    formatted_text = formatted_text.replace("4. ", "</div><div class='section'><span class='section-number'>4.</span> <span class='subtitle'>Competitive Landscape</span><br><div class='content'>")
-    formatted_text = formatted_text.replace("5. ", "</div><div class='section'><span class='section-number'>5.</span> <span class='subtitle'>Conclusion</span><br><div class='content'>")
-
-    return formatted_text + "</div>"
+@app.errorhandler(500)
+def internal_server_error(e):
+    return jsonify(error=str(e)), 500
 
 # Fix for Heroku: Bind to PORT
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
+    app.run(host="0.0.0.0", port=port, debug=True) # Debug mode for development
