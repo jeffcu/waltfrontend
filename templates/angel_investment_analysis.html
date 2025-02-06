@@ -1,295 +1,141 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Angel Investment Analysis</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
-    <meta name="csrf-token" content="{{ csrf_token() }}">  <!-- CSRF Token -->
-    <style>
-        * {
-            box-sizing: border-box;
-        }
+<script>
+     async function analyze() {
+         let instructions = document.getElementById("meta_instructions").value;
+         let query = document.getElementById("user_query").value;
+         let outputBox = document.getElementById("results");
+         let fileInput = document.getElementById("file_upload").files[0];
+         let csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');  // Get CSRF token
 
-        body {
-            font-family: 'Inter', sans-serif;
-            margin: 0;
-            padding: 20px;
-            background-color: #1E2A38;
-            color: #E5E5E5;
-        }
+         outputBox.innerHTML = "<strong>Calling API...</strong>";
 
-        .container {
-            max-width: 800px;
-            padding: 20px;
-            background: #2A3D55;
-            border-radius: 12px;
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
-            transition: all 0.3s ease;
-            text-align: left;
-        }
+         let formData = new FormData();
+         formData.append("meta_instructions", instructions);
+         formData.append("user_query", query);
+         if (fileInput) {
+             formData.append("file_upload", fileInput);
+         }
+         formData.append("csrf_token", csrfToken);  // Append CSRF token to form data
 
-        h1 {
-            font-weight: 600;
-            font-size: 28px;
-            color: #2D9CDB;
-            text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.2);
-            margin-bottom: 5px;
-        }
+         try {
+             outputBox.innerHTML = "<strong>Waiting for response...</strong>";
 
-        .subtitle {
-            font-size: 14px;
-            color: #AEBCCF;
-            margin-bottom: 20px;
-        }
+             let response = await fetch("/analyze", {
+                 method: "POST",
+                 body: formData
+             });
 
-        .form-group {
-            margin-bottom: 15px;
-        }
+             let data = await response.json();
+             if (response.ok) {
+                 displayAnalysisResults(data["Analysis Summary"]); // Use the new function
+                 // Store the analysis results for download
+                 sessionStorage.setItem('analysisResults', data["Analysis Summary"]);
+                 document.getElementById("downloadButton").style.display = "block"; // Show the download button
+             } else {
+                 outputBox.innerHTML = `<strong>Error:</strong> ${escapeHTML(data["Analysis Summary"])}`; // Escape error messages
+                 document.getElementById("downloadButton").style.display = "none"; // hide the download button
+             }
+         } catch (error) {
+             outputBox.innerHTML = `<strong>API Error:</strong> ${escapeHTML(error.message)}`; // Escape error messages
+             document.getElementById("downloadButton").style.display = "none"; // hide the download button
+         }
+     }
 
-        label {
-            font-weight: 400;
-            color: #D9E1EC;
-            display: block;
-            margin-bottom: 5px;
-            font-size: 14px;
-        }
+     function displayAnalysisResults(responseText) {
+         let outputBox = document.getElementById("results");
+         outputBox.innerHTML = ""; // Clear the previous content
 
-        textarea, input {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #4C657E;
-            border-radius: 6px;
-            background-color: #1E2A38;
-            color: #E5E5E5;
-            font-size: 14px;
-        }
+         // Create an ordered list to display the results
+         let ol = document.createElement("ol");
+         ol.style.textAlign = "left";
 
-        textarea:focus, input:focus {
-            outline: none;
-            border-color: #2D9CDB;
-            box-shadow: 0 0 8px rgba(45, 156, 219, 0.5);
-        }
+         // Split the response into sections based on line breaks
+         let sections = responseText.split(/\r?\n/);
 
-        .button {
-            width: 100%;
-            padding: 12px;
-            background-color: #27AE60;
-            border: none;
-            border-radius: 6px;
-            font-size: 16px;
-            font-weight: 600;
-            color: white;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
+         sections.forEach(section => {
+             // Create a list item for each section
+             let li = document.createElement("li");
+             li.style.marginBottom = "8px";
 
-        .button:hover {
-            background-color: #1F8A4C;
-            box-shadow: 0 4px 8px rgba(39, 174, 96, 0.4);
-        }
+             // Check if the section starts with a number and a period (e.g., "1. Introduction")
+             let match = section.match(/^(\d+\.\s+)(.*)/);
+             if (match) {
+                 // If it's a numbered section, make the number bold
+                 let number = match[1];
+                 let content = match[2];
 
-        .results {
-            background: #2D9CDB;
-            padding: 15px;
-            border-radius: 6px;
-            margin-top: 15px;
-            color: white;
-            font-size: 14px;
-            text-align: left;
-        }
+                 let strong = document.createElement("strong");
+                 strong.textContent = number;
 
-        .results p {
-            margin: 0;
-            font-size: 14px;
-        }
+                 li.appendChild(strong);
+                 li.appendChild(document.createTextNode(" " + content));
+             } else {
+                 // If it's not a numbered section, just add the text
+                 li.textContent = section;
+             }
 
-        .download {
-            background-color: #27AE60;
-            text-align: center;
-            margin-top: 10px;
-            cursor: pointer;
-            padding: 12px;
-            border-radius: 6px;
-            color: white;
-            text-decoration: none;
-            display: block; /* Ensures the whole button is clickable */
-        }
+             ol.appendChild(li);
+         });
 
-        .download:hover {
-            background-color: #1F8A4C;
-        }
+         outputBox.appendChild(ol);
+     }
 
-        @media (max-width: 768px) {
-            .container {
-                width: 100%;
-                padding: 15px;
-            }
-        }
-    </style>
-    <script>
-        async function analyze() {
-            let instructions = document.getElementById("meta_instructions").value;
-            let query = document.getElementById("user_query").value;
-            let outputBox = document.getElementById("results");
-            let fileInput = document.getElementById("file_upload").files[0];
-            let csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');  // Get CSRF token
-
-            outputBox.innerHTML = "<strong>Calling API...</strong>";
-
-            let formData = new FormData();
-            formData.append("meta_instructions", instructions);
-            formData.append("user_query", query);
-            if (fileInput) {
-                formData.append("file_upload", fileInput);
-            }
-            formData.append("csrf_token", csrfToken);  // Append CSRF token to form data
-
-            try {
-                outputBox.innerHTML = "<strong>Waiting for response...</strong>";
-
-                let response = await fetch("/analyze", {
-                    method: "POST",
-                    body: formData
-                });
-
-                let data = await response.json();
-                if (response.ok) {
-                    displayAnalysisResults(data["Analysis Summary"]); // Use the new function
-                    // Store the analysis results for download
-                    sessionStorage.setItem('analysisResults', data["Analysis Summary"]);
-                    document.getElementById("downloadButton").style.display = "block"; // Show the download button
-                } else {
-                    outputBox.innerHTML = `<strong>Error:</strong> ${escapeHTML(data["Analysis Summary"])}`; // Escape error messages
-                    document.getElementById("downloadButton").style.display = "none"; // hide the download button
-                }
-            } catch (error) {
-                outputBox.innerHTML = `<strong>API Error:</strong> ${escapeHTML(error.message)}`; // Escape error messages
-                document.getElementById("downloadButton").style.display = "none"; // hide the download button
-            }
-        }
-
-        function displayAnalysisResults(responseText) {
-            let outputBox = document.getElementById("results");
-            outputBox.innerHTML = ""; // Clear the previous content
-
-            // Create an ordered list to display the results
-            let ol = document.createElement("ol");
-            ol.style.textAlign = "left";
-
-            // Split the response into sections based on line breaks
-            let sections = responseText.split(/\r?\n/);
-
-            sections.forEach(section => {
-                // Create a list item for each section
-                let li = document.createElement("li");
-                li.style.marginBottom = "8px";
-
-                // Check if the section starts with a number and a period (e.g., "1. Introduction")
-                let match = section.match(/^(\d+\.\s+)(.*)/);
-                if (match) {
-                    // If it's a numbered section, make the number bold
-                    let number = match[1];
-                    let content = match[2];
-
-                    let strong = document.createElement("strong");
-                    strong.textContent = number;
-
-                    li.appendChild(strong);
-                    li.appendChild(document.createTextNode(" " + content));
-                } else {
-                    // If it's not a numbered section, just add the text
-                    li.textContent = section;
-                }
-
-                ol.appendChild(li);
-            });
-
-            outputBox.appendChild(ol);
-        }
-
-        // Function to escape HTML characters
-        function escapeHTML(str) {
-            let div = document.createElement('div');
-            div.appendChild(document.createTextNode(str));
-            return div.innerHTML;
-        }
+     // Function to escape HTML characters
+     function escapeHTML(str) {
+         let div = document.createElement('div');
+         div.appendChild(document.createTextNode(str));
+         return div.innerHTML;
+     }
 
 
-        function downloadReport() {
-            let summaryData = sessionStorage.getItem('analysisResults');
+     function downloadReport() {
+         let summaryData = sessionStorage.getItem('analysisResults');
+          let csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');  // Get CSRF token
 
-            if (!summaryData) {
-                alert("No analysis results available to download.");
-                return;
-            }
+         if (!summaryData) {
+             alert("No analysis results available to download.");
+             return;
+         }
 
-            // Create a form to submit the data
-            let form = document.createElement('form');
-            form.method = 'POST';
-            form.action = '/download_report';
-            form.style.display = 'none';
+         // Create a form to submit the data
+         let form = document.createElement('form');
+         form.method = 'POST';
+         form.action = '/download_report';
+         form.style.display = 'none';
 
-            // Create an input field for the summary data
-            let input = document.createElement('input');
-            input.type = 'hidden';
-            input.name = 'summaryData';
-            input.value = summaryData;
+         // Create an input field for the summary data
+         let input = document.createElement('input');
+         input.type = 'hidden';
+         input.name = 'summaryData';
+         input.value = summaryData;
 
-            // Add the input field to the form
-            form.appendChild(input);
+         let csrfInput = document.createElement('input');
+         csrfInput.type = 'hidden';
+         csrfInput.name = 'csrf_token';
+         csrfInput.value = csrfToken;
 
-            // Add the form to the document and submit it
-            document.body.appendChild(form);
-            form.submit();
 
-            // Remove the form from the document after submission
-            document.body.removeChild(form);
-        }
+         // Add the input field to the form
+         form.appendChild(input);
+         form.appendChild(csrfInput)
 
-        window.onload = function() {
-            // Get the download button
-            let downloadButton = document.getElementById("downloadButton");
 
-            // Initially hide the download button
-            downloadButton.style.display = "none";
+         // Add the form to the document and submit it
+         document.body.appendChild(form);
+         form.submit();
 
-            // Attach the downloadReport function to the button's click event
-            downloadButton.addEventListener('click', downloadReport);
-        };
+         // Remove the form from the document after submission
+         document.body.removeChild(form);
+     }
 
-    </script>
-</head>
-<body>
+     window.onload = function() {
+         // Get the download button
+         let downloadButton = document.getElementById("downloadButton");
 
-    <div class="container">
-        <h1>Angel Investment Analysis</h1>
-        <p class="subtitle">Analyze startup companies with precision and generate insightful reports.</p>
+         // Initially hide the download button
+         downloadButton.style.display = "none";
 
-        <div class="form-group">
-            <label for="meta_instructions">Meta Instructions:</label>
-            <textarea id="meta_instructions" placeholder="You're an expert at understanding startup companies."></textarea>
-        </div>
+         // Attach the downloadReport function to the button's click event
+         downloadButton.addEventListener('click', downloadReport);
+     };
 
-        <div class="form-group">
-            <label for="user_query">User Query:</label>
-            <textarea id="user_query" placeholder="Tell me about this company and its market."></textarea>
-        </div>
-
-        <div class="form-group">
-            <label for="file_upload">Upload File:</label>
-            <input type="file" id="file_upload">
-        </div>
-
-        <button class="button" onclick="analyze()">Analyze</button>
-
-        <div class="results" id="results">
-            <p><strong>Summary Results:</strong></p>
-            <p>(Results will display here after analysis)</p>
-        </div>
-
-        <a id="downloadButton" class="download">Download Report</a>
-    </div>
-
-</body>
-</html>
+ </script>

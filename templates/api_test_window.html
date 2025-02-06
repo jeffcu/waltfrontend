@@ -3,6 +3,7 @@
 <head>
     <title>API Test</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -51,11 +52,15 @@
         function callOpenAI() {
             let inputText = document.getElementById("query").value;
             let outputBox = document.getElementById("output");
+            let csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
 
             fetch("/analyze", {  // Use the /analyze endpoint
                 method: "POST",
-                headers: { "Content-Type": "application/x-www-form-urlencoded" }, // changed to correct content type
-                body: "meta_instructions=&user_query=" + encodeURIComponent(inputText) // Correctly format the body
+                headers: {
+                     "Content-Type": "application/x-www-form-urlencoded"
+                 }, // changed to correct content type
+                body: "meta_instructions=&user_query=" + encodeURIComponent(inputText) + "&csrf_token=" + csrfToken // Correctly format the body
             })
             .then(response => response.json())
             .then(data => {
