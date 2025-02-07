@@ -1,16 +1,18 @@
 # Filename: virtual-lab.py
 # Location: virtual-lab.py (relative to root)
+
 from flask import Flask, request, jsonify, render_template, send_file, abort
 import os
 import logging
 import weasyprint
 from io import BytesIO
 from investment_analysis.services import InvestmentAnalysisService
-from investment_analysis.utils import format_pdf_content # take out, not being used
+from investment_analysis.utils import format_pdf_content  # take out, not being used
 from dotenv import load_dotenv
 from PyPDF2 import PdfReader
 from werkzeug.utils import secure_filename  # for secure file uploads
 from flask_wtf.csrf import CSRFProtect  # Import CSRFProtect
+import time  # Import the time module
 
 # Load environment variables
 load_dotenv()
@@ -39,6 +41,26 @@ if not openai_api_key:
 
 analysis_service = InvestmentAnalysisService(openai_api_key=openai_api_key)
 
+# --- Rate Limiting (Naive Approach - DO NOT USE IN PRODUCTION) ---
+REQUEST_LIMIT = 10  # Max requests per minute
+REQUEST_WINDOW = 60  # Seconds (1 minute)
+user_request_counts = {}
+
+def rate_limit_exceeded(user_id):
+    now = time.time()
+    if user_id not in user_request_counts:
+        user_request_counts[user_id] = []
+
+    # Remove requests older than the rate limit window
+    user_request_counts[user_id] = [ts for ts in user_request_counts[user_id] if now - ts < REQUEST_WINDOW]
+
+    # Check if the rate limit has been exceeded
+    if len(user_request_counts[user_id]) >= REQUEST_LIMIT:
+        return True
+
+    # Record this request
+    user_request_counts[user_id].append(now)
+    return False
 
 # Home route redirecting to the gallery page
 @app.route('/')
@@ -67,40 +89,16 @@ def extract_text_from_pdf(file):
 # Route to render the angel investment analysis page
 @app.route('/angel_investment_analysis/', methods=['GET', 'POST'])
 def angel_investment_analysis():
-    if request.method == 'POST':
-        try:
-            user_input = request.form.get('meta_instructions', '') + " " + request.form.get('user_query', '')
-            file = request.files.get('file_upload')
-
-            if file and file.filename != '':
-                if not allowed_file(file.filename):
-                    return render_template('angel_investment_analysis.html',
-                                           analysis_result="Invalid file type. Only PDF files are allowed.")
-
-                extracted_text = extract_text_from_pdf(file)
-                user_input += " " + extracted_text
-
-            if not user_input.strip():
-                return render_template('angel_investment_analysis.html', analysis_result="No content provided")
-
-            analysis_result = analysis_service.analyze_investment(user_input)
-
-            return render_template('angel_investment_analysis.html', analysis_result=analysis_result)
-
-        except ValueError as e:
-            logging.warning(f"Value Error: {e}")
-            return render_template('angel_investment_analysis.html', analysis_result=str(e))
-        except Exception as e:
-            logging.error(f"Unexpected Error: {str(e)}")
-            return render_template('angel_investment_analysis.html',
-                                   analysis_result=f"An unexpected error occurred: {str(e)}")
-
     return render_template('angel_investment_analysis.html', analysis_result=None)
-
 
 # Route for handling AJAX API call
 @app.route('/analyze', methods=['POST'])
 def analyze():
+    user_id = request.remote_addr  # Use IP address as a simple user identifier (INSECURE in practice)
+
+    if rate_limit_exceeded(user_id):
+        return jsonify({"error": "Rate limit exceeded. Please try again later."}), 429
+
     try:
         user_input = request.form.get('meta_instructions', '') + " " + request.form.get('user_query', '')
         file = request.files.get('file_upload')
@@ -181,6 +179,10 @@ def api_test_window():
 def bad_request(e):
     return jsonify(error=str(e)), 400
 
+# Custom error handler for rate limit exceeded (429)
+@app.errorhandler(429)
+def rate_limit_handler(e):
+    return jsonify({"error": "Rate limit exceeded. Please try again later."}), 429
 
 @app.errorhandler(500)
 def internal_server_error(e):
