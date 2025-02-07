@@ -1,10 +1,12 @@
+# Filename: virtual-lab.py
+# Location: virtual-lab.py (relative to root)
 from flask import Flask, request, jsonify, render_template, send_file, abort
 import os
 import logging
 import weasyprint
 from io import BytesIO
 from investment_analysis.services import InvestmentAnalysisService
-from investment_analysis.utils import format_pdf_content
+from investment_analysis.utils import format_pdf_content # take out, not being used
 from dotenv import load_dotenv
 from PyPDF2 import PdfReader
 from werkzeug.utils import secure_filename  # for secure file uploads
@@ -89,7 +91,7 @@ def angel_investment_analysis():
             logging.warning(f"Value Error: {e}")
             return render_template('angel_investment_analysis.html', analysis_result=str(e))
         except Exception as e:
-            logging.error(f"Unexpected Error: {e}")
+            logging.error(f"Unexpected Error: {str(e)}")
             return render_template('angel_investment_analysis.html',
                                    analysis_result=f"An unexpected error occurred: {str(e)}")
 
@@ -114,7 +116,6 @@ def analyze():
             return jsonify({"Analysis Summary": "No content provided"})
 
         analysis_result = analysis_service.analyze_investment(user_input)
-        #analysis_result = format_response(analysis_result) # Take out legacy formating
         logging.info(f"API Response: {analysis_result}")
         return jsonify({"Analysis Summary": analysis_result})
 
@@ -123,7 +124,7 @@ def analyze():
         return jsonify({"Analysis Summary": str(e)})
 
     except Exception as e:
-        logging.error(f"Unexpected Error: {e}")
+        logging.error(f"Unexpected Error: {str(e)}")
         return jsonify({"Analysis Summary": f"An unexpected error occurred: {str(e)}"})
 
 
@@ -138,26 +139,20 @@ def download_report():
 
     logging.info(f"Generating PDF with summary: {summary_data[:200]}...")
 
-    formatted_summary = format_pdf_content(summary_data)
-
     html_content = f"""
     <!DOCTYPE html>
     <html>
         <head>
-            <title>Investment Report</title>
+            <title>Angel Investment Analysis Summary</title>
             <style>
                 body {{ font-family: 'Arial', sans-serif; padding: 20px; }}
                 h1 {{ color: #2D9CDB; font-size: 24px; text-align: center; }}
-                h2 {{ color: #27AE60; font-size: 18px; margin-bottom: 5px; }}
-                .section {{ margin-bottom: 15px; }}
-                .section-number {{ font-size: 18px; font-weight: bold; color: #333; }}
-                .subtitle {{ font-size: 16px; font-weight: bold; color: #555; }}
-                .content {{ font-size: 14px; margin-top: 5px; }}
+                pre {{ white-space: pre-wrap; word-break: break-word; font-family: 'Arial', sans-serif; }} /* Use pre tag to preserve formatting */
             </style>
         </head>
         <body>
-            <h1>Angel Investment Analysis Report</h1>
-            {formatted_summary}
+            <h1>Angel Investment Analysis Summary</h1>
+            <pre>{summary_data}</pre>  <!-- Display the raw summary data -->
         </body>
     </html>
     """
