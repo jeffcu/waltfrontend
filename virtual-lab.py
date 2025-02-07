@@ -62,7 +62,15 @@ def home():
     hourly_limit = limiter.limits[0].limit  # Get the value of the first limit (per hour)
     rate_limit_key = f"rate_limit:{get_remote_address()}:/analyze:1+hour"
 
-    remaining = hourly_limit - (int(redis_connection.get(rate_limit_key).decode('utf-8')) if redis_connection.get(rate_limit_key) else 0)
+    redis_value = redis_connection.get(rate_limit_key)
+    if redis_value:
+        try:
+            remaining = hourly_limit - int(redis_value.decode('utf-8'))
+        except ValueError:
+            logging.error(f"Non-integer value found in Redis for key {rate_limit_key}: {redis_value}")
+            remaining = hourly_limit  # or handle the error in some other way (e.g., set to 0)
+    else:
+        remaining = hourly_limit
 
     return render_template('gallery.html', rate_limit=f"{int(remaining)}/{hourly_limit}")
 
