@@ -1,6 +1,5 @@
 # Filename: virtual-lab.py
 # Location: virtual-lab.py (relative to root)
-
 from flask import Flask, request, jsonify, render_template, send_file, abort
 import os
 import logging
@@ -12,7 +11,9 @@ from dotenv import load_dotenv
 from PyPDF2 import PdfReader
 from werkzeug.utils import secure_filename  # for secure file uploads
 from flask_wtf.csrf import CSRFProtect  # Import CSRFProtect
-import time  # Import the time module
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+from redis import Redis # Import Redis
 
 # Load environment variables
 load_dotenv()
@@ -33,6 +34,18 @@ if not os.path.exists(app.config['UPLOAD_FOLDER']):
 csrf = CSRFProtect()
 csrf.init_app(app)
 
+# Configure rate limiting
+redis_url = os.environ.get("REDIS_URL", "redis://localhost:6379")
+redis_connection = Redis.from_url(redis_url)
+
+limiter = Limiter(
+    get_remote_address,
+    app=app,
+    default_limits=["200 per day", "50 per hour"],
+    storage_uri=redis_url,  # Make sure to put in Redis URL
+    storage_options={"socket_connect_timeout": 30, "socket_timeout": 30}
+)
+
 # Initialize InvestmentAnalysisService (pass API key)
 openai_api_key = os.environ.get("OPENAI_API_KEY")
 if not openai_api_key:
@@ -41,32 +54,17 @@ if not openai_api_key:
 
 analysis_service = InvestmentAnalysisService(openai_api_key=openai_api_key)
 
-# --- Rate Limiting (Naive Approach - DO NOT USE IN PRODUCTION) ---
-REQUEST_LIMIT = 10  # Max requests per minute
-REQUEST_WINDOW = 60  # Seconds (1 minute)
-user_request_counts = {}
-
-def rate_limit_exceeded(user_id):
-    now = time.time()
-    if user_id not in user_request_counts:
-        user_request_counts[user_id] = []
-
-    # Remove requests older than the rate limit window
-    user_request_counts[user_id] = [ts for ts in user_request_counts[user_id] if now - ts < REQUEST_WINDOW]
-
-    # Check if the rate limit has been exceeded
-    if len(user_request_counts[user_id]) >= REQUEST_LIMIT:
-        return True
-
-    # Record this request
-    user_request_counts[user_id].append(now)
-    return False
 
 # Home route redirecting to the gallery page
 @app.route('/')
 def home():
-    return render_template('gallery.html')
+    # Get the rate limit remaining for the current user for the hour
+    hourly_limit = limiter.limits[0].limit  # Get the value of the first limit (per hour)
+    rate_limit_key = f"rate_limit:{get_remote_address()}:/analyze:1+hour"
 
+    remaining = hourly_limit - (redis_connection.get(rate_limit_key) or 0) # fix type error
+
+    return render_template('gallery.html', rate_limit=f"{int(remaining)}/{hourly_limit}")
 
 ALLOWED_EXTENSIONS = {'pdf'}  # only allow pdf files
 
@@ -93,12 +91,8 @@ def angel_investment_analysis():
 
 # Route for handling AJAX API call
 @app.route('/analyze', methods=['POST'])
+@limiter.limit("10 per minute")  # Apply rate limit to the /analyze route
 def analyze():
-    user_id = request.remote_addr  # Use IP address as a simple user identifier (INSECURE in practice)
-
-    if rate_limit_exceeded(user_id):
-        return jsonify({"error": "Rate limit exceeded. Please try again later."}), 429
-
     try:
         user_input = request.form.get('meta_instructions', '') + " " + request.form.get('user_query', '')
         file = request.files.get('file_upload')
@@ -179,9 +173,9 @@ def api_test_window():
 def bad_request(e):
     return jsonify(error=str(e)), 400
 
-# Custom error handler for rate limit exceeded (429)
+
 @app.errorhandler(429)
-def rate_limit_handler(e):
+def ratelimit_handler(e):
     return jsonify({"error": "Rate limit exceeded. Please try again later."}), 429
 
 @app.errorhandler(500)
