@@ -180,6 +180,7 @@
             }
         }
 
+
         // Function to escape HTML characters
         function escapeHTML(str) {
             let div = document.createElement('div');
@@ -211,14 +212,12 @@
 
             let csrfInput = document.createElement('input');
             csrfInput.type = 'hidden';
-            input.name = 'csrf_token';
-            input.value = csrfToken;
-
+            csrfInput.name = 'csrf_token';
+            csrfInput.value = csrfToken;
 
             // Add the input field to the form
             form.appendChild(input);
-            form.appendChild(csrfInput)
-
+            form.appendChild(csrfInput);
 
             // Add the form to the document and submit it
             document.body.appendChild(form);
