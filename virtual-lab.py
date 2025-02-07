@@ -13,7 +13,7 @@ from werkzeug.utils import secure_filename  # for secure file uploads
 from flask_wtf.csrf import CSRFProtect  # Import CSRFProtect
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
-from redis import Redis # Import Redis
+from redis import Redis  # Import Redis
 
 # Load environment variables
 load_dotenv()
