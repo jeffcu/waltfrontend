@@ -105,6 +105,7 @@
             text-align: left;
             font-family: 'Arial', sans-serif;
             line-height: 1.6;
+            white-space: pre-wrap; /* Preserve formatting */
         }
 
         .results h2 {
@@ -189,7 +190,8 @@
 
                 let data = await response.json();
                 if (response.ok) {
-                    displayAnalysisResults(data["Analysis Summary"]); // Use the new function
+                    //displayAnalysisResults(data["Analysis Summary"]); // Use the new function
+                    outputBox.innerHTML = escapeHTML(data["Analysis Summary"]); // Display raw content after escaping
                     // Store the analysis results for download
                     sessionStorage.setItem('analysisResults', data["Analysis Summary"]);
                     document.getElementById("downloadButton").style.display = "block"; // Show the download button
@@ -204,60 +206,7 @@
         }
 
         function displayAnalysisResults(responseText) {
-            let outputBox = document.getElementById("results");
-            outputBox.innerHTML = ""; // Clear the previous content
-
-            // Create an ordered list to display the results
-            let ol = document.createElement("ul"); // change to <ul>
-            ol.style.textAlign = "left";
-
-            let sections = responseText.split(/(?=\n*\d+\.\s)/);
-
-            sections.forEach(section => {
-                section = section.trim();
-
-                if (!section) return;
-
-                const match = section.match(/^(\d+\.\s+)(.*)/);
-
-                if (match) {
-                    const sectionNumber = match[1];
-                    const sectionTitle = match[2].split('\n')[0];
-                    const sectionContent = match[2].substring(sectionTitle.length).trim();
-
-                    let li = document.createElement("li");
-                    li.style.marginBottom = "15px";
-
-                    // Isolate content in a div with a specific class
-                    let contentDiv = document.createElement("div"); // Changed to a div for isolation
-                    contentDiv.className = "result-content";
-                    contentDiv.style.color = "white"; // Force white color
-
-                    let h2 = document.createElement("h2");
-                    h2.textContent = sectionNumber + sectionTitle;
-                    contentDiv.appendChild(h2);  // Append h2 to the div
-
-                    let p = document.createElement("p");
-                    p.textContent = sectionContent;
-                    contentDiv.appendChild(p);  // Append p to the div
-
-                    li.appendChild(contentDiv);  // Append the div to the li
-                    ol.appendChild(li);
-                } else {
-                    let li = document.createElement("li");
-
-                    // Isolate content in a div with a specific class
-                    let contentDiv = document.createElement("div");  // Changed to a div for isolation
-                    contentDiv.className = "result-content";
-                    contentDiv.style.color = "white"; // Force white color
-                    contentDiv.textContent = section;
-
-                    li.appendChild(contentDiv);  // Append the div to the li
-                    ol.appendChild(li);
-                }
-            });
-
-            outputBox.appendChild(ol);
+            // This function is not being used now
         }
 
 
@@ -293,8 +242,8 @@
 
             let csrfInput = document.createElement('input');
             csrfInput.type = 'hidden';
-            csrfInput.name = 'csrf_token';
-            csrfInput.value = csrfToken;
+            input.name = 'csrf_token';
+            input.value = csrfToken;
 
 
             // Add the input field to the form
