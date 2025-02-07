@@ -15,6 +15,8 @@ from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from redis import Redis  # Import Redis
 
+from flask import Flask, request, jsonify, render_template
+
 # Load environment variables
 load_dotenv()
 
@@ -36,7 +38,13 @@ csrf.init_app(app)
 
 # Configure rate limiting
 redis_url = os.environ.get("REDIS_URL", "redis://localhost:6379")
-redis_connection = Redis.from_url(redis_url)
+try:
+    redis_connection = Redis.from_url(redis_url)
+    redis_connection.ping()  # Check redis connection
+    logging.info("Redis connection successful!")
+except Exception as e:
+    logging.error(f"Redis connection failed: {e}")
+    redis_connection = None
 
 limiter = Limiter(
     get_remote_address,
@@ -60,18 +68,20 @@ analysis_service = InvestmentAnalysisService(openai_api_key=openai_api_key)
 def home():
     # Get the rate limit remaining for the current user for the hour
     hourly_limit = limiter.limits[0].limit  # Get the value of the first limit (per hour)
-    rate_limit_key = f"rate_limit:{get_remote_address()}:/analyze:1+hour"
 
-    redis_value = redis_connection.get(rate_limit_key)
-    if redis_value:
-        try:
-            remaining = hourly_limit - int(redis_value.decode('utf-8'))
-        except ValueError:
-            logging.error(f"Non-integer value found in Redis for key {rate_limit_key}: {redis_value}")
-            remaining = hourly_limit  # or handle the error in some other way (e.g., set to 0)
+    if redis_connection:
+        rate_limit_key = f"rate_limit:{get_remote_address()}:/analyze:1+hour"
+        redis_value = redis_connection.get(rate_limit_key)
+        if redis_value:
+            try:
+                remaining = hourly_limit - int(redis_value.decode('utf-8'))
+            except ValueError as e:
+                logging.error(f"Non-integer value found in Redis for key {rate_limit_key}: {redis_value}, {e}")
+                remaining = hourly_limit
+        else:
+            remaining = hourly_limit
     else:
-        remaining = hourly_limit
-
+        remaining = hourly_limit # if redis is not available set the maximum and keep on trucking
     return render_template('gallery.html', rate_limit=f"{int(remaining)}/{hourly_limit}")
 
 ALLOWED_EXTENSIONS = {'pdf'}  # only allow pdf files
