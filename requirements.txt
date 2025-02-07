@@ -8,4 +8,5 @@ weasyprint
 pytest
 pytest-mock
 werkzeug
-Flask-Limiter
+flask-limiter
+redis
