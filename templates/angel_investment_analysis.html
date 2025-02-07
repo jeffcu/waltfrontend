@@ -105,7 +105,6 @@
             text-align: left;
             font-family: 'Arial', sans-serif;
             line-height: 1.6;
-            white-space: pre-wrap; /* Preserve formatting */
         }
 
         .results h2 {
@@ -131,6 +130,12 @@
         .results li .result-content {
             color: white;
             /* Ensure content inside list items is white */
+        }
+
+        .results ul li ul {
+            list-style-type: disc; /* Style for nested list items */
+            padding-left: 30px; /* Indent the bullet points */
+            margin-bottom: 0; /* Remove extra margin */
         }
 
         .download {
@@ -190,8 +195,7 @@
 
                 let data = await response.json();
                 if (response.ok) {
-                    //displayAnalysisResults(data["Analysis Summary"]); // Use the new function
-                    outputBox.innerHTML = escapeHTML(data["Analysis Summary"]); // Display raw content after escaping
+                    displayAnalysisResults(data["Analysis Summary"]); // Use the new function
                     // Store the analysis results for download
                     sessionStorage.setItem('analysisResults', data["Analysis Summary"]);
                     document.getElementById("downloadButton").style.display = "block"; // Show the download button
@@ -206,7 +210,61 @@
         }
 
         function displayAnalysisResults(responseText) {
-            // This function is not being used now
+            let outputBox = document.getElementById("results");
+            outputBox.innerHTML = ""; // Clear the previous content
+
+            // Create an ordered list to display the results
+            let ul = document.createElement("ul"); // Change to unordered list
+            ul.style.textAlign = "left";
+
+            let sections = responseText.split(/(?=\n*\d+\.\s)/);
+
+            sections.forEach(section => {
+                section = section.trim();
+
+                if (!section) return;
+
+                const match = section.match(/^(\d+\.\s+)(.*)/);
+
+                if (match) {
+                    const sectionNumber = match[1];
+                    const sectionTitle = match[2].split('\n')[0];
+                    const sectionContent = match[2].substring(sectionTitle.length).trim();
+
+                    let li = document.createElement("li");
+                    li.style.marginBottom = "15px";
+                    li.style.color = "white"; // Make sure text is white
+
+                    let h2 = document.createElement("h2");
+                    h2.textContent = sectionNumber + sectionTitle;
+                    li.appendChild(h2);
+
+                    // Format bullet points using a nested unordered list
+                    let ulInner = document.createElement("ul");
+                    let bulletPoints = sectionContent.split(/\n- /); // Split by newline followed by "- "
+
+                    bulletPoints.forEach(bulletPoint => {
+                        bulletPoint = bulletPoint.trim();
+                        if (bulletPoint) {
+                            let liInner = document.createElement("li");
+                            liInner.textContent = bulletPoint;
+                            ulInner.appendChild(liInner);
+                        }
+                    });
+
+                    li.appendChild(ulInner);  // Append the inner list to the section's list item
+                    ul.appendChild(li);
+                } else {
+                    let li = document.createElement("li");
+                    li.style.color = "white";
+                    let p = document.createElement("p");
+                    p.textContent = section;
+                    li.appendChild(p);
+                    ul.appendChild(li);
+                }
+            });
+
+            outputBox.appendChild(ul);
         }
 
 
