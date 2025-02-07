@@ -1,6 +1,6 @@
 # Filename: virtual-lab.py
-# Location: virtual-lab.py (relative to root)
-from flask import Flask, request, jsonify, render_template, send_file, abort
+# Location: ./virtual-lab.py (relative to root)
+
 import os
 import logging
 import weasyprint
@@ -62,7 +62,7 @@ def home():
     hourly_limit = limiter.limits[0].limit  # Get the value of the first limit (per hour)
     rate_limit_key = f"rate_limit:{get_remote_address()}:/analyze:1+hour"
 
-    remaining = hourly_limit - (redis_connection.get(rate_limit_key) or 0) # fix type error
+    remaining = hourly_limit - (int(redis_connection.get(rate_limit_key).decode('utf-8')) if redis_connection.get(rate_limit_key) else 0)
 
     return render_template('gallery.html', rate_limit=f"{int(remaining)}/{hourly_limit}")
 
