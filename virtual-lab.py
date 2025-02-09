@@ -1,21 +1,16 @@
 # Filename: virtual-lab.py
-# Location: ./virtual-lab.py (relative to root)
-
+# Location: virtual-lab.py (relative to root)
+from flask import Flask, request, jsonify, render_template, send_file, abort
 import os
 import logging
 import weasyprint
 from io import BytesIO
 from investment_analysis.services import InvestmentAnalysisService
-from investment_analysis.utils import format_pdf_content  # take out, not being used
+from investment_analysis.utils import format_pdf_content # take out, not being used
 from dotenv import load_dotenv
 from PyPDF2 import PdfReader
 from werkzeug.utils import secure_filename  # for secure file uploads
 from flask_wtf.csrf import CSRFProtect  # Import CSRFProtect
-from flask_limiter import Limiter
-from flask_limiter.util import get_remote_address
-from redis import Redis  # Import Redis
-
-from flask import Flask, request, jsonify, render_template
 
 # Load environment variables
 load_dotenv()
@@ -36,24 +31,6 @@ if not os.path.exists(app.config['UPLOAD_FOLDER']):
 csrf = CSRFProtect()
 csrf.init_app(app)
 
-# Configure rate limiting
-redis_url = os.environ.get("REDIS_URL", "redis://localhost:6379")
-try:
-    redis_connection = Redis.from_url(redis_url)
-    redis_connection.ping()  # Check redis connection
-    logging.info("Redis connection successful!")
-except Exception as e:
-    logging.error(f"Redis connection failed: {e}")
-    redis_connection = None
-
-limiter = Limiter(
-    get_remote_address,
-    app=app,
-    default_limits=["200 per day", "50 per hour"],
-    storage_uri=redis_url,  # Make sure to put in Redis URL
-    storage_options={"socket_connect_timeout": 30, "socket_timeout": 30}
-)
-
 # Initialize InvestmentAnalysisService (pass API key)
 openai_api_key = os.environ.get("OPENAI_API_KEY")
 if not openai_api_key:
@@ -66,23 +43,8 @@ analysis_service = InvestmentAnalysisService(openai_api_key=openai_api_key)
 # Home route redirecting to the gallery page
 @app.route('/')
 def home():
-    # Get the rate limit remaining for the current user for the hour
-    hourly_limit = limiter.limits[0].limit  # Get the value of the first limit (per hour)
+    return render_template('gallery.html')
 
-    if redis_connection:
-        rate_limit_key = f"rate_limit:{get_remote_address()}:/analyze:1+hour"
-        redis_value = redis_connection.get(rate_limit_key)
-        if redis_value:
-            try:
-                remaining = hourly_limit - int(redis_value.decode('utf-8'))
-            except ValueError as e:
-                logging.error(f"Non-integer value found in Redis for key {rate_limit_key}: {redis_value}, {e}")
-                remaining = hourly_limit
-        else:
-            remaining = hourly_limit
-    else:
-        remaining = hourly_limit # if redis is not available set the maximum and keep on trucking
-    return render_template('gallery.html', rate_limit=f"{int(remaining)}/{hourly_limit}")
 
 ALLOWED_EXTENSIONS = {'pdf'}  # only allow pdf files
 
@@ -105,11 +67,39 @@ def extract_text_from_pdf(file):
 # Route to render the angel investment analysis page
 @app.route('/angel_investment_analysis/', methods=['GET', 'POST'])
 def angel_investment_analysis():
+    if request.method == 'POST':
+        try:
+            user_input = request.form.get('meta_instructions', '') + " " + request.form.get('user_query', '')
+            file = request.files.get('file_upload')
+
+            if file and file.filename != '':
+                if not allowed_file(file.filename):
+                    return render_template('angel_investment_analysis.html',
+                                           analysis_result="Invalid file type. Only PDF files are allowed.")
+
+                extracted_text = extract_text_from_pdf(file)
+                user_input += " " + extracted_text
+
+            if not user_input.strip():
+                return render_template('angel_investment_analysis.html', analysis_result="No content provided")
+
+            analysis_result = analysis_service.analyze_investment(user_input)
+
+            return render_template('angel_investment_analysis.html', analysis_result=analysis_result)
+
+        except ValueError as e:
+            logging.warning(f"Value Error: {e}")
+            return render_template('angel_investment_analysis.html', analysis_result=str(e))
+        except Exception as e:
+            logging.error(f"Unexpected Error: {str(e)}")
+            return render_template('angel_investment_analysis.html',
+                                   analysis_result=f"An unexpected error occurred: {str(e)}")
+
     return render_template('angel_investment_analysis.html', analysis_result=None)
+
 
 # Route for handling AJAX API call
 @app.route('/analyze', methods=['POST'])
-@limiter.limit("10 per minute")  # Apply rate limit to the /analyze route
 def analyze():
     try:
         user_input = request.form.get('meta_instructions', '') + " " + request.form.get('user_query', '')
@@ -191,10 +181,6 @@ def api_test_window():
 def bad_request(e):
     return jsonify(error=str(e)), 400
 
-
-@app.errorhandler(429)
-def ratelimit_handler(e):
-    return jsonify({"error": "Rate limit exceeded. Please try again later."}), 429
 
 @app.errorhandler(500)
 def internal_server_error(e):
