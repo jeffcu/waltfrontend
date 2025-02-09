@@ -178,8 +178,8 @@ def api_test_window():
 # New route to display images from /static/images/jeffsart
 @app.route('/jeffsart/<filename>')
 def jeffsart_image(filename):
-    image_path = os.path.join('static', 'images', 'jeffsart', filename)
-    if os.path.isfile(image_path):
+    image_path = os.path.join('images', 'jeffsart', filename) # Corrected line
+    if os.path.isfile(os.path.join('static', image_path)):
         return render_template('jeffsart_image.html', image_path=image_path)
     else:
         abort(404)
