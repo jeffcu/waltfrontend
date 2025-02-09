@@ -175,6 +175,15 @@ def download_report():
 def api_test_window():
     return render_template('api_test_window.html')
 
+# New route to display images from /static/images/jeffsart
+@app.route('/jeffsart/<filename>')
+def jeffsart_image(filename):
+    image_path = os.path.join('static', 'images', 'jeffsart', filename)
+    if os.path.isfile(image_path):
+        return render_template('jeffsart_image.html', image_path=image_path)
+    else:
+        abort(404)
+
 
 # Error handlers
 @app.errorhandler(400)

@@ -1,3 +1,5 @@
+<!-- Filename: gallery.html -->
+<!-- Location: templates/gallery.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -123,6 +125,14 @@
                 alert("Popup blocked! Please allow popups for this site.");
             }
         }
+
+        function openJeffsArt(imageName) {
+            let newWindow = window.open("/jeffsart/" + imageName, "JeffsArtWindow");
+
+            if (!newWindow) {
+                alert("Popup blocked! Please allow popups for this site.");
+            }
+        }
     </script>
 </head>
 <body>
@@ -143,7 +153,15 @@
                 <a href="#" onclick="openTestWindow()">API Test</a>
             </div>
 
-            {% for i in range(14) %}
+            <!-- New JeffsArt Button -->
+            <div class="project-tile">
+                <img src="static/icons/blue-button.jpeg" alt="Jeff's Art">
+                <h3>Jeff's Art</h3>
+                <p>View Jeff's artistic creations.</p>
+                <a href="#" onclick="openJeffsArt('racecars.jpeg')">View Art</a>
+            </div>
+
+            {% for i in range(13) %}
             <div class="project-tile">
                 <img src="static/icons/red-button.jpeg" alt="Placeholder Project">
                 <h3>Placeholder Project {{ i + 3 }}</h3>
