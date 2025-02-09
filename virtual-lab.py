@@ -179,7 +179,10 @@ def api_test_window():
 @app.route('/jeffsart/<filename>')
 def jeffsart_image(filename):
     image_path = os.path.join('images', 'jeffsart', filename) # Corrected line
-    if os.path.isfile(os.path.join('static', image_path)):
+    full_path = os.path.join('static', image_path)
+    logging.info(f"Image path: {image_path}")  # Log the relative path
+    logging.info(f"Full path: {full_path}")  # Log the absolute path
+    if os.path.isfile(full_path):
         return render_template('jeffsart_image.html', image_path=image_path)
     else:
         abort(404)
