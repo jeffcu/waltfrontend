@@ -139,26 +139,28 @@
     <div class="container">
         <h1>Jeff Virtual Lab</h1>
         <div class="gallery">
+
+            <!-- Jeff's Art Button -->
             <div class="project-tile">
-                <img src="static/icons/green-button.jpeg" alt="Active Application">
-                <h3>Angel Investment Analysis</h3>
-                <p>Analyze startup companies and generate insightful reports.</p>
-                <a href="/angel_investment_analysis">Launch Project</a>
+                <img src="static/icons/green-button.jpeg" alt="Jeff's Art">
+                <h3>Jeff's Art</h3>
+                <p>View Jeff's artistic creations.</p>
+                <a href="#" onclick="openJeffsArt('racecars.jpeg')">View Art</a>
             </div>
 
             <div class="project-tile">
-                <img src="static/icons/amber-button.jpeg" alt="API Test">
+                <img src="static/icons/green-button.jpeg" alt="API Test">
                 <h3>API Test</h3>
                 <p>Check API connection and response.</p>
                 <a href="#" onclick="openTestWindow()">API Test</a>
             </div>
 
-            <!-- New JeffsArt Button -->
+           <!-- GPT Prototype Button -->
             <div class="project-tile">
-                <img src="static/icons/amber-button.jpeg" alt="Jeff's Art">
-                <h3>Jeff's Art</h3>
-                <p>View Jeff's artistic creations.</p>
-                <a href="#" onclick="openJeffsArt('racecars.jpeg')">View Art</a>
+                <img src="static/icons/amber-button.jpeg" alt="GPT Prototype">
+                <h3>GPT Prototype</h3>
+                <p>Marshall inputs to ChatGPT</p>
+                <a href="/angel_investment_analysis">Launch Project</a>
             </div>
 
             {% for i in range(13) %}
