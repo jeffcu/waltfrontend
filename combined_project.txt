@@ -1,0 +1,1768 @@
+
+
+--- FILE: test_openai.py ---
+
+from flask import Blueprint, request, jsonify
+import openai
+import logging
+
+api_test_bp = Blueprint('api_test', __name__)
+logging.basicConfig(level=logging.DEBUG)
+
+def format_api_response(response_text):
+    """Format response for structured readability."""
+    formatted_text = response_text.replace("**", "")  # Remove double asterisks
+    formatted_text = formatted_text.replace("\n", "<br>")  # Line breaks
+    formatted_text = formatted_text.replace("- ", "<li>") + "</li>"  # Bullets
+    formatted_text = formatted_text.replace("1. ", "<li><strong>1.</strong> ") + "</li>"  # Numbering
+    return f"<strong>Analysis Report:</strong><br><ul>{formatted_text}</ul>"
+
+@api_test_bp.route('/api_test', methods=['POST'])
+def api_test():
+    """Handles OpenAI API requests for the API Test popup."""
+    data = request.json
+    user_query = data.get('query', 'Who invented velcro?')
+
+    if not user_query.strip():
+        return jsonify({"response": "Error: Query is empty"}), 400
+
+    try:
+        client = openai.Client()
+        response = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": "You are an API testing assistant."},
+                {"role": "user", "content": user_query}
+            ]
+        )
+        api_response = response.choices[0].message.content.strip()
+        return jsonify({"response": format_api_response(api_response)})  # Apply formatting
+    except Exception as e:
+        logging.error(f"OpenAI API call failed: {str(e)}")
+        return jsonify({"response": f"Error: {str(e)}"}), 500
+
+
+--- FILE: combine.py ---
+
+import os
+import mimetypes
+
+def combine_files(base_directory, output_file):
+    """Combines specific file types, excluding the .venv directory,
+       and lists static files in the static directory."""
+
+    text_extensions = ['.py', '.html', '.txt', '.env', '.json', '.css', '.js', '.xml', 'Procfile']
+    static_dir = "static"
+    venv_dir = ".venv"  # Name of your virtual environment directory
+
+    static_files = []
+    with open(output_file, 'w', encoding='utf-8') as outfile:
+        # Traverse the entire directory tree
+        for root, _, files in os.walk(base_directory):
+            for filename in files:
+                filepath = os.path.join(root, filename) # Correct file path
+
+                relative_path = os.path.relpath(filepath, base_directory) # Relative to project root
+                root_path = os.path.relpath(root, base_directory)
+                #filename=os.path.basename(filepath) #Get File Name #Unnecessary now
+
+                # Skip .git directory, and .venv directory
+                if '.git' in relative_path.split(os.sep) or venv_dir in root_path.split(os.sep):
+                    continue
+
+                _, ext = os.path.splitext(filename) #Get extension
+                if ext in text_extensions or filename == 'Procfile':
+                    try:
+                        with open(filepath, 'r', encoding='utf-8') as infile:
+                            content = infile.read()
+                            outfile.write(f"\n\n--- FILE: {relative_path} ---\n\n")
+                            outfile.write(content)
+                    except Exception as e:
+                        print(f"Error reading {filepath}: {e}")
+                # Handle static files if the file is directly under static, or a folder under static
+                elif static_dir in relative_path.split(os.sep):
+                    # Handle static files
+                    file_mime_type, _ = mimetypes.guess_type(filepath)
+                    static_files.append((relative_path, file_mime_type or 'unknown'))
+
+        # Write the list of static files to the end of the output file
+        outfile.write("\n\n--- STATIC FILES ---\n\n")
+        for path, mime_type in static_files:
+            outfile.write(f"File: {path}, Mime Type: {mime_type}\n")
+
+
+if __name__ == "__main__":
+    base_directory = "."  # Project Root - where the script runs
+    output_file = "combined_project.txt"
+    combine_files(base_directory, output_file)
+    print(f"Combined files into {output_file}")
+
+
+--- FILE: combined_project.txt ---
+
+
+
+--- FILE: requirements.txt ---
+
+gunicorn
+openai>=1.0.0
+Flask
+flask-wtf
+python-dotenv
+PyPDF2
+weasyprint
+pytest
+pytest-mock
+werkzeug
+flask-limiter
+redis
+
+
+--- FILE: runtime.txt ---
+
+python-3.11.2
+
+--- FILE: virtual-lab.py ---
+
+# Filename: virtual-lab.py
+# Location: virtual-lab.py (relative to root)
+from flask import Flask, request, jsonify, render_template, send_file, abort
+import os
+import logging
+import weasyprint
+from io import BytesIO
+from investment_analysis.services import InvestmentAnalysisService
+from investment_analysis.utils import format_pdf_content # take out, not being used
+from dotenv import load_dotenv
+from PyPDF2 import PdfReader
+from werkzeug.utils import secure_filename  # for secure file uploads
+from flask_wtf.csrf import CSRFProtect  # Import CSRFProtect
+from walt.walt import walt_bp  # Import the walt blueprint
+
+# Load environment variables
+load_dotenv()
+
+# Setup logging
+logging.basicConfig(level=logging.DEBUG)
+
+app = Flask(__name__)
+app.config['UPLOAD_FOLDER'] = 'uploads'  # Create an uploads folder
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max upload size
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'a_very_secret_key')  # Set a secret key for CSRF
+
+# Create the uploads folder if it doesn't exist
+if not os.path.exists(app.config['UPLOAD_FOLDER']):
+    os.makedirs(app.config['UPLOAD_FOLDER'])
+
+# Initialize CSRF protection
+csrf = CSRFProtect()
+csrf.init_app(app)
+
+# Initialize InvestmentAnalysisService (pass API key)
+openai_api_key = os.environ.get("OPENAI_API_KEY")
+if not openai_api_key:
+    logging.error("OPENAI_API_KEY not set in environment variables.")
+    raise ValueError("OPENAI_API_KEY not set.  Please configure.")
+
+analysis_service = InvestmentAnalysisService(openai_api_key=openai_api_key)
+
+
+# Home route redirecting to the gallery page
+@app.route('/')
+def home():
+    return render_template('gallery.html')
+
+
+ALLOWED_EXTENSIONS = {'pdf'}  # only allow pdf files
+
+
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
+def extract_text_from_pdf(file):
+    try:
+        reader = PdfReader(file)
+        extracted_text = " ".join([page.extract_text() for page in reader.pages if page.extract_text()])
+        return extracted_text
+    except Exception as e:
+        logging.error(f"Error extracting text from PDF: {str(e)}")
+        raise ValueError("Error extracting text from PDF.  Ensure it's a valid PDF.") from e
+
+
+# Route to render the angel investment analysis page
+@app.route('/angel_investment_analysis/', methods=['GET', 'POST'])
+def angel_investment_analysis():
+    if request.method == 'POST':
+        try:
+            user_input = request.form.get('meta_instructions', '') + " " + request.form.get('user_query', '')
+            file = request.files.get('file_upload')
+
+            if file and file.filename != '':
+                if not allowed_file(file.filename):
+                    return render_template('angel_investment_analysis.html',
+                                           analysis_result="Invalid file type. Only PDF files are allowed.")
+
+                extracted_text = extract_text_from_pdf(file)
+                user_input += " " + extracted_text
+
+            if not user_input.strip():
+                return render_template('angel_investment_analysis.html', analysis_result="No content provided")
+
+            analysis_result = analysis_service.analyze_investment(user_input)
+
+            return render_template('angel_investment_analysis.html', analysis_result=analysis_result)
+
+        except ValueError as e:
+            logging.warning(f"Value Error: {e}")
+            return render_template('angel_investment_analysis.html', analysis_result=str(e))
+        except Exception as e:
+            logging.error(f"Unexpected Error: {str(e)}")
+            return render_template('angel_investment_analysis.html',
+                                   analysis_result=f"An unexpected error occurred: {str(e)}")
+
+    return render_template('angel_investment_analysis.html', analysis_result=None)
+
+
+# Route for handling AJAX API call
+@app.route('/analyze', methods=['POST'])
+def analyze():
+    try:
+        user_input = request.form.get('meta_instructions', '') + " " + request.form.get('user_query', '')
+        file = request.files.get('file_upload')
+
+        if file and file.filename != '':
+            if not allowed_file(file.filename):
+                return jsonify({"Analysis Summary": "Invalid file type. Only PDF files are allowed."})
+
+            extracted_text = extract_text_from_pdf(file)
+            user_input += " " + extracted_text
+
+        if not user_input.strip():
+            return jsonify({"Analysis Summary": "No content provided"})
+
+        analysis_result = analysis_service.analyze_investment(user_input)
+        logging.info(f"API Response: {analysis_result}")
+        return jsonify({"Analysis Summary": analysis_result})
+
+    except ValueError as e:
+        logging.warning(f"Value Error: {e}")
+        return jsonify({"Analysis Summary": str(e)})
+
+    except Exception as e:
+        logging.error(f"Unexpected Error: {str(e)}")
+        return jsonify({"Analysis Summary": f"An unexpected error occurred: {str(e)}"})
+
+
+# Route to generate and download PDF report
+@app.route('/download_report', methods=['POST'])
+def download_report():
+    summary_data = request.form.get('summaryData')
+
+    if not summary_data:
+        logging.error("No summary data received for PDF generation.")
+        abort(400, description="No summary data provided")
+
+    logging.info(f"Generating PDF with summary: {summary_data[:200]}...")
+
+    html_content = f"""
+    <!DOCTYPE html>
+    <html>
+        <head>
+            <title>Angel Investment Analysis Summary</title>
+            <style>
+                body {{ font-family: 'Arial', sans-serif; padding: 20px; }}
+                h1 {{ color: #2D9CDB; font-size: 24px; text-align: center; }}
+                pre {{ white-space: pre-wrap; word-break: break-word; font-family: 'Arial', sans-serif; }} /* Use pre tag to preserve formatting */
+            </style>
+        </head>
+        <body>
+            <h1>Angel Investment Analysis Summary</h1>
+            <pre>{summary_data}</pre>  <!-- Display the raw summary data -->
+        </body>
+    </html>
+    """
+
+    try:
+        pdf = BytesIO(weasyprint.HTML(string=html_content).write_pdf())  # using BytesIO to handle binary data
+        return send_file(
+            pdf,
+            as_attachment=True,
+            download_name="investment_report.pdf",
+            mimetype='application/pdf'
+        )
+    except Exception as e:
+        logging.error(f"PDF generation failed: {str(e)}")
+        abort(500, description=f"PDF generation failed: {str(e)}")
+
+
+# New route to serve static API testing window
+@app.route('/api_test_window')
+def api_test_window():
+    return render_template('api_test_window.html')
+
+# New route to display images from /static/images/jeffsart
+@app.route('/jeffsart/<filename>')
+def jeffsart_image(filename):
+    image_path = os.path.join('images', 'jeffsart', filename) # Corrected line
+    full_path = os.path.join('static', image_path)
+    logging.info(f"Image path: {image_path}")  # Log the relative path
+    logging.info(f"Full path: {full_path}")  # Log the absolute path
+    if os.path.isfile(full_path):
+        return render_template('jeffsart_image.html', image_path=image_path)
+    else:
+        abort(404)
+
+
+# Error handlers
+@app.errorhandler(400)
+def bad_request(e):
+    return jsonify(error=str(e)), 400
+
+
+@app.errorhandler(500)
+def internal_server_error(e):
+    return jsonify(error=str(e)), 500
+
+# Register the walt blueprint
+app.register_blueprint(walt_bp)
+
+
+# Fix for Heroku: Bind to PORT
+if __name__ == '__main__':
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port, debug=True)  # Debug mode for development
+
+
+--- FILE: walt_prompt.txt ---
+
+Personality: You are a gifted interviewer and biographer.  You ask insightful probing questions that lead you to insights about a person and what's made their life experiences unique and led them to be the unique person they are today.   But get to the bottom of their story quickly, keep them interested and engaged at all times.   With their responses you craft a true story about the unique person and what they share with the world.   You are not afraid of tough questions to uncover what makes someone tick.  You are charming to people with genuine interest in them and an easy engaging southern style.
+
+As an world-class interviewer and biographer, you embody the best qualities of renowned figures like Oprah Winfrey, David Frost, Terry Gross, Walter Isaacson, and Barbara Walters. You always blend of empathy, meticulous research ability, excellent listening skills, adaptability, compelling storytelling, intellectual curiosity, unwavering integrity and ethics, exceptional communication skills, cultural and social awareness, and patience and perseverance.
+
+Your role is to uncover, reveal and illustratively document what you learned.  You are 90% about active listening and 10% talking.   But figure out the story and ask questions that fill it in a cleverly and truthfully as possible.
+
+You operate in two Modes.  Autobiography Mode and Biography Mode
+You always ask the users which mode they want to work within and then you stay true to that chosen mode until the user asks you to stop.
+
+Autobiography Mode: operate  in a systematic slow style that can span many sessions.   Capture all the content with metadata.   Visualize a scene where this interviewer is engaging with a notable figure across multiple sessions. Each session unravels layers of the subject's life, thoughts, and experiences, with the interviewer demonstrating a deep connection and understanding, encouraging candid and profound revelations. The interviewer's approach is both empathetic and probing, ensuring a comfortable yet revealing dialogue.
+
+Autobiography mode: you start with an outline that you agree to with the user.   You keep that outline in memory and always refer to it to keep the biography moving.
+
+Biography Mode: You operate in a single session.   The person you are interviewing will share information about a third person.   Quickly gather key moments and memories about the 3rd party.   Turn that into a straightforward story of a persons key moments in life, weddings, children, big moments in their lives.   Always get the name of the 3rd person and how the interviewee is acquainted with them.   Your goal is to ask 10 questions and then produce a 12-15 section outline that summarizings the persons life in a thoughtful, truthful and fond way.
+
+Biography Mode: You can be purposeful and to the point.   Don't waste time.   Be succinct.
+
+Process: You ask one insightful question at a time to provoke an answer that reveals something unique and special about a person and then ask successive questions about how that person became special in that way.   Only ask one question at a time.   When you respond, do not repeat what I said.   Always be brief.   Ask provocative, open-ended questions that reveal the person that is the subject.  For example, What one thing do you/they want to be remembered for?
+
+
+--- FILE: Procfile ---
+
+web: gunicorn virtual-lab:app
+
+--- FILE: virtual-lab 01.14.py ---
+
+import os
+from flask import Flask, request, render_template, send_file
+from dotenv import load_dotenv
+from weasyprint import HTML
+import re
+import unicodedata
+
+# Load environment variables
+load_dotenv()
+
+# Initialize Flask application
+app = Flask(__name__)
+app.config['UPLOAD_FOLDER'] = 'uploads'  # Folder to store uploaded files
+os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+
+# Application version
+APP_VERSION = "0.1.14"
+
+def sanitize_text(text):
+    """Sanitize text to remove unwanted characters."""
+    text = unicodedata.normalize('NFKD', text)
+    return re.sub(r'[“”]', '"', text).replace("\u2022", "-").strip()
+
+def generate_pdf(content, filename="output.pdf"):
+    """Generate a styled PDF from HTML content."""
+    pdf_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+
+    # Properly formatted HTML content without f-strings
+    html_content = (
+        "<!DOCTYPE html>"
+        "<html lang='en'>"
+        "<head>"
+        "<style>"
+        "body { font-family: Arial, sans-serif; line-height: 1.6; margin: 1in; }"
+        "h1 { text-align: center; color: #0073e6; }"
+        "h2 { color: #333; margin-top: 20px; font-weight: bold; }"
+        "p, li { font-size: 12pt; color: #555; }"
+        "ul { margin-left: 20px; padding-left: 20px; list-style-type: disc; }"
+        "ul li { margin-bottom: 10px; }"
+        ".footer { margin-top: 20px; text-align: center; font-size: 10pt; color: #777; }"
+        "</style>"
+        "</head>"
+        "<body>"
+        "<h1>Analysis Report</h1>"
+        "<div>" + content.replace("\n", "<br>") + "</div>"
+        "<div class='footer'>Generated by Jeff's AI Workshop - Version " + APP_VERSION + "</div>"
+        "</body>"
+        "</html>"
+    )
+
+    HTML(string=html_content).write_pdf(pdf_path)
+    return pdf_path
+
+@app.route('/', methods=['GET', 'POST'])
+def home():
+    """Render the main interface."""
+    inputs = {}
+    api_response = ""
+    error = ""
+
+    # Default input values
+    default_meta_instructions = "You're an expert at understanding startup companies. You can summarize them quickly."
+    default_user_query = "Tell me about this company and its market. Summarize the company name and what other information you can determine from the provided passed information from their presentation."
+
+    if request.method == 'POST':
+        try:
+            # Get form inputs
+            meta_instructions = request.form.get('meta_instructions', default_meta_instructions).strip()
+            user_query = request.form.get('user_query', default_user_query).strip()
+
+            # Collect inputs
+            inputs = {
+                "Meta Instructions": meta_instructions,
+                "User Query": user_query
+            }
+
+            # Mock API response (replace with actual API call)
+            api_response = (
+                "Company Name: M&R Technology, Inc. - Infinity Shield\n"
+                "Market: Residential garage safety sensors in North America\n"
+                "Key Points:\n"
+                "- Developed the first full-coverage safety sensor for every garage in North America\n"
+                "- Addresses a $1 billion annual problem of car and door damage\n"
+                "- Features advanced technology with patented solutions\n"
+                "- No competing residential sensor in the market\n"
+                "- Strong barriers against competitors\n"
+                "- Business model includes direct-to-consumer sales, professional installers/distributors, and partnerships with insurance companies\n"
+                "- Sales projections include revenue of $168M and profit of $110M over five years\n"
+                "- Team includes experienced founders and key team members\n"
+                "- Seeking funding of $250k - $1M\n"
+            )
+
+        except Exception as e:
+            error = str(e)
+
+    return render_template('index.html', inputs=inputs, api_response=api_response, error=error, app_version=APP_VERSION)
+
+@app.route('/download', methods=['POST'])
+def download_pdf():
+    """Generate and download a PDF of the API response."""
+    try:
+        # Get API response
+        api_response = request.form.get('api_response', '')
+
+        # Generate PDF
+        filename = "analysis_report.pdf"
+        pdf_path = generate_pdf(api_response, filename=filename)
+
+        return send_file(pdf_path, as_attachment=True, download_name=filename)
+    except Exception as e:
+        return f"Error generating PDF: {str(e)}"
+
+if __name__ == '__main__':
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port)
+
+
+--- FILE: icon_config.json ---
+
+{
+    "Angel Investment Analysis": "dewar-flask.jpeg",
+    "Coming Soon App 1": "amber-button.jpeg",
+    "Coming Soon App 2": "amber-button.jpeg",
+    "Coming Soon App 3": "amber-button.jpeg"
+}
+
+
+--- FILE: tests/test-services.py ---
+
+import unittest
+from unittest.mock import patch
+from investment_analysis.services import InvestmentAnalysisService
+import pytest
+
+class TestInvestmentAnalysisService(unittest.TestCase):
+
+    @patch('investment_analysis.services.openai.Client')  # Mock the OpenAI client
+    def test_analyze_investment_success(self, mock_openai_client):
+        # Configure the mock to return a specific response
+        mock_response = type('obj', (object,), {'choices': [type('obj', (object,), {'message': type('obj', (object,), {'content': 'Mock analysis'})})]})
+        mock_openai_client.return_value.chat.completions.create.return_value = mock_response
+
+        service = InvestmentAnalysisService(openai_api_key="dummy_key")
+        result = service.analyze_investment("Test input")
+        self.assertEqual(result, "Mock analysis")
+
+    @patch('investment_analysis.services.openai.Client')
+    def test_analyze_investment_api_error(self, mock_openai_client):
+        # Configure the mock to raise an exception
+        mock_openai_client.return_value.chat.completions.create.side_effect = Exception("API error")
+
+        service = InvestmentAnalysisService(openai_api_key="dummy_key")
+        with self.assertRaises(ValueError) as context:
+            service.analyze_investment("Test input")
+        self.assertTrue("API error" in str(context.exception))
+
+
+--- FILE: investment_analysis/services.py ---
+
+import openai
+import logging
+import os
+
+class InvestmentAnalysisService:
+    def __init__(self, openai_api_key=None):
+        self.openai_api_key = openai_api_key or os.environ.get("OPENAI_API_KEY")
+        if not self.openai_api_key:
+            raise ValueError("OpenAI API key is required. Set OPENAI_API_KEY environment variable or pass it to the constructor.")
+        self.client = openai.Client(api_key=self.openai_api_key)
+        self.system_prompt = "You are an expert on startup investment analysis."
+
+    def analyze_investment(self, user_input):
+        try:
+            response = self.client.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=[
+                    {"role": "system", "content": self.system_prompt},
+                    {"role": "user", "content": user_input}
+                ]
+            )
+            return response.choices[0].message.content.strip()
+        except openai.APIConnectionError as e:
+            logging.error(f"API Connection Error: {e}")
+            raise ValueError("Could not connect to the OpenAI API. Please check your internet connection.") from e
+        except openai.RateLimitError as e:
+            logging.error(f"Rate Limit Error: {e}")
+            raise ValueError("OpenAI API rate limit exceeded. Please try again later.") from e
+        except Exception as e:
+            logging.error(f"OpenAI API call failed: {str(e)}")
+            raise ValueError(f"OpenAI API call failed: {str(e)}") from e
+
+
+--- FILE: investment_analysis/utils.py ---
+
+def format_response(response_text):
+    """
+    Format API response for readability in the web UI.
+    - Uses numbered sections (1., 2., 3.).
+    - Each section has a subtitle, then a line break, then the content.
+    """
+    formatted_text = response_text.replace("**", "").replace("\n", "<br><br>")
+    formatted_text = formatted_text.replace("1. ", "<strong>1. </strong>")
+    formatted_text = formatted_text.replace("2. ", "<strong>2. </strong>")
+    formatted_text = formatted_text.replace("3. ", "<strong>3. </strong>")
+    formatted_text = formatted_text.replace("4. ", "<strong>4. </strong>")
+    formatted_text = formatted_text.replace("5. ", "<strong>5. </strong>")
+
+    return f"<strong>Analysis Report:</strong><br>{formatted_text}"
+
+def format_pdf_content(summary_data):
+    """
+    Format content for structured PDF output.
+    - Uses numbered sections (1., 2., 3.).
+    - Ensures section numbers are followed by subtitles and content.
+    - Sections are spaced out for readability.
+    """
+    formatted_text = summary_data.replace("**", "")
+    formatted_text = formatted_text.replace("\n\n", "<br><br>")
+    formatted_text = formatted_text.replace("1. ", "<div class='section'><span class='section-number'>1.</span> <span class='subtitle'>Introduction</span><br><div class='content'>")
+    formatted_text = formatted_text.replace("2. ", "</div><div class='section'><span class='section-number'>2.</span> <span class='subtitle'>Market Analysis</span><br><div class='content'>")
+    formatted_text = formatted_text.replace("3. ", "</div><div class='section'><span class='section-number'>3.</span> <span class='subtitle'>Financial Overview</span><br><div class='content'>")
+    formatted_text = formatted_text.replace("4. ", "</div><div class='section'><span class='section-number'>4.</span> <span class='subtitle'>Competitive Landscape</span><br><div class='content'>")
+    formatted_text = formatted_text.replace("5. ", "</div><div class='section'><span class='section-number'>5.</span> <span class='subtitle'>Conclusion</span><br><div class='content'>")
+
+    return formatted_text + "</div>"
+
+
+--- FILE: walt/walt.py ---
+
+# walt/walt.py
+
+from flask import Blueprint, render_template
+
+walt_bp = Blueprint('walt', __name__, template_folder='templates')
+
+@walt_bp.route('/walt')
+def walt_window():
+    return render_template('walt_window.html')
+
+
+--- FILE: walt/template/walt_window.html ---
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Walt Wants to Write Your Story!</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            text-align: center;
+            padding: 20px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h1>Walt Wants to Write Your Story!</h1>
+    <button onclick="window.close()">Close Window</button>
+</body>
+</html>
+
+
+--- FILE: templates/index.html ---
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jeff's Virtual Lab</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            background-color: #fef9f3;
+            color: #4b3b2b;
+        }
+
+        header {
+            background-color: #005f73;
+            color: white;
+            padding: 1rem 0;
+            text-align: center;
+        }
+
+        main {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 1rem;
+        }
+
+        .nav {
+            margin-top: 1.5rem;
+        }
+
+        .nav a {
+            text-decoration: none;
+            color: #005f73;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+
+        .nav a:hover {
+            text-decoration: underline;
+        }
+
+        .form-section {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: bold;
+            color: #4b3b2b;
+        }
+
+        input[type="text"], textarea, input[type="file"] {
+            width: calc(100% - 10px);
+            padding: 0.75rem;
+            margin-left: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 1rem;
+            background-color: #fffdf9;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        button {
+            background-color: #94d2bd;
+            color: #1b4332;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            margin-bottom: 1rem;
+            width: 100%;
+        }
+
+        button:hover {
+            background-color: #65a39f;
+        }
+
+        .button-group {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            justify-content: center;
+        }
+
+        .summary-results {
+            margin: 1rem 0;
+            padding: 1rem;
+            border: 1px solid #ddd;
+            background-color: #a2d2ff;
+            border-radius: 4px;
+        }
+
+        .summary-results h3 {
+            margin: 0 0 0.5rem 0;
+            color: #005f73;
+        }
+
+        .output {
+            margin-top: 2rem;
+            padding: 1rem;
+            background: #ede0d4;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Jeff's Virtual Lab</h1>
+    </header>
+    <main>
+        <div class="nav">
+            <a href="{{ url_for('gallery') }}">&larr; Back to Gallery</a>
+        </div>
+        <h2>Angel Investment Analysis</h2>
+        <form method="POST" action="{{ url_for('angel_investment_analysis') }}" enctype="multipart/form-data">
+            <div class="form-section">
+                <label for="meta_instructions">Meta Instructions:</label>
+                <textarea id="meta_instructions" name="meta_instructions">You're an expert at understanding startup companies. You can summarize them quickly.</textarea>
+            </div>
+            <div class="form-section">
+                <label for="user_query">User Query:</label>
+                <textarea id="user_query" name="user_query">Tell me about this company and its market. Summarize the company name and what other information you can determine from the provided passed information from their presentation.</textarea>
+            </div>
+            <div class="form-section">
+                <label for="file_upload">Upload File:</label>
+                <input type="file" id="file_upload" name="file_upload">
+            </div>
+
+            <div class="button-group">
+                <button type="submit">Step 1: Analyze</button>
+                <div class="summary-results">
+                    <h3>Summary Results:</h3>
+                    <p>(Results will display here after analysis)</p>
+                </div>
+                <button formaction="{{ url_for('download_report') }}" type="submit">Step 2: Generate Report</button>
+            </div>
+        </form>
+
+        {% if analysis_result %}
+        <div class="output">
+            <h2>Analysis Result:</h2>
+            <pre>{{ analysis_result }}</pre>
+        </div>
+        {% endif %}
+
+        {% if error %}
+        <div class="output">
+            <h2>Error:</h2>
+            <pre>{{ error }}</pre>
+        </div>
+        {% endif %}
+    </main>
+    <footer>
+        <p>Jeff's Virtual Lab &copy; 2025 | Version {{ app_version }}</p>
+    </footer>
+</body>
+</html>
+
+
+--- FILE: templates/index old.html ---
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jeff's AI Workshop - Angel Investor</title>
+    <style>
+        body {
+            background-color: #00274d;
+            font-family: 'Courier New', Courier, monospace;
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 800px;
+            background-color: #003366;
+            border: 5px solid #f9c74f;
+            border-radius: 15px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+            padding: 20px;
+            overflow: auto;
+        }
+
+        h1 {
+            font-size: 2rem;
+            text-align: center;
+            color: #f9c74f;
+            margin-bottom: 20px;
+        }
+
+        textarea, input[type="file"], input[type="submit"] {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 1rem;
+            border: 2px solid #8d99ae;
+            border-radius: 5px;
+            background-color: #00274d;
+            color: #ffffff;
+        }
+
+        textarea {
+            resize: vertical;
+            height: 100px;
+        }
+
+        input[type="submit"] {
+            background-color: #f9c74f;
+            color: #00274d;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        input[type="submit"]:hover {
+            background-color: #d6a92c;
+        }
+
+        .response-container {
+            margin-top: 20px;
+            background-color: #00509e;
+            border: 2px solid #f9c74f;
+            border-radius: 10px;
+            padding: 15px;
+            color: #ffffff;
+        }
+
+        .response-title {
+            font-weight: bold;
+            color: #f9c74f;
+        }
+
+        .error {
+            color: red;
+            font-weight: bold;
+            text-align: center;
+            margin-top: 10px;
+        }
+
+        .status-messages {
+            margin-top: 15px;
+            background-color: #004080;
+            border: 2px solid #f9c74f;
+            border-radius: 10px;
+            padding: 10px;
+        }
+
+        .status-message {
+            margin: 5px 0;
+            font-size: 0.9rem;
+        }
+
+        .loading {
+            text-align: center;
+            color: #f9c74f;
+            font-weight: bold;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+    </style>
+    <script>
+        function showLoading() {
+            const loading = document.getElementById('loading');
+            loading.style.display = 'block';
+        }
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h1>Jeff's AI Workshop - Angel Investor</h1>
+        <p style="font-size: 0.9rem; color: #d6a92c; text-align: center;">Version {{ app_version }}</p>
+        <form method="post" action="/" enctype="multipart/form-data" onsubmit="showLoading()">
+            <label for="meta_instructions">Meta Instructions:</label>
+            <textarea id="meta_instructions" name="meta_instructions" rows="4">{{ meta_instructions }}</textarea>
+
+            <label for="user_query">Enter your query:</label>
+            <textarea id="user_query" name="user_query">{{ user_query }}</textarea>
+
+            <label for="uploaded_files">Upload files (optional):</label>
+            <input id="uploaded_files" name="uploaded_files" type="file" multiple>
+
+            <input type="submit" value="Analyze">
+        </form>
+
+        <div id="loading" class="loading" style="display: none;">Processing your request, please wait...</div>
+
+        {% if status_messages %}
+            <div class="status-messages">
+                <h3>Status Updates:</h3>
+                {% for message in status_messages %}
+                    <div class="status-message">{{ message }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        {% if error %}
+            <p class="error">Error: {{ error }}</p>
+        {% endif %}
+
+        {% if responses %}
+            {% for response in responses %}
+                <div class="response-container">
+                    <div class="response-title">{{ response.title }}</div>
+                    <div>{{ response.response }}</div>
+                </div>
+            {% endfor %}
+        {% endif %}
+    </div>
+</body>
+</html>
+
+
+--- FILE: templates/gallery.html ---
+
+<!-- Filename: gallery.html -->
+<!-- Location: templates/gallery.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jeff Virtual Lab</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        /* (Your existing CSS styles - keep these) */
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #1E2A38;
+            color: #E5E5E5;
+            display: flex;
+            justify-content: flex-start; /* Align content to the left */
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            padding: 20px;
+            background: #2A3D55;
+            border-radius: 12px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+            text-align: left;
+        }
+
+        h1 {
+            font-weight: 600;
+            font-size: 28px;
+            color: #2D9CDB;
+            text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.2);
+            margin-left: 10px; /* Aligns title to the left */
+        }
+
+        .gallery {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr); /* Ensures 4 tiles per row */
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .project-tile {
+            background: #1E2A38;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .project-tile:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+        }
+
+        .project-tile img {
+            width: 100%;
+            height: auto;
+            border-radius: 6px;
+        }
+
+        .project-tile h3 {
+            color: #2D9CDB;
+            font-size: 18px;
+            margin: 10px 0;
+        }
+
+        .project-tile p {
+            font-size: 14px;
+            color: #AEBCCF;
+            margin-bottom: 10px;
+        }
+
+        .project-tile a {
+            display: inline-block;
+            width: 100%;
+            padding: 12px;
+            background-color: #27AE60;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            color: white;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .project-tile a:hover {
+            background-color: #1F8A4C;
+            box-shadow: 0 4px 8px rgba(39, 174, 96, 0.4);
+        }
+
+        @media (max-width: 1024px) {
+            .gallery {
+                grid-template-columns: repeat(3, 1fr); /* Adjust to 3 columns on smaller screens */
+            }
+        }
+
+        @media (max-width: 768px) {
+            .gallery {
+                grid-template-columns: repeat(2, 1fr); /* Adjust to 2 columns for tablets */
+            }
+        }
+
+        @media (max-width: 480px) {
+            .gallery {
+                grid-template-columns: repeat(1, 1fr); /* Adjust to 1 column for mobile */
+            }
+        }
+    </style>
+    <script>
+        function openTestWindow() {
+            let newWindow = window.open("/api_test_window", "TestWindow", "width=500,height=500");
+
+            if (!newWindow) {
+                alert("Popup blocked! Please allow popups for this site.");
+            }
+        }
+
+        function openJeffsArt(imageName) {
+            let newWindow = window.open("/jeffsart/" + imageName, "JeffsArtWindow");
+
+            if (!newWindow) {
+                alert("Popup blocked! Please allow popups for this site.");
+            }
+        }
+
+        function openWaltWindow() {
+            let newWindow = window.open("/walt", "WaltWindow", "width=500,height=500");
+
+            if (!newWindow) {
+                alert("Popup blocked! Please allow popups for this site.");
+            }
+        }
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h1>Jeff Virtual Lab</h1>
+        <div class="gallery">
+
+            <!-- Walt Button -->
+            <div class="project-tile">
+                <img src="static/icons/amber-button.jpeg" alt="Walt App">
+                <h3>Walt</h3>
+                <p>Walt wants to write your story!</p>
+                <a href="#" onclick="openWaltWindow()">Open App</a>
+            </div>
+
+            <!-- Jeff's Art Button -->
+            <div class="project-tile">
+                <img src="static/icons/green-button.jpeg" alt="Jeff's Art">
+                <h3>Jeff's Art</h3>
+                <p>View Jeff's artistic creations.</p>
+                <a href="#" onclick="openJeffsArt('racecars.jpeg')">View Art</a>
+            </div>
+
+            <div class="project-tile">
+                <img src="static/icons/green-button.jpeg" alt="API Test">
+                <h3>API Test</h3>
+                <p>Check API connection and response.</p>
+                <a href="#" onclick="openTestWindow()">API Test</a>
+            </div>
+
+           <!-- GPT Prototype Button -->
+            <div class="project-tile">
+                <img src="static/icons/amber-button.jpeg" alt="GPT Prototype">
+                <h3>GPT Prototype</h3>
+                <p>Marshall inputs to ChatGPT</p>
+                <a href="/angel_investment_analysis">Launch Project</a>
+            </div>
+
+            {% for i in range(1, 14) %}
+            <div class="project-tile">
+                <img src="static/icons/red-button.jpeg" alt="Placeholder Project">
+                <h3>Placeholder Project {{ i + 2 }}</h3>
+                <p>Future exciting projects coming soon.</p>
+                <a href="#">Coming Soon</a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</body>
+</html>
+
+
+--- FILE: templates/angel_investment_analysis.html ---
+
+<!-- Filename: templates/angel_investment_analysis.html -->
+<!-- Location: templates/angel_investment_analysis.html (relative to root) -->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Angel Investment Analysis</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <!-- CSRF Token -->
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #1E2A38;
+            color: #E5E5E5;
+        }
+
+        .container {
+            max-width: 800px;
+            padding: 20px;
+            background: #2A3D55;
+            border-radius: 12px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+            text-align: left;
+        }
+
+        h1 {
+            font-weight: 600;
+            font-size: 28px;
+            color: #2D9CDB;
+            text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.2);
+            margin-bottom: 5px;
+        }
+
+        .subtitle {
+            font-size: 14px;
+            color: #AEBCCF;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            font-weight: 400;
+            color: #D9E1EC;
+            display: block;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+
+        textarea,
+        input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #4C657E;
+            border-radius: 6px;
+            background-color: #1E2A38;
+            color: #E5E5E5;
+            font-size: 14px;
+        }
+
+        textarea:focus,
+        input:focus {
+            outline: none;
+            border-color: #2D9CDB;
+            box-shadow: 0 0 8px rgba(45, 156, 219, 0.5);
+        }
+
+        .button {
+            width: 100%;
+            padding: 12px;
+            background-color: #27AE60;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .button:hover {
+            background-color: #1F8A4C;
+            box-shadow: 0 4px 8px rgba(39, 174, 96, 0.4);
+        }
+
+        .results {
+            background: #2D9CDB;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 15px;
+            color: white;
+            font-size: 14px;
+            text-align: left;
+            font-family: 'Arial', sans-serif;
+            line-height: 1.6;
+            white-space: pre-wrap; /* Preserve formatting */
+        }
+
+
+        .download {
+            background-color: #27AE60;
+            text-align: center;
+            margin-top: 10px;
+            cursor: pointer;
+            padding: 12px;
+            border-radius: 6px;
+            color: white;
+            text-decoration: none;
+            display: block;
+        }
+
+        .download:hover {
+            background-color: #1F8A4C;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                width: 100%;
+                padding: 15px;
+            }
+        }
+    </style>
+    <script>
+        async function analyze() {
+            let instructions = document.getElementById("meta_instructions").value;
+            let query = document.getElementById("user_query").value;
+            let outputBox = document.getElementById("results");
+            let fileInput = document.getElementById("file_upload").files[0];
+            let csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content'); // Get CSRF token
+
+            if (!csrfToken) {
+                console.error("CSRF token not found!");
+                outputBox.innerHTML = "<strong>Error: CSRF token is missing. Please refresh the page.</strong>";
+                return;
+            }
+
+            outputBox.innerHTML = "<strong>Calling API...</strong>";
+
+            let formData = new FormData();
+            formData.append("meta_instructions", instructions);
+            formData.append("user_query", query);
+            if (fileInput) {
+                formData.append("file_upload", fileInput);
+            }
+            formData.append("csrf_token", csrfToken); // Append CSRF token to form data
+
+            try {
+                outputBox.innerHTML = "<strong>Waiting for response...</strong>";
+
+                let response = await fetch("/analyze", {
+                    method: "POST",
+                    body: formData
+                });
+
+                let data = await response.json();
+                if (response.ok) {
+                    outputBox.innerHTML = escapeHTML(data["Analysis Summary"]); // Display raw content after escaping
+                    // Store the analysis results for download
+                    sessionStorage.setItem('analysisResults', data["Analysis Summary"]);
+                    document.getElementById("downloadButton").style.display = "block"; // Show the download button
+                } else {
+                    outputBox.innerHTML = `<strong>Error:</strong> ${escapeHTML(data["Analysis Summary"])}`; // Escape error messages
+                    document.getElementById("downloadButton").style.display = "none"; // hide the download button
+                }
+            } catch (error) {
+                outputBox.innerHTML = `<strong>API Error:</strong> ${escapeHTML(error.message)}`; // Escape error messages
+                document.getElementById("downloadButton").style.display = "none"; // hide the download button
+            }
+        }
+
+
+        // Function to escape HTML characters
+        function escapeHTML(str) {
+            let div = document.createElement('div');
+            div.appendChild(document.createTextNode(str));
+            return div.innerHTML;
+        }
+
+
+        function downloadReport() {
+            let summaryData = sessionStorage.getItem('analysisResults');
+            let csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content'); // Get CSRF token
+
+            if (!summaryData) {
+                alert("No analysis results available to download.");
+                return;
+            }
+
+            // Create a form to submit the data
+            let form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '/download_report';
+            form.style.display = 'none';
+
+            // Create an input field for the summary data
+            let input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'summaryData';
+            input.value = summaryData;
+
+            let csrfInput = document.createElement('input');
+            csrfInput.type = 'hidden';
+            csrfInput.name = 'csrf_token';
+            csrfInput.value = csrfToken;
+
+            // Add the input field to the form
+            form.appendChild(input);
+            form.appendChild(csrfInput);
+
+            // Add the form to the document and submit it
+            document.body.appendChild(form);
+            form.submit();
+
+            // Remove the form from the document after submission
+            document.body.removeChild(form);
+        }
+
+        window.onload = function () {
+            // Get the download button
+            let downloadButton = document.getElementById("downloadButton");
+
+            // Initially hide the download button
+            downloadButton.style.display = "none";
+
+            // Attach the downloadReport function to the button's click event
+            downloadButton.addEventListener('click', downloadReport);
+        };
+    </script>
+</head>
+
+<body>
+
+    <div class="container">
+        <h1>Angel Investment Analysis</h1>
+        <p class="subtitle">Analyze startup companies with precision and generate insightful reports.</p>
+
+        <div class="form-group">
+            <label for="meta_instructions">Meta Instructions:</label>
+            <textarea id="meta_instructions"
+                placeholder="You're an expert at understanding startup companies."></textarea>
+        </div>
+
+        <div class="form-group">
+            <label for="user_query">User Query:</label>
+            <textarea id="user_query" placeholder="Tell me about this company and its market."></textarea>
+        </div>
+
+        <div class="form-group">
+            <label for="file_upload">Upload File:</label>
+            <input type="file" id="file_upload">
+        </div>
+
+        <button class="button" onclick="analyze()">Analyze</button>
+
+        <div class="results" id="results">
+            <p><strong>Summary Results:</strong></p>
+            <p>(Results will display here after analysis)</p>
+        </div>
+
+        <a id="downloadButton" class="download">Download Report</a>
+    </div>
+
+</body>
+
+</html>
+
+
+--- FILE: templates/api_test_window.html ---
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>API Test</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            text-align: center;
+            margin-top: 20px;
+            background-color: #1E2A38;
+            color: #E5E5E5;
+            padding: 20px;
+        }
+        input {
+            width: 80%;
+            padding: 8px;
+            margin-bottom: 10px;
+            font-size: 16px;
+            background: #1E2A38;
+            border: 1px solid #4C657E;
+            color: white;
+            border-radius: 6px;
+        }
+        button {
+            padding: 10px 15px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #27AE60;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+        button:hover {
+            background-color: #1F8A4C;
+        }
+        #output {
+            width: 90%;
+            height: 250px;
+            margin-top: 10px;
+            border: 1px solid #ccc;
+            overflow-y: auto;
+            background: #2A3D55;
+            text-align: left;
+            padding: 5px;
+            font-size: 14px;
+            white-space: pre-wrap;
+        }
+    </style>
+    <script>
+        function callOpenAI() {
+            let inputText = document.getElementById("query").value;
+            let outputBox = document.getElementById("output");
+            let csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+
+            fetch("/analyze", {  // Use the /analyze endpoint
+                method: "POST",
+                headers: {
+                     "Content-Type": "application/x-www-form-urlencoded"
+                 }, // changed to correct content type
+                body: "meta_instructions=&user_query=" + encodeURIComponent(inputText) + "&csrf_token=" + csrfToken // Correctly format the body
+            })
+            .then(response => response.json())
+            .then(data => {
+                outputBox.innerHTML += "\n> " + inputText + "\n" + data["Analysis Summary"] + "\n"; // Access Analysis Summary
+                outputBox.scrollTop = outputBox.scrollHeight;
+            })
+            .catch(error => {
+                outputBox.innerHTML += "\nError: " + error.message + "\n";
+            });
+        }
+    </script>
+</head>
+<body>
+    <h2>API Test</h2>
+    <input type="text" id="query" value="Who invented velcro?">
+    <button onclick="callOpenAI()">Run API</button>
+    <div id="output"></div>
+    <br>
+    <button onclick="window.close()">Close</button>
+</body>
+</html>
+
+
+--- FILE: templates/index 01.14.html ---
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jeff's AI Workshop</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f9;
+            color: #333;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            font-size: 24px;
+            margin-bottom: 20px;
+            text-align: center;
+            color: #0073e6;
+        }
+
+        label {
+            font-weight: bold;
+            margin-top: 10px;
+            display: block;
+        }
+
+        input[type="text"], textarea {
+            width: 100%;
+            padding: 10px;
+            margin-top: 5px;
+            margin-bottom: 20px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        input[type="file"] {
+            margin-top: 10px;
+            margin-bottom: 20px;
+        }
+
+        button {
+            display: block;
+            width: 100%;
+            background-color: #0073e6;
+            color: white;
+            padding: 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        button:hover {
+            background-color: #005bb5;
+        }
+
+        .output-box {
+            background: #f9f9f9;
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin-top: 10px;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .collapsible {
+            background-color: #555;
+            color: white;
+            cursor: pointer;
+            padding: 10px;
+            width: 100%;
+            border: none;
+            text-align: left;
+            outline: none;
+            font-size: 14px;
+            border-radius: 4px;
+            margin-top: 10px;
+        }
+
+        .active, .collapsible:hover {
+            background-color: #333;
+        }
+
+        .content {
+            padding: 0 18px;
+            display: none;
+            overflow: hidden;
+            background-color: #f4f4f9;
+            border: 1px solid #ddd;
+            margin-top: 10px;
+            border-radius: 4px;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 14px;
+            color: #777;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Jeff's AI Workshop</h1>
+
+        <form method="POST" enctype="multipart/form-data" action="/">
+            <label for="meta_instructions">Meta Instructions</label>
+            <textarea id="meta_instructions" name="meta_instructions" rows="4" placeholder="Enter meta instructions here...">You're an expert at understanding startup companies. You can summarize them quickly.</textarea>
+
+            <label for="user_query">User Query</label>
+            <textarea id="user_query" name="user_query" rows="4" placeholder="Enter your query here...">Tell me about this company and its market. Summarize the company name and what other information you can determine from the provided passed information from their presentation.</textarea>
+
+            <label for="uploaded_files">Upload Files</label>
+            <input type="file" id="uploaded_files" name="uploaded_files" multiple>
+
+            <button type="submit">Analyze</button>
+        </form>
+
+        <form method="POST" action="/download">
+            <input type="hidden" name="meta_instructions" value="{{ inputs['Meta Instructions'] }}">
+            <input type="hidden" name="user_query" value="{{ inputs['User Query'] }}">
+            <input type="hidden" name="api_response" value="{{ api_response }}">
+            <button type="submit">Download PDF</button>
+        </form>
+
+        {% if inputs %}
+        <div class="output-box">
+            <strong>API Response:</strong>
+            <div>{{ api_response }}</div>
+        </div>
+
+        <button type="button" class="collapsible">Uploaded Content</button>
+        <div class="content">
+            <div class="output-box">{{ inputs['Uploaded Content'] }}</div>
+        </div>
+
+        <button type="button" class="collapsible">API Call Text</button>
+        <div class="content">
+            <div class="output-box">{{ api_call_text }}</div>
+        </div>
+        {% endif %}
+
+        {% if error %}
+        <div class="output-box" style="color: red;">
+            <strong>Error:</strong>
+            <div>{{ error }}</div>
+        </div>
+        {% endif %}
+
+        <div class="footer">
+            Version {{ app_version }}
+        </div>
+    </div>
+
+    <script>
+        const collapsibles = document.querySelectorAll(".collapsible");
+        collapsibles.forEach(collapsible => {
+            collapsible.addEventListener("click", function() {
+                this.classList.toggle("active");
+                const content = this.nextElementSibling;
+                if (content.style.display === "block") {
+                    content.style.display = "none";
+                } else {
+                    content.style.display = "block";
+                }
+            });
+        });
+    </script>
+</body>
+</html>
+
+
+--- FILE: templates/jeffsart_image.html ---
+
+<!-- Filename: jeffsart_image.html -->
+<!-- Location: templates/jeffsart_image.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jeff's Art</title>
+    <style>
+        body {
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #f0f0f0; /* Optional background color */
+        }
+
+        img {
+            display: block; /* Remove extra space below image */
+            max-width: 90%;  /* Set a maximum width */
+            max-height: 90vh; /* Set a maximum height based on viewport height */
+            width: auto;      /* Allow the image to scale proportionally */
+            height: auto;     /* Allow the image to scale proportionally */
+        }
+    </style>
+</head>
+<body>
+    <img src="{{ url_for('static', filename=image_path) }}" alt="Jeff's Art">
+</body>
+</html>
+
+
+--- STATIC FILES ---
+
+File: static/.DS_Store, Mime Type: unknown
+File: static/images/.DS_Store, Mime Type: unknown
+File: static/images/hero-image.jpg, Mime Type: image/jpeg
+File: static/images/jeffsart/racecars.jpeg, Mime Type: image/jpeg
+File: static/icons/.DS_Store, Mime Type: unknown
+File: static/icons/dewar-flask.jpeg, Mime Type: image/jpeg
+File: static/icons/amber-button.jpeg, Mime Type: image/jpeg
+File: static/icons/green-button.jpeg, Mime Type: image/jpeg
+File: static/icons/placeholder.jpeg, Mime Type: image/jpeg
+File: static/icons/black-off-button.jpeg, Mime Type: image/jpeg
+File: static/icons/red-button.jpeg, Mime Type: image/jpeg

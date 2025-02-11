@@ -11,6 +11,7 @@ from dotenv import load_dotenv
 from PyPDF2 import PdfReader
 from werkzeug.utils import secure_filename  # for secure file uploads
 from flask_wtf.csrf import CSRFProtect  # Import CSRFProtect
+from walt.walt import walt_bp  # Import the walt blueprint
 
 # Load environment variables
 load_dotenv()
@@ -197,6 +198,9 @@ def bad_request(e):
 @app.errorhandler(500)
 def internal_server_error(e):
     return jsonify(error=str(e)), 500
+
+# Register the walt blueprint
+app.register_blueprint(walt_bp)
 
 
 # Fix for Heroku: Bind to PORT

@@ -133,12 +133,28 @@
                 alert("Popup blocked! Please allow popups for this site.");
             }
         }
+
+        function openWaltWindow() {
+            let newWindow = window.open("/walt", "WaltWindow", "width=500,height=500");
+
+            if (!newWindow) {
+                alert("Popup blocked! Please allow popups for this site.");
+            }
+        }
     </script>
 </head>
 <body>
     <div class="container">
         <h1>Jeff Virtual Lab</h1>
         <div class="gallery">
+
+            <!-- Walt Button -->
+            <div class="project-tile">
+                <img src="static/icons/amber-button.jpeg" alt="Walt App">
+                <h3>Walt</h3>
+                <p>Walt wants to write your story!</p>
+                <a href="#" onclick="openWaltWindow()">Open App</a>
+            </div>
 
             <!-- Jeff's Art Button -->
             <div class="project-tile">
@@ -163,10 +179,10 @@
                 <a href="/angel_investment_analysis">Launch Project</a>
             </div>
 
-            {% for i in range(13) %}
+            {% for i in range(1, 14) %}
             <div class="project-tile">
                 <img src="static/icons/red-button.jpeg" alt="Placeholder Project">
-                <h3>Placeholder Project {{ i + 3 }}</h3>
+                <h3>Placeholder Project {{ i + 2 }}</h3>
                 <p>Future exciting projects coming soon.</p>
                 <a href="#">Coming Soon</a>
             </div>
