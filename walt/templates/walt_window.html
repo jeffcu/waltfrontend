@@ -1,22 +1,76 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Walt Wants to Write Your Story!</title>
+    <title>Walt - Write Your Story</title>
     <style>
         body {
-            font-family: sans-serif;
+            font-family: 'Inter', sans-serif;
             text-align: center;
             padding: 20px;
+            background-color: #1E2A38;
+            color: #E5E5E5;
+        }
+        h1 {
+            color: #2D9CDB;
+            margin-bottom: 10px;
+        }
+        input[type="file"] {
+            margin-bottom: 15px;
+            padding: 8px;
+            background-color: #2A3D55;
+            color: #D9E1EC;
+            border: 1px solid #4C657E;
+            border-radius: 6px;
         }
         button {
             padding: 10px 20px;
             font-size: 16px;
             cursor: pointer;
+            background-color: #27AE60;
+            color: white;
+            border: none;
+            border-radius: 6px;
+        }
+        button:hover {
+            background-color: #1F8A4C;
+        }
+        #prompt-display {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #2A3D55;
+            border: 1px solid #4C657E;
+            border-radius: 6px;
+            text-align: left;
+            white-space: pre-wrap;
         }
     </style>
 </head>
 <body>
-    <h1>Walt Wants to Write Your Story!</h1>
+    <h1>Walt - Write Your Story</h1>
+
+    <input type="file" id="story_upload" name="story_upload">
+    <p>To continue writing your story, upload it so far:</p>
+    <p id="upload-status">We'll start fresh!</p>
+
+    <h2>Walt Prompt:</h2>
+    <div id="prompt-display">
+        <!-- Prompt content will be displayed here -->
+    </div>
+
     <button onclick="window.close()">Close Window</button>
+
+    <script>
+        const fileInput = document.getElementById('story_upload');
+        const uploadStatus = document.getElementById('upload-status');
+
+        fileInput.addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (file) {
+                uploadStatus.textContent = `File "${file.name}" selected.`;
+            } else {
+                uploadStatus.textContent = "We'll start fresh!";
+            }
+        });
+    </script>
 </body>
 </html>
