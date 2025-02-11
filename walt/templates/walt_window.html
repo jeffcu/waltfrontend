@@ -34,15 +34,6 @@
         button:hover {
             background-color: #1F8A4C;
         }
-        #prompt-display {
-            margin-top: 20px;
-            padding: 10px;
-            background-color: #2A3D55;
-            border: 1px solid #4C657E;
-            border-radius: 6px;
-            text-align: left;
-            white-space: pre-wrap;
-        }
         #output {
             width: 90%;
             height: 250px;
@@ -60,25 +51,34 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <script>
         function callOpenAI() {
-            let promptText = document.getElementById("prompt-display").textContent;
             let fileInput = document.getElementById("story_upload").files[0];
             let outputBox = document.getElementById("output");
             let csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-            let inputText = promptText;
+            let inputText = "";
 
-            if (fileInput) {
-                const reader = new FileReader();
-                reader.onload = function(event) {
-                    inputText += "\n" + event.target.result;  // Append file content
-                    sendToOpenAI(inputText, outputBox, csrfToken);
-                };
-                reader.onerror = function(event) {
-                    outputBox.innerHTML = "Error reading file: " + event.target.error;
-                };
-                reader.readAsText(fileInput);  // Read as text file
-            } else {
-                sendToOpenAI(inputText, outputBox, csrfToken);
-            }
+            // Read the walt_prompt.txt content
+            fetch("/get_walt_prompt")
+                .then(response => response.text())
+                .then(promptText => {
+                    inputText = promptText;
+
+                    if (fileInput) {
+                        const reader = new FileReader();
+                        reader.onload = function(event) {
+                            inputText += "\n" + event.target.result;  // Append file content
+                            sendToOpenAI(inputText, outputBox, csrfToken);
+                        };
+                        reader.onerror = function(event) {
+                            outputBox.innerHTML = "Error reading file: " + event.target.error;
+                        };
+                        reader.readAsText(fileInput);  // Read as text file
+                    } else {
+                        sendToOpenAI(inputText, outputBox, csrfToken);
+                    }
+                })
+                .catch(error => {
+                    outputBox.innerHTML = "Error fetching prompt: " + error.message;
+                });
         }
 
         function sendToOpenAI(inputText, outputBox, csrfToken) {
@@ -107,11 +107,6 @@
     <input type="file" id="story_upload" name="story_upload">
     <p>To continue writing your story, upload it so far:</p>
     <p id="upload-status">We'll start fresh!</p>
-
-    <h2>Walt Prompt:</h2>
-    <div id="prompt-display">
-        {{ prompt_text }}  <!-- Display the prompt text here! -->
-    </div>
 
     <button onclick="callOpenAI()">Your Turn</button>
     <div id="output"></div>
