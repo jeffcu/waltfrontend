@@ -1,27 +1,50 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Walt - Write Your Story</title>
+    <title>Walt - Chatbot</title>
     <style>
         body {
             font-family: 'Inter', sans-serif;
-            text-align: center;
-            padding: 20px;
             background-color: #1E2A38;
             color: #E5E5E5;
+            padding: 20px;
         }
-        h1 {
-            color: #2D9CDB;
+
+        .container {
+            display: flex;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .chat-output {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #4C657E;
+            border-radius: 6px;
+            background-color: #2A3D55;
+            white-space: pre-wrap;
+            overflow-y: auto;
+            height: 300px;
+        }
+
+        .chat-input {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 10px;
+        }
+
+        textarea {
+            flex: 1;
             margin-bottom: 10px;
-        }
-        input[type="file"] {
-            margin-bottom: 15px;
             padding: 8px;
             background-color: #2A3D55;
             color: #D9E1EC;
             border: 1px solid #4C657E;
             border-radius: 6px;
+            resize: none;
         }
+
         button {
             padding: 10px 20px;
             font-size: 16px;
@@ -31,55 +54,37 @@
             border: none;
             border-radius: 6px;
         }
+
         button:hover {
             background-color: #1F8A4C;
         }
-        #output {
-            width: 90%;
-            height: 250px;
-            margin-top: 10px;
-            border: 1px solid #ccc;
-            overflow-y: auto;
-            background: #2A3D55;
-            text-align: left;
-            padding: 5px;
-            font-size: 14px;
-            white-space: pre-wrap;
-            color: #E5E5E5;
-        }
     </style>
     <script>
-        function callOpenAI() {
-            let fileInput = document.getElementById("story_upload").files[0];
-            let outputBox = document.getElementById("output");
-            let inputText = "";
+        let conversationHistory = ""; // Stores the conversation
 
-            // Read the walt_prompt.txt content
+        function submitPrompt() {
+            let userInput = document.getElementById("userPrompt").value;
+            let chatOutput = document.getElementById("chatOutput");
+
+            // Append user's prompt to the conversation history
+            conversationHistory += "User: " + userInput + "\n";
+
+            chatOutput.textContent = "Loading..."; // Show a loading message
+
             fetch("/get_walt_prompt")
                 .then(response => response.text())
                 .then(promptText => {
-                    inputText = promptText;
-
-                    if (fileInput) {
-                        const reader = new FileReader();
-                        reader.onload = function(event) {
-                            inputText += "\n" + event.target.result;  // Append file content
-                            sendToOpenAI(inputText, outputBox);
-                        };
-                        reader.onerror = function(event) {
-                            outputBox.innerHTML = "Error reading file: " + event.target.error;
-                        };
-                        reader.readAsText(fileInput);  // Read as text file
-                    } else {
-                        sendToOpenAI(inputText, outputBox);
-                    }
+                    const combinedText = promptText + "\n" + conversationHistory;
+                    sendToOpenAI(combinedText, chatOutput);
                 })
                 .catch(error => {
-                    outputBox.innerHTML = "Error fetching prompt: " + error.message;
+                    chatOutput.textContent = "Error fetching prompt: " + error.message;
                 });
+
+            document.getElementById("userPrompt").value = ""; // Clear the input field after submitting
         }
 
-        function sendToOpenAI(inputText, outputBox) {
+        function sendToOpenAI(combinedText, chatOutput) {
             // Get CSRF token from cookie
             function getCookie(name) {
                 const value = `; ${document.cookie}`;
@@ -92,46 +97,32 @@
             fetch("/analyze", {
                 method: "POST",
                 headers: {
-                     "Content-Type": "application/x-www-form-urlencoded",
-                     "X-CSRFToken": csrfToken  // Include CSRF token in header
-                 }, // changed to correct content type
-                body: "meta_instructions=&user_query=" + encodeURIComponent(inputText) // Correctly format the body
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    "X-CSRFToken": csrfToken  // Include CSRF token in header
+                },
+                body: "meta_instructions=&user_query=" + encodeURIComponent(combinedText)
             })
             .then(response => response.json())
             .then(data => {
-                outputBox.innerHTML += "\n" + data["Analysis Summary"] + "\n";
-                outputBox.scrollTop = outputBox.scrollHeight;
+                let apiResponse = data["Analysis Summary"];
+                conversationHistory += "Walt: " + apiResponse + "\n"; // Append response to conversation
+                chatOutput.textContent = conversationHistory; // Display the entire conversation
+
             })
             .catch(error => {
-                outputBox.innerHTML += "\nError: " + error.message + "\n";
+                chatOutput.textContent = "Error: " + error.message;
             });
         }
-
     </script>
 </head>
 <body>
-    <h1>Walt - Write Your Story</h1>
-
-    <input type="file" id="story_upload" name="story_upload">
-    <p>To continue writing your story, upload it so far:</p>
-    <p id="upload-status">We'll start fresh!</p>
-
-    <button onclick="callOpenAI()">Your Turn</button>
-    <div id="output"></div>
-    <button onclick="window.close()">Close Window</button>
-
-    <script>
-        const fileInput = document.getElementById('story_upload');
-        const uploadStatus = document.getElementById('upload-status');
-
-        fileInput.addEventListener('change', function(event) {
-            const file = event.files[0];
-            if (file) {
-                uploadStatus.textContent = `File "${file.name}" selected.`;
-            } else {
-                uploadStatus.textContent = "We'll start fresh!";
-            }
-        });
-    </script>
+    <h1>Walt - Chatbot</h1>
+    <div class="container">
+        <div class="chat-output" id="chatOutput"></div>
+        <div class="chat-input">
+            <textarea id="userPrompt" placeholder="Enter your prompt"></textarea>
+            <button onclick="submitPrompt()">Submit</button>
+        </div>
+    </div>
 </body>
 </html>
