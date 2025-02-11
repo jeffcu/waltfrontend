@@ -10,7 +10,7 @@ from investment_analysis.utils import format_pdf_content # take out, not being u
 from dotenv import load_dotenv
 from PyPDF2 import PdfReader
 from werkzeug.utils import secure_filename  # for secure file uploads
-from flask_wtf.csrf import CSRFProtect  # Import CSRFProtect
+from flask_wtf.csrf import CSRFProtect, generate_csrf  # Import CSRFProtect and generate_csrf
 from walt.walt import walt_bp  # Import the walt blueprint
 
 # Load environment variables
