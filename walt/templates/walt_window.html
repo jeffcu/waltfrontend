@@ -43,7 +43,63 @@
             text-align: left;
             white-space: pre-wrap;
         }
+        #output {
+            width: 90%;
+            height: 250px;
+            margin-top: 10px;
+            border: 1px solid #ccc;
+            overflow-y: auto;
+            background: #2A3D55;
+            text-align: left;
+            padding: 5px;
+            font-size: 14px;
+            white-space: pre-wrap;
+            color: #E5E5E5;
+        }
     </style>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <script>
+        function callOpenAI() {
+            let promptText = document.getElementById("prompt-display").textContent;
+            let fileInput = document.getElementById("story_upload").files[0];
+            let outputBox = document.getElementById("output");
+            let csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+            let inputText = promptText;
+
+            if (fileInput) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    inputText += "\n" + event.target.result;  // Append file content
+                    sendToOpenAI(inputText, outputBox, csrfToken);
+                };
+                reader.onerror = function(event) {
+                    outputBox.innerHTML = "Error reading file: " + event.target.error;
+                };
+                reader.readAsText(fileInput);  // Read as text file
+            } else {
+                sendToOpenAI(inputText, outputBox, csrfToken);
+            }
+        }
+
+        function sendToOpenAI(inputText, outputBox, csrfToken) {
+            fetch("/analyze", {
+                method: "POST",
+                headers: {
+                     "Content-Type": "application/x-www-form-urlencoded"
+                 }, // changed to correct content type
+                body: "meta_instructions=&user_query=" + encodeURIComponent(inputText) + "&csrf_token=" + csrfToken // Correctly format the body
+            })
+            .then(response => response.json())
+            .then(data => {
+                outputBox.innerHTML += "\n" + data["Analysis Summary"] + "\n";
+                outputBox.scrollTop = outputBox.scrollHeight;
+            })
+            .catch(error => {
+                outputBox.innerHTML += "\nError: " + error.message + "\n";
+            });
+        }
+
+    </script>
 </head>
 <body>
     <h1>Walt - Write Your Story</h1>
@@ -57,6 +113,8 @@
         {{ prompt_text }}  <!-- Display the prompt text here! -->
     </div>
 
+    <button onclick="callOpenAI()">Your Turn</button>
+    <div id="output"></div>
     <button onclick="window.close()">Close Window</button>
 
     <script>
