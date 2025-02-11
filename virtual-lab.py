@@ -32,6 +32,12 @@ if not os.path.exists(app.config['UPLOAD_FOLDER']):
 csrf = CSRFProtect()
 csrf.init_app(app)
 
+# Inject CSRF token into all templates
+@app.after_request
+def inject_csrf_token(response):
+    response.set_cookie('csrf_token', generate_csrf())  # Set a cookie to access the token
+    return response
+
 # Initialize InvestmentAnalysisService (pass API key)
 openai_api_key = os.environ.get("OPENAI_API_KEY")
 if not openai_api_key:
