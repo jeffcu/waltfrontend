@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Walt the Biographer</title>
     <style>
         body {
@@ -42,27 +44,20 @@
             flex: 1;
         }
 
-        .chat-output {
-            flex: 1;
+        .chat-output, .chat-input {
+            flex: 1; /* Equal width for both */
             padding: 10px;
             border: 1px solid #4C657E;
             border-radius: 6px;
             background-color: #2A3D55;
-            white-space: pre-wrap;
-            overflow-y: auto;
             min-height: 400px;
             text-align: left;
-        }
-
-        .chat-input {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            padding: 10px;
+            white-space: pre-wrap;
+            overflow-y: auto;
         }
 
         textarea {
-            flex: 1;
+            width: 100%; /* Ensure textarea takes full width of its container */
             margin-bottom: 10px;
             padding: 8px;
             background-color: #2A3D55;
@@ -89,12 +84,9 @@
             background-color: #1F8A4C;
         }
 
-        /* Add some space at the bottom */
         #saveButton {
-            margin-top: auto;
-            margin-bottom: 20px;
+            margin-top: 20px;
         }
-
     </style>
     <script>
         function submitPrompt() {
@@ -160,6 +152,6 @@
         </div>
     </div>
 
-    <button id="saveButton">Save Our Work and Quit</button>
+    <button id="saveButton" onclick="window.location.href='/'">Save Our Work and Quit</button>
 </body>
 </html>

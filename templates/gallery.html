@@ -135,11 +135,7 @@
         }
 
         function openWaltWindow() {
-            let newWindow = window.open("/walt", "WaltWindow", "width=500,height=500");
-
-            if (!newWindow) {
-                alert("Popup blocked! Please allow popups for this site.");
-            }
+            window.location.href = "/walt";
         }
     </script>
 </head>

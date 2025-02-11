@@ -193,6 +193,11 @@ def jeffsart_image(filename):
     else:
         abort(404)
 
+# New route to display Walt
+@app.route('/walt')
+def walt():
+    return render_template('walt_window.html')
+
 
 # Error handlers
 @app.errorhandler(400)
