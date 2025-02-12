@@ -10,3 +10,4 @@ pytest-mock
 werkzeug
 flask-limiter
 redis
+flask-session

@@ -95,20 +95,11 @@
 
             chatOutput.textContent = "Loading..."; // Show a loading message
 
-            fetch("/get_walt_prompt")
-                .then(response => response.text())
-                .then(promptText => {
-                    const combinedText = promptText + "\nUser: " + userInput;  // Include user's input
-                    sendToOpenAI(combinedText, chatOutput);
-                })
-                .catch(error => {
-                    chatOutput.textContent = "Error fetching prompt: " + error.message;
-                });
-
+            sendToOpenAI(userInput, chatOutput);
             document.getElementById("userPrompt").value = ""; // Clear the input field after submitting
         }
 
-        function sendToOpenAI(combinedText, chatOutput) {
+        function sendToOpenAI(userInput, chatOutput) {
             // Get CSRF token from cookie
             function getCookie(name) {
                 const value = `; ${document.cookie}`;
@@ -118,18 +109,21 @@
 
             const csrfToken = getCookie('csrf_token');  // Retrieve from cookie
 
-            fetch("/analyze", {
+            fetch("/walt_analyze", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/x-www-form-urlencoded",
                     "X-CSRFToken": csrfToken  // Include CSRF token in header
                 },
-                body: "meta_instructions=&user_query=" + encodeURIComponent(combinedText)
+                body: "user_query=" + encodeURIComponent(userInput) // Correctly format the body
             })
             .then(response => response.json())
             .then(data => {
-                let apiResponse = data["Analysis Summary"];
-                chatOutput.textContent = apiResponse;  // Display only the latest response
+                if (data.error) {
+                    chatOutput.textContent = "Error: " + data.error;
+                } else {
+                    chatOutput.textContent = data.response;  // Display the API response
+                }
 
             })
             .catch(error => {

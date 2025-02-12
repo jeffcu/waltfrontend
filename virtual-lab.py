@@ -1,6 +1,6 @@
 # Filename: virtual-lab.py
 # Location: virtual-lab.py (relative to root)
-from flask import Flask, request, jsonify, render_template, send_file, abort
+from flask import Flask, request, jsonify, render_template, send_file, abort, session
 import os
 import logging
 import weasyprint
@@ -12,6 +12,7 @@ from PyPDF2 import PdfReader
 from werkzeug.utils import secure_filename  # for secure file uploads
 from flask_wtf.csrf import CSRFProtect, generate_csrf  # Import CSRFProtect and generate_csrf
 from walt.walt import walt_bp  # Import the walt blueprint
+from flask_session import Session # Import Flask-Session
 
 # Load environment variables
 load_dotenv()
@@ -23,6 +24,12 @@ app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'uploads'  # Create an uploads folder
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max upload size
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'a_very_secret_key')  # Set a secret key for CSRF
+
+# Configure Flask-Session (for storing conversation history)
+app.config['SESSION_TYPE'] = 'filesystem'  # Or 'redis', 'mongodb', etc.
+app.config['SESSION_PERMANENT'] = False  # Session expires when browser closes
+app.config['SESSION_KEY_PREFIX'] = 'walt_'  # Prevents conflicts with other session data
+Session(app) # Initialize Flask-Session
 
 # Create the uploads folder if it doesn't exist
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
