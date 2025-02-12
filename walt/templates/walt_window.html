@@ -29,17 +29,21 @@
             margin-bottom: 20px;
         }
 
+        #uploadButtonContainer {
+            text-align: right; /* Position upload button to the right */
+            margin-bottom: 20px;
+        }
+
         #uploadButton {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            padding: 8px 12px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
             background-color: #27AE60;
             color: white;
             border: none;
             border-radius: 6px;
-            cursor: pointer;
-            z-index: 10;  /* Ensure it's above other elements */
+            height: 2em; /* Approximately 2 inches */
+            line-height: 2em; /* Vertically center text */
         }
 
         input[type="file"] {
@@ -93,26 +97,35 @@
             font-size: 1.2em; /* Larger font */
         }
 
-        button {
-            padding: 10px 20px;
+        #submitButton {
+           padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: gold;
+            color: dimgrey;
+            border: none;
+            border-radius: 6px;
+            width: 100%;
+            box-sizing: border-box;
+            height: auto ;
+        }
+
+        #saveButton {
+            margin-top: 20px;
+            box-sizing: border-box;
+              padding: 10px 20px;
             font-size: 16px;
             cursor: pointer;
             background-color: #27AE60;
             color: white;
             border: none;
             border-radius: 6px;
-            width: 100%;
+             text-align: center;
+           align-self: center; /*  center horizontally */
+          width: 2in;
             box-sizing: border-box;
             height: auto /* adjust height of area */; /* Let the content decide the height */
-        }
-
-        button:hover {
-            background-color: #1F8A4C;
-        }
-
-        #saveButton {
-            margin-top: 20px;
-            box-sizing: border-box;
+             font-size: 1.2em; /*  Larger font */
         }
 
         #sessionSummary {
@@ -128,24 +141,13 @@
             box-sizing: border-box;
             font-size: 1.2em;
         }
-         /* Add some space at the bottom */
-        #saveDownloadButton {
-            margin-top: auto;
-            margin-bottom: 20px;
-             padding: 10px 20px;
-            font-size: 16px;
-            cursor: pointer;
-            background-color: #27AE60;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            width: 100%;
-            box-sizing: border-box;
-            height: auto /* adjust height of area */; /* Let the content decide the height */
+        note {
+            align-self: center;
+            margin-bottom: 3px;
         }
+
     </style>
     <script>
-
         function submitPrompt() {
             let userInput = document.getElementById("userPrompt").value;
             let chatOutput = document.getElementById("chatOutput");
@@ -180,7 +182,6 @@
                     chatOutput.textContent = "Error: " + data.error;
                 } else {
                     chatOutput.textContent = data.response;  // Display the API response
-                    //conversationSummary = data.session_summary;
 
                 }
 
@@ -189,38 +190,11 @@
                 chatOutput.textContent = "Error: " + error.message;
             });
         }
-
-    //function getStoryBoard
-        function getStoryBoard(){
+      function getStoryBoard(){
             let chatOutput = document.getElementById("chatOutput").textContent;
             return chatOutput
         }
-
-        function saveAndQuit() {
-
-            fetch("/walt_session_summary", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/x-www-form-urlencoded"
-                },
-                body: ""
-            })
-            .then(response => response.json())
-            .then(data => {
-                //Display the content from the API call on the screen.
-                document.getElementById("sessionSummary").innerHTML = data.session_summary;
-            })
-            .catch(error => {
-                chatOutput.textContent = "Error: " + error.message;
-            });
-
-        }
-   function uploadStory() {
-            document.getElementById("story_upload").click();
-        }
-window.sessionContent;
-
-        function saveTextAsFile() {
+         function saveTextAsFile() {
              let textToWrite = getStoryBoard()
 
             var textFileAsBlob = new Blob([textToWrite], { type: 'text/plain' });
@@ -246,7 +220,9 @@ window.sessionContent;
 
             downloadLink.click();
         }
-
+        function uploadStory() {
+            document.getElementById("story_upload").click();
+        }
         window.onload = function() {
             document.getElementById("chatOutput").textContent = "Hi, I'm Walt. What's your name?";
         };
@@ -256,22 +232,25 @@ window.sessionContent;
     <h1>Walt the Biographer</h1>
     <p class="tagline">I want to write your story!</p>
 
-    <button id="uploadButton" onclick="uploadStory()">Start where you left off. Upload your Biography checkpoint file.</button>
-
+       <div id="uploadButtonContainer">
+        <button id="uploadButton" onclick="uploadStory()">Start where you left off. Upload your Biography checkpoint file.</button>
+    </div>
     <input type="file" id="story_upload" name="story_upload" accept=".txt, .walt" onchange="this.form.submit()">
 
     <div class="chat-container">
-        <div class="chat-output" id="chatOutput"></div>
+        <div class="chat-output">
+            <h2>Walt</h2>
+            <div id="chatOutput"></div>
+        </div>
         <div class="chat-input">
+            <h2>Response</h2>
             <textarea id="userPrompt" placeholder="Enter your prompt"></textarea>
-            <button onclick="submitPrompt()">Submit</button>
+            <button id="submitButton" onclick="submitPrompt()">Submit</button>
         </div>
     </div>
 
-    <button id="saveButton" onclick="saveTextAsFile()" >Download a Checkpoint file to continue later.</button>
-
-    <Note>No data is saved by this application, the only memory is through this file alone.</Note>
-    <h2>Session Summary</h2>
+    <h3align="center" >Note: No data is saved by this application, the only memory is through this file alone.</h3>
+    <button id="saveButton" onclick="saveTextAsFile()" >Generate Work In Progress</button>
     <div id="sessionSummary"></div>
 </body>
 </html>
