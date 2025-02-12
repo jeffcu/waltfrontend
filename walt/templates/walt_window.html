@@ -35,6 +35,9 @@
         }
 
         #uploadButton {
+          height: 30%;/*Set height of the area as a percentage of screen */
+           text-align: center;
+           display: inline-block;
             padding: 10px 20px;
             font-size: 16px;
             cursor: pointer;
@@ -42,9 +45,8 @@
             color: white;
             border: none;
             border-radius: 6px;
-            height: 2em; /* Approximately 2 inches */
-            line-height: 2em; /* Vertically center text */
-            box-sizing: border-box; /* Ensure padding is included in height/width */
+            box-sizing: border-box;
+          width: 2in;
         }
 
         input[type="file"] {
@@ -146,7 +148,6 @@
 
     </style>
     <script>
-
         function submitPrompt() {
             let userInput = document.getElementById("userPrompt").value;
             let chatOutput = document.getElementById("chatOutput");
@@ -253,7 +254,7 @@
     </div>
 
     <h3 class="dataNote">Note: No data is saved by this application, the only memory is through this file alone.</h3>
-    <button id="saveButton" onclick="saveTextAsFile()">Generate Work In Progress</button>
+    <button id="saveButton" onclick="saveTextAsFile()" >Generate Work In Progress</button>
     <div id="sessionSummary"></div>
 </body>
 </html>
