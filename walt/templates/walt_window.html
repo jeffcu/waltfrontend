@@ -29,13 +29,21 @@
             margin-bottom: 20px;
         }
 
-        input[type="file"] {
-            margin-bottom: 15px;
-            padding: 8px;
-            background-color: #2A3D55;
-            color: #D9E1EC;
-            border: 1px solid #4C657E;
+        #uploadButton {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            padding: 8px 12px;
+            background-color: #27AE60;
+            color: white;
+            border: none;
             border-radius: 6px;
+            cursor: pointer;
+            z-index: 10;  /* Ensure it's above other elements */
+        }
+
+        input[type="file"] {
+            display: none; /* Hide the default file input */
         }
 
         .chat-container {
@@ -120,9 +128,23 @@
             box-sizing: border-box;
             font-size: 1.2em;
         }
+         /* Add some space at the bottom */
+        #saveDownloadButton {
+            margin-top: auto;
+            margin-bottom: 20px;
+             padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #27AE60;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            width: 100%;
+            box-sizing: border-box;
+            height: auto /* adjust height of area */; /* Let the content decide the height */
+        }
     </style>
     <script>
-        let conversationSummary = ""; // Store the conversation Summary
 
         function submitPrompt() {
             let userInput = document.getElementById("userPrompt").value;
@@ -158,7 +180,7 @@
                     chatOutput.textContent = "Error: " + data.error;
                 } else {
                     chatOutput.textContent = data.response;  // Display the API response
-                    conversationSummary = data.session_summary;
+                    //conversationSummary = data.session_summary;
 
                 }
 
@@ -168,23 +190,20 @@
             });
         }
 
-        function saveAndQuit() {
-            var sessionContent = getSessionData();
-            // Get CSRF token from cookie
-            function getCookie(name) {
-                const value = `; ${document.cookie}`;
-                const parts = value.split(`; ${name}=`);
-                if (parts.length === 2) return parts.pop().split(';').shift();
-            }
+    //function getStoryBoard
+        function getStoryBoard(){
+            let chatOutput = document.getElementById("chatOutput").textContent;
+            return chatOutput
+        }
 
-            const csrfToken = getCookie('csrf_token');  // Retrieve from cookie
+        function saveAndQuit() {
+
             fetch("/walt_session_summary", {
                 method: "POST",
                 headers: {
-                    "Content-Type": "application/x-www-form-urlencoded",
-                    "X-CSRFToken": csrfToken  // Include CSRF token in header
+                    "Content-Type": "application/x-www-form-urlencoded"
                 },
-                body: "sessionContent=" + encodeURIComponent(sessionContent)
+                body: ""
             })
             .then(response => response.json())
             .then(data => {
@@ -196,13 +215,37 @@
             });
 
         }
+   function uploadStory() {
+            document.getElementById("story_upload").click();
+        }
+window.sessionContent;
 
-        function getSessionData(){
-         let chatHistory = document.getElementById("chatOutput").textContent;
-              console.log(chatHistory)
-               return chatHistory
+        function saveTextAsFile() {
+             let textToWrite = getStoryBoard()
 
-         }
+            var textFileAsBlob = new Blob([textToWrite], { type: 'text/plain' });
+            var fileNameToSaveAs = "sessionStory.txt";
+
+            var downloadLink = document.createElement("a");
+            downloadLink.download = fileNameToSaveAs;
+            downloadLink.innerHTML = "Download File";
+
+            if (window.webkitURL != null) {
+                // Chrome allows the link to be clicked
+                // without actually adding it to the DOM.
+                downloadLink.href = window.webkitURL.createObjectURL(textFileAsBlob);
+            }
+            else {
+                // Firefox requires the link to be added to the DOM
+                // before it can be clicked.
+                downloadLink.href = window.URL.createObjectURL(textFileAsBlob);
+                downloadLink.onclick = destroyClickedElement;
+                downloadLink.style.display = "none";
+                document.body.appendChild(downloadLink);
+            }
+
+            downloadLink.click();
+        }
 
         window.onload = function() {
             document.getElementById("chatOutput").textContent = "Hi, I'm Walt. What's your name?";
@@ -213,7 +256,9 @@
     <h1>Walt the Biographer</h1>
     <p class="tagline">I want to write your story!</p>
 
-    <input type="file" id="story_upload" name="story_upload" accept=".txt, .walt">
+    <button id="uploadButton" onclick="uploadStory()">Start where you left off. Upload your Biography checkpoint file.</button>
+
+    <input type="file" id="story_upload" name="story_upload" accept=".txt, .walt" onchange="this.form.submit()">
 
     <div class="chat-container">
         <div class="chat-output" id="chatOutput"></div>
@@ -223,7 +268,9 @@
         </div>
     </div>
 
-    <button id="saveButton" onclick="saveAndQuit()">Generate Work In Progress</button>
+    <button id="saveButton" onclick="saveTextAsFile()" >Download a Checkpoint file to continue later.</button>
+
+    <Note>No data is saved by this application, the only memory is through this file alone.</Note>
     <h2>Session Summary</h2>
     <div id="sessionSummary"></div>
 </body>
