@@ -8,12 +8,10 @@ from flask import current_app
 
 walt_bp = Blueprint('walt', __name__, template_folder='templates')
 
-# Route to render the main Walt app page
 @walt_bp.route('/walt')
 def walt_window():
     return render_template('walt_window.html')
 
-# Route to fetch the initial system prompt from walt_prompt.txt
 @walt_bp.route('/get_walt_prompt')
 def get_walt_prompt():
     try:
@@ -25,7 +23,7 @@ def get_walt_prompt():
     except Exception as e:
         return jsonify({"error": f"Error reading walt_prompt.txt: {str(e)}"}), 500
 
-# Route to handle user prompts and generate ChatGPT responses
+# New Route for Walt-Specific Analysis
 @walt_bp.route('/walt_analyze', methods=['POST'])
 def walt_analyze():
     user_input = request.form.get('user_query')
@@ -72,18 +70,25 @@ def walt_analyze():
 # Route to generate and return a session summary
 @walt_bp.route('/walt_session_summary', methods=['POST'])
 def walt_session_summary():
+    session_content=""
     try:
         client = openai.Client()  # Use your preferred method to initialize the OpenAI client
         # Get session information
         session_info = session.get('conversation', [])
+        #Get the story content if uploaded.
+        session_file=""
+        if 'file_content' in session:
+           session_content= session['file_content']
+        else:
+            session_content = "No story started"
 
         # Generate Summary from API
         response = client.chat.completions.create(
             model="gpt-4o",  # Specify the model you want to use
-            messages=[{"role": "system", "content": "Summarize the following conversation with an outline and summary of each section."},
-                      {"role": "user", "content": f"{session_info}"}],
+            messages=[{"role": "system", "content": "Your job is to deliver the status and summary of the session, the outline of sections written, the conversation history and the prompt.  Do not add anything else."},
+                      {"role": "user", "content": f"Return all known story with with outline, sections written, session prompts, system_info and the conversation."}],
             temperature=0.7,  # Adjust as needed
-            max_tokens=256,
+            max_tokens=2000, # up to 2000 tokes
             top_p=1
         )
         api_response = response.choices[0].message.content.strip()
