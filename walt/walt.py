@@ -1,3 +1,6 @@
+# Filename: walt/walt.py
+# Location: walt/walt.py (inside the walt directory)
+
 from flask import Blueprint, render_template, request, jsonify, session
 import os
 import openai  # Import the OpenAI library
@@ -5,10 +8,12 @@ from flask import current_app
 
 walt_bp = Blueprint('walt', __name__, template_folder='templates')
 
+# Route to render the main Walt app page
 @walt_bp.route('/walt')
 def walt_window():
     return render_template('walt_window.html')
 
+# Route to fetch the initial system prompt from walt_prompt.txt
 @walt_bp.route('/get_walt_prompt')
 def get_walt_prompt():
     try:
@@ -20,7 +25,7 @@ def get_walt_prompt():
     except Exception as e:
         return jsonify({"error": f"Error reading walt_prompt.txt: {str(e)}"}), 500
 
-# New Route for Walt-Specific Analysis
+# Route to handle user prompts and generate ChatGPT responses
 @walt_bp.route('/walt_analyze', methods=['POST'])
 def walt_analyze():
     user_input = request.form.get('user_query')
@@ -64,6 +69,7 @@ def walt_analyze():
         print(f"Error calling OpenAI: {e}")
         return jsonify({"error": str(e)}), 500
 
+# Route to generate and return a session summary
 @walt_bp.route('/walt_session_summary', methods=['POST'])
 def walt_session_summary():
     try:

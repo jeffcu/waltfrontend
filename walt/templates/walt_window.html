@@ -15,6 +15,7 @@
             min-height: 100vh;
             display: flex;
             flex-direction: column;
+            box-sizing: border-box; /* Important for padding/border inclusion */
         }
 
         h1 {
@@ -42,6 +43,8 @@
             max-width: 1200px;
             margin: 0 auto;
             flex: 1;
+            width: 100%; /* Ensure it takes full width */
+            box-sizing: border-box; /* Important for padding/border inclusion */
         }
 
         .chat-output {
@@ -54,14 +57,16 @@
             text-align: left;
             white-space: pre-wrap;
             overflow-y: auto;
+            box-sizing: border-box; /* Important for padding/border inclusion */
         }
 
         .chat-input {
-            flex: 1; /*  */
+            flex: 1;
             display: flex;
             flex-direction: column;
             padding: 10px;
             height:400px;
+            box-sizing: border-box; /* Important for padding/border inclusion */
         }
 
         textarea {
@@ -74,6 +79,7 @@
             border-radius: 6px;
             resize: vertical;
             min-height: 300px;
+            box-sizing: border-box; /* Important for padding/border inclusion */
         }
 
         button {
@@ -86,6 +92,7 @@
             border-radius: 6px;
             width: 100%;
             margin-bottom: 10px;
+            box-sizing: border-box; /* Important for padding/border inclusion */
         }
 
         button:hover {
@@ -94,8 +101,10 @@
 
         #saveButton {
             margin-top: 20px;
+            box-sizing: border-box; /* Important for padding/border inclusion */
         }
-                #sessionSummary {
+
+        #sessionSummary {
             margin-top: 20px;
             padding: 10px;
             border: 1px solid #4C657E;
@@ -105,6 +114,7 @@
             overflow-y: auto;
             min-height: 200px;
             text-align: left;
+            box-sizing: border-box; /* Important for padding/border inclusion */
         }
 
     </style>
