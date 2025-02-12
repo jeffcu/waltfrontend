@@ -76,17 +76,25 @@ def walt_session_summary():
         # Get session information
         session_info = session.get('conversation', [])
         #Get the story content if uploaded.
-        session_file=""
+        session_content=""
         if 'file_content' in session:
-           session_content= session['file_content']
+           file_content= session['file_content']
         else:
-            session_content = "No story started"
+            file_content = "No story started"
 
         # Generate Summary from API
+        session_content=""
+        #if session info exists add it.
+        if session_info:
+             session_content=session_info
+        else:
+             session_content = "No story started"
+
+
         response = client.chat.completions.create(
             model="gpt-4o",  # Specify the model you want to use
             messages=[{"role": "system", "content": "Your job is to deliver the status and summary of the session, the outline of sections written, the conversation history and the prompt.  Do not add anything else."},
-                      {"role": "user", "content": f"Return all known story with with outline, sections written, session prompts, system_info and the conversation."}],
+                      {"role": "user", "content": f"Return all known story with with outline, sections written, session prompts, system_info and the conversation for {session_content}."}],
             temperature=0.7,  # Adjust as needed
             max_tokens=2000, # up to 2000 tokes
             top_p=1

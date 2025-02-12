@@ -201,9 +201,20 @@ def jeffsart_image(filename):
         abort(404)
 
 # New route to display Walt
-@app.route('/walt')
+@app.route('/walt', methods=['GET', 'POST'])
 def walt():
-    return render_template('walt_window.html')
+    if request.method == 'POST':
+            if request.files:
+                 f = request.files['story_upload']
+                 file_content = f.read().decode("utf-8")
+                 session['file_content'] = file_content
+                 session.modified = True
+            else:
+                 #It's called with no information
+                  pass
+            return render_template('walt_window.html')
+    else:
+       return render_template('walt_window.html')
 
 
 # Error handlers

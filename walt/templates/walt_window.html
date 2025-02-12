@@ -53,12 +53,13 @@
             border: 1px solid #4C657E;
             border-radius: 6px;
             background-color: #2A3D55;
-            height: 300px; /* Fixed Height for 10 lines */
+            height: 300px;  /* Fixed Height for 10 lines */
             text-align: left;
             white-space: pre-wrap;
             overflow-y: auto;
             box-sizing: border-box;
             font-size: 1.2em; /* Larger font */
+            align-items: flex-start; /* Align to the top */
         }
 
         .chat-input {
@@ -168,7 +169,7 @@
         }
 
         function saveAndQuit() {
-
+            var sessionContent = getSessionData();
             // Get CSRF token from cookie
             function getCookie(name) {
                 const value = `; ${document.cookie}`;
@@ -183,7 +184,7 @@
                     "Content-Type": "application/x-www-form-urlencoded",
                     "X-CSRFToken": csrfToken  // Include CSRF token in header
                 },
-                body: ""
+                body: "sessionContent=" + encodeURIComponent(sessionContent)
             })
             .then(response => response.json())
             .then(data => {
@@ -195,6 +196,13 @@
             });
 
         }
+
+        function getSessionData(){
+         let chatHistory = document.getElementById("chatOutput").textContent;
+              console.log(chatHistory)
+               return chatHistory
+
+         }
 
         window.onload = function() {
             document.getElementById("chatOutput").textContent = "Hi, I'm Walt. What's your name?";
