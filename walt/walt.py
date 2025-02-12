@@ -63,3 +63,27 @@ def walt_analyze():
     except Exception as e:
         print(f"Error calling OpenAI: {e}")
         return jsonify({"error": str(e)}), 500
+
+@walt_bp.route('/walt_session_summary', methods=['POST'])
+def walt_session_summary():
+    try:
+        client = openai.Client()  # Use your preferred method to initialize the OpenAI client
+        # Get session information
+        session_info = session.get('conversation', [])
+
+        # Generate Summary from API
+        response = client.chat.completions.create(
+            model="gpt-4o",  # Specify the model you want to use
+            messages=[{"role": "system", "content": "Summarize the following conversation with an outline and summary of each section."},
+                      {"role": "user", "content": f"{session_info}"}],
+            temperature=0.7,  # Adjust as needed
+            max_tokens=256,
+            top_p=1
+        )
+        api_response = response.choices[0].message.content.strip()
+
+    except Exception as e:
+        print(f"Error calling OpenAI: {e}")
+        return jsonify({"error": str(e)}), 500
+
+    return jsonify({"session_summary": f"{api_response}"})

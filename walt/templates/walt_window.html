@@ -50,7 +50,7 @@
             border: 1px solid #4C657E;
             border-radius: 6px;
             background-color: #2A3D55;
-            min-height: 400px;
+            height: 400px;  /* Fixed Height */
             text-align: left;
             white-space: pre-wrap;
             overflow-y: auto;
@@ -87,8 +87,11 @@
         #saveButton {
             margin-top: 20px;
         }
+
     </style>
     <script>
+        let conversationSummary = ""; // Store the conversation Summary
+
         function submitPrompt() {
             let userInput = document.getElementById("userPrompt").value;
             let chatOutput = document.getElementById("chatOutput");
@@ -123,12 +126,43 @@
                     chatOutput.textContent = "Error: " + data.error;
                 } else {
                     chatOutput.textContent = data.response;  // Display the API response
+                    conversationSummary = data.session_summary;
+
                 }
 
             })
             .catch(error => {
                 chatOutput.textContent = "Error: " + error.message;
             });
+        }
+
+        function saveAndQuit() {
+
+            // Get CSRF token from cookie
+            function getCookie(name) {
+                const value = `; ${document.cookie}`;
+                const parts = value.split(`; ${name}=`);
+                if (parts.length === 2) return parts.pop().split(';').shift();
+            }
+
+            const csrfToken = getCookie('csrf_token');  // Retrieve from cookie
+            fetch("/walt_session_summary", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    "X-CSRFToken": csrfToken  // Include CSRF token in header
+                },
+                body: ""
+            })
+            .then(response => response.json())
+            .then(data => {
+                //Display the content from the API call on the screen.
+                document.getElementById("sessionSummary").innerHTML = data.session_summary;
+            })
+            .catch(error => {
+                chatOutput.textContent = "Error: " + error.message;
+            });
+             window.location.href = "/";
         }
     </script>
 </head>
@@ -146,6 +180,8 @@
         </div>
     </div>
 
-    <button id="saveButton" onclick="window.location.href='/'">Save Our Work and Quit</button>
+    <button id="saveButton" onclick="saveAndQuit()">Save Our Work and Quit</button>
+    <h2>Session Summary</h2>
+    <div id="sessionSummary"></div>
 </body>
 </html>
