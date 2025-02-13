@@ -85,6 +85,7 @@
             border-radius: 6px;
             background-color: #2A3D55;
             color: #D9E1EC;
+            min-height: 400px; /* Min height of 400px */
             height: 450px; /* Adjusted height to fit 18 lines, approximately */
             text-align: left;
             white-space: pre-wrap;
@@ -100,6 +101,7 @@
             flex-direction: column;
             box-sizing: border-box;
             padding: 10px;
+            min-height: 400px;  /* Added a min-height */
             height:450px; /* Adjusted height to match output */
         }
 
@@ -160,10 +162,11 @@
             background-color: #2A3D55;
             white-space: pre-wrap;
             overflow-y: auto;
-            min-height: 200px;
+            min-height: 0; /*Removes min height so no shape present*/
             text-align: left;
             box-sizing: border-box;
             font-size: 1.2em;
+            display:none; /*Hides the shape*/
         }
     </style>
     <script>
