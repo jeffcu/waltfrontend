@@ -266,7 +266,7 @@
         }
 
         function sendCheckpointData(fileContent) {
-                // Get CSRF token from cookie
+            // Get CSRF token from cookie
             function getCookie(name) {
                 const value = `; ${document.cookie}`;
                 const parts = value.split(`; ${name}=`);
@@ -279,7 +279,7 @@
                 method: "POST",
                 headers: {
                     "Content-Type": "application/x-www-form-urlencoded",
-                     "X-CSRFToken": csrfToken
+                    "X-CSRFToken": csrfToken  // Send CSRF token!
                 },
                 body: "checkpoint_data=" + encodeURIComponent(fileContent)
             })
