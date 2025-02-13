@@ -242,10 +242,15 @@
            downloadLink.click();
        }
 
-
         function uploadStory() {
             document.getElementById("story_upload").click(); // Trigger file input
         }
+
+         //Function to share messages
+         function sendLoadMessage() {
+            let chatOutput = document.getElementById("chatOutput");
+            chatOutput.textContent ="Oh I see! I'd forgotten what we already did. Wonderful";
+         }
 
         function sendCheckpointData(fileContent) {
             // Get CSRF token from cookie
@@ -271,6 +276,7 @@
                     document.getElementById("chatOutput").textContent = "Error: " + data.error;
                 } else {
                     document.getElementById("chatOutput").textContent = data.response;
+                     sendLoadMessage()//Added message on upload
                 }
             })
             .catch(error => {
@@ -289,14 +295,23 @@
                  const reader = new FileReader();
 
                     reader.onload = function(event) {
-                        uploaded_content = event.target.result; // Capture upload
-                        const fileContent = event.target.result;
-                        chatOutput.textContent = "Loading Checkpoint...";  // Display loading message
-                         sendCheckpointData(fileContent);
+                         try{
+                            uploaded_content = event.target.result; // Capture upload
+                            const fileContent = event.target.result;
+                            chatOutput.textContent = "Loading Checkpoint...";  // Display loading message
+                            sendCheckpointData(fileContent);
+                            console.log("File loaded into uploaded_content:", fileContent); // Check content
+                         }
+                         catch (error){
+                              chatOutput.textContent = "Error loading file in eventListener" + error;
+                         }
+
+
                     };
 
                     reader.onerror = function(event) {
                         chatOutput.textContent = "Error reading file: " + event.target.error;
+                         console.error("Error reading file:", event.target.error);
                     };
 
                     reader.readAsText(file);

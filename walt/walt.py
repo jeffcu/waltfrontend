@@ -1,5 +1,3 @@
-# Path: /walt/walt.py
-
 from flask import Blueprint, render_template, request, jsonify, session
 import os
 import openai  # Import the OpenAI library
@@ -46,6 +44,9 @@ def walt_analyze():
     # Add the uploaded content (if any) as context
     if uploaded_content:
         session['conversation'].append({"role": "system", "content": f"Here is context from your biography: {uploaded_content}"})
+        print(f"UPLOADED CONTENT TO OPEN API")
+    else:
+        print ("NO UPLOADED CONTENT!")
 
     # Add the user's message to the conversation
     session['conversation'].append({"role": "user", "content": user_input + ". Pick another chapter and let's discuss it."}) # Force chapter selection
