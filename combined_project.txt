@@ -1252,15 +1252,17 @@ def walt_session_summary():
         }
 
         #uploadButton {
-          padding: 10px 20px;
+            padding: 10px 20px;
             font-size: 16px;
             cursor: pointer;
             background-color: #27AE60;
             color: white;
             border: none;
             border-radius: 6px;
-            height: 2em;
+            height: auto; /* Make height adjust to content */
             width: 2in;
+            line-height: 1.2; /* Adjust line height for readability */
+            white-space: normal; /* Allow text to wrap */
         }
 
         input[type="file"] {
@@ -1297,7 +1299,8 @@ def walt_session_summary():
             border-radius: 6px;
             background-color: #2A3D55;
             color: #D9E1EC;
-            height: 300px;
+            min-height: 400px; /* Min height of 400px */
+            height: 450px; /* Adjusted height to fit 18 lines, approximately */
             text-align: left;
             white-space: pre-wrap;
             overflow-y: auto;
@@ -1312,7 +1315,8 @@ def walt_session_summary():
             flex-direction: column;
             box-sizing: border-box;
             padding: 10px;
-            height:300px;
+            min-height: 400px;  /* Added a min-height */
+            height:450px; /* Adjusted height to match output */
         }
 
         textarea {
@@ -1372,10 +1376,11 @@ def walt_session_summary():
             background-color: #2A3D55;
             white-space: pre-wrap;
             overflow-y: auto;
-            min-height: 200px;
+            min-height: 0; /*Removes min height so no shape present*/
             text-align: left;
             box-sizing: border-box;
             font-size: 1.2em;
+            display:none; /*Hides the shape*/
         }
     </style>
     <script>
@@ -1401,7 +1406,7 @@ def walt_session_summary():
             fetch("/walt_analyze", {
                 method: "POST",
                 headers: {
-                    "Content-Type": "application/x-www-form-urlencoded",
+                     "Content-Type": "application/x-www-form-urlencoded",
                     "X-CSRFToken": csrfToken
                 },
                 body: "user_query=" + encodeURIComponent(userInput)
@@ -1465,7 +1470,7 @@ def walt_session_summary():
     <p class="tagline">I want to write your story!</p>
 
        <div id="uploadButtonContainer">
-        <button id="uploadButton" onclick="uploadStory()">Start where you left off. Upload your Biography checkpoint file.</button>
+        <button id="uploadButton" onclick="uploadStory()">Start at last Checkpoint</button>
     </div>
     <input type="file" id="story_upload" name="story_upload" accept=".txt, .walt" onchange="this.form.submit()">
 
@@ -1482,7 +1487,7 @@ def walt_session_summary():
     </div>
 
     <h3 class="dataNote">Note: No data is saved by this application, the only memory is through this file alone.</h3>
-    <button id="saveButton" onclick="saveTextAsFile()" >Generate Work In Progress</button>
+    <button id="saveButton" onclick="saveTextAsFile()" >Create Checkpoint File</button>
     <div id="sessionSummary"></div>
 </body>
 </html>

@@ -1,3 +1,5 @@
+# Filename: walt/templates/walt_window.html
+# Path: /walt/templates/walt_window.html
 <!DOCTYPE html>
 <html>
 <head>
@@ -189,7 +191,7 @@
             fetch("/walt_analyze", {
                 method: "POST",
                 headers: {
-                     "Content-Type": "application/x-www-form-urlencoded",
+                    "Content-Type": "application/x-www-form-urlencoded",
                     "X-CSRFToken": csrfToken
                 },
                 body: "user_query=" + encodeURIComponent(userInput)
@@ -212,40 +214,89 @@
             return chatOutput
         }
 
-        function saveTextAsFile() {
-             let textToWrite = getStoryBoard()
+       function saveTextAsFile() {
+           let textToWrite = getStoryBoard();
 
-            var textFileAsBlob = new Blob([textToWrite], { type: 'text/plain' });
-            var fileNameToSaveAs = "sessionStory.txt";
+           var textFileAsBlob = new Blob([textToWrite], { type: 'text/plain' });
+           var fileNameToSaveAs = "sessionStory.txt";
 
-            var downloadLink = document.createElement("a");
-            downloadLink.download = fileNameToSaveAs;
-            downloadLink.innerHTML = "Download File";
+           var downloadLink = document.createElement("a");
+           downloadLink.download = fileNameToSaveAs;
+           downloadLink.innerHTML = "Download File";
 
-            if (window.webkitURL != null) {
-                // Chrome allows the link to be clicked
-                // without actually adding it to the DOM.
-                downloadLink.href = window.webkitURL.createObjectURL(textFileAsBlob);
-            }
-            else {
-                // Firefox requires the link to be added to the DOM
-                // before it can be clicked.
-                downloadLink.href = window.URL.createObjectURL(textFileAsBlob);
-                downloadLink.onclick = destroyClickedElement;
-                downloadLink.style.display = "none";
-                document.body.appendChild(downloadLink);
-            }
+           if (window.webkitURL != null) {
+               // Chrome allows the link to be clicked
+               // without actually adding it to the DOM.
+               downloadLink.href = window.webkitURL.createObjectURL(textFileAsBlob);
+           }
+           else {
+               // Firefox requires the link to be added to the DOM
+               // before it can be clicked.
+               downloadLink.href = window.URL.createObjectURL(textFileAsBlob);
+               downloadLink.onclick = destroyClickedElement;
+               downloadLink.style.display = "none";
+               document.body.appendChild(downloadLink);
+           }
 
-            downloadLink.click();
-        }
+           downloadLink.click();
+       }
+
 
         function uploadStory() {
-            document.getElementById("story_upload").click();
+            const fileInput = document.getElementById("story_upload");
+            const chatOutput = document.getElementById("chatOutput");
+            const file = fileInput.files[0];
+
+            if (!file) {
+                alert("Please select a file.");
+                return;
+            }
+
+            const reader = new FileReader();
+
+            reader.onload = function(event) {
+                const fileContent = event.target.result;
+                chatOutput.textContent = "Loading Checkpoint...";  // Display loading message
+                sendCheckpointData(fileContent);
+            };
+
+            reader.onerror = function(event) {
+                chatOutput.textContent = "Error reading file: " + event.target.error;
+            };
+
+            reader.readAsText(file);
         }
 
-        window.onload = function() {
-            document.getElementById("chatOutput").textContent = "Hi, I'm Walt. What's your name?";
-        };
+        function sendCheckpointData(fileContent) {
+                // Get CSRF token from cookie
+            function getCookie(name) {
+                const value = `; ${document.cookie}`;
+                const parts = value.split(`; ${name}=`);
+                if (parts.length === 2) return parts.pop().split(';').shift();
+            }
+
+            const csrfToken = getCookie('csrf_token');
+
+            fetch("/load_checkpoint", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded",
+                     "X-CSRFToken": csrfToken
+                },
+                body: "checkpoint_data=" + encodeURIComponent(fileContent)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    document.getElementById("chatOutput").textContent = "Error: " + data.error;
+                } else {
+                    document.getElementById("chatOutput").textContent = data.response;
+                }
+            })
+            .catch(error => {
+                 document.getElementById("chatOutput").textContent = "Error: " + error.message;
+            });
+        }
     </script>
 </head>
 <body>

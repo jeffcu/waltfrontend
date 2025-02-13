@@ -1,5 +1,5 @@
 # Filename: walt/walt.py
-# Location: walt/walt.py (inside the walt directory)
+# Path: /walt/walt.py
 
 from flask import Blueprint, render_template, request, jsonify, session
 import os
@@ -106,3 +106,36 @@ def walt_session_summary():
         return jsonify({"error": str(e)}), 500
 
     return jsonify({"session_summary": f"{api_response}"})
+
+@walt_bp.route('/load_checkpoint', methods=['POST'])
+def load_checkpoint():
+    checkpoint_data = request.form.get('checkpoint_data')
+    if not checkpoint_data:
+        return jsonify({"error": "No checkpoint data received"}), 400
+
+    try:
+        # Extract user's name (crude, but functional for demonstration)
+        if "Name:" in checkpoint_data:
+           user_name = checkpoint_data.split("Name:")[1].split("\n")[0].strip()
+        else:
+            user_name = "User"
+
+        #Call OpenAPI to get summary
+        client = openai.Client()
+        response = client.chat.completions.create(
+            model="gpt-4o",  # Or your preferred model
+            messages=[
+                {"role": "system", "content": "You are a biography assistant. Summarize the provided checkpoint file and return the users name and what parts of their biography are in the file."},
+                {"role": "user", "content": checkpoint_data}
+            ],
+            temperature=0.7,
+            max_tokens=256,
+            top_p=1,
+        )
+        api_response = response.choices[0].message.content.strip()
+
+        return jsonify({"response": f"Welcome back, {user_name}!  Here's a summary of your progress:\n{api_response}"})
+
+    except Exception as e:
+        print(f"Error processing checkpoint: {e}")
+        return jsonify({"error": str(e)}), 500
