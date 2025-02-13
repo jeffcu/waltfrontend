@@ -1,3 +1,5 @@
+# Path: /walt/walt.py
+
 from flask import Blueprint, render_template, request, jsonify, session
 import os
 import openai  # Import the OpenAI library
@@ -29,24 +31,24 @@ def walt_analyze():
     if not user_input:
         return jsonify({"error": "No user query provided"}), 400
 
+    try:
+        with open('walt_prompt.txt', 'r', encoding='utf-8') as f:
+            walt_prompt = f.read()  # Read the walt_prompt.txt
+    except FileNotFoundError:
+        return jsonify({"error": "walt_prompt.txt not found!"}), 500
+    except Exception as e:
+        return jsonify({"error": f"Error reading walt_prompt.txt: {str(e)}"}), 500
+
     # Initialize conversation history in session if it doesn't exist
     if 'conversation' not in session:
-        try:
-            with open('walt_prompt.txt', 'r', encoding='utf-8') as f:
-                system_prompt = f.read()
-        except FileNotFoundError:
-            return jsonify({"error": "walt_prompt.txt not found!"}), 500
-        except Exception as e:
-            return jsonify({"error": f"Error reading walt_prompt.txt: {str(e)}"}), 500
-
-        session['conversation'] = [{"role": "system", "content": system_prompt}]
+        session['conversation'] = [{"role": "system", "content": walt_prompt}]
 
     # Add the uploaded content (if any) as context
     if uploaded_content:
         session['conversation'].append({"role": "system", "content": f"Here is context from your biography: {uploaded_content}"})
 
     # Add the user's message to the conversation
-    session['conversation'].append({"role": "user", "content": user_input})
+    session['conversation'].append({"role": "user", "content": user_input + ". Pick another chapter and let's discuss it."}) # Force chapter selection
 
     try:
         client = openai.Client()  # Use your preferred method to initialize the OpenAI client
