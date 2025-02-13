@@ -188,9 +188,6 @@
 
             const csrfToken = getCookie('csrf_token');
 
-            //Debugging Statement
-            console.log ("Uploaded Content in sendToOpenAI:", fileContent)
-
             fetch("/walt_analyze", {
                 method: "POST",
                 headers: {
@@ -245,7 +242,6 @@
            downloadLink.click();
        }
 
-
         function uploadStory() {
             document.getElementById("story_upload").click(); // Trigger file input
         }
@@ -282,6 +278,7 @@
         }
 
         //Event listener to save data from upload
+        document.getElementById("story_upload").removeEventListener("change", arguments.callee);
         document.getElementById("story_upload").addEventListener("change", function() {
            if (this.files && this.files[0]) {
                 const fileInput = document.getElementById("story_upload");
@@ -329,7 +326,7 @@
        <div id="uploadButtonContainer">
         <button id="uploadButton" onclick="uploadStory()">Start at last Checkpoint</button>
     </div>
-    <input type="file" id="story_upload" name="story_upload" accept=".txt, .walt" onchange="this.form.submit()">
+    <input type="file" id="story_upload" name="story_upload" accept=".txt, .walt">
 
     <div class="chat-container">
          <div class="chat-area">
