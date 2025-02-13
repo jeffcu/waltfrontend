@@ -167,6 +167,8 @@
         }
     </style>
     <script>
+        let uploaded_content = ""; //Global variable to store uploaded content
+
         function submitPrompt() {
             let userInput = document.getElementById("userPrompt").value;
             let chatOutput = document.getElementById("chatOutput");
@@ -213,31 +215,41 @@
         }
 
        function saveTextAsFile() {
-           let textToWrite = getStoryBoard();
+            let textToWrite = "";
 
-           var textFileAsBlob = new Blob([textToWrite], { type: 'text/plain' });
-           var fileNameToSaveAs = "sessionStory.txt";
+            // Get the current content of the chat output
+            let chatOutput = document.getElementById("chatOutput").textContent;
+            let userPrompt = document.getElementById("userPrompt").value;
 
-           var downloadLink = document.createElement("a");
-           downloadLink.download = fileNameToSaveAs;
-           downloadLink.innerHTML = "Download File";
+            // Append user prompt even if empty to help understand history
+            textToWrite += "User Prompt:\n" + userPrompt + "\n\n";
 
-           if (window.webkitURL != null) {
-               // Chrome allows the link to be clicked
-               // without actually adding it to the DOM.
-               downloadLink.href = window.webkitURL.createObjectURL(textFileAsBlob);
-           }
-           else {
-               // Firefox requires the link to be added to the DOM
-               // before it can be clicked.
-               downloadLink.href = window.URL.createObjectURL(textFileAsBlob);
-               downloadLink.onclick = destroyClickedElement;
-               downloadLink.style.display = "none";
-               document.body.appendChild(downloadLink);
-           }
+            //Append the chat ouptut (the back and forth)
+            textToWrite = "File Checkpoint:\n" + uploaded_content+  "\nSession Text:\n" + chatOutput;
 
-           downloadLink.click();
-       }
+            var textFileAsBlob = new Blob([textToWrite], { type: 'text/plain' });
+            var fileNameToSaveAs = "sessionStory.txt";
+
+            var downloadLink = document.createElement("a");
+            downloadLink.download = fileNameToSaveAs;
+            downloadLink.innerHTML = "Download File";
+
+            if (window.webkitURL != null) {
+                // Chrome allows the link to be clicked
+                // without actually adding it to the DOM.
+                downloadLink.href = window.webkitURL.createObjectURL(textFileAsBlob);
+            }
+            else {
+                // Firefox requires the link to be added to the DOM
+                // before it can be clicked.
+                downloadLink.href = window.URL.createObjectURL(textFileAsBlob);
+                downloadLink.onclick = destroyClickedElement;
+                downloadLink.style.display = "none";
+                document.body.appendChild(downloadLink);
+            }
+
+            downloadLink.click();
+        }
 
 
         function uploadStory() {
@@ -253,6 +265,7 @@
             const reader = new FileReader();
 
             reader.onload = function(event) {
+                uploaded_content = event.target.result; // Capture upload
                 const fileContent = event.target.result;
                 chatOutput.textContent = "Loading Checkpoint...";  // Display loading message
                 sendCheckpointData(fileContent);
