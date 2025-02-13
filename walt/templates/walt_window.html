@@ -215,67 +215,35 @@
         }
 
        function saveTextAsFile() {
-            let textToWrite = "";
+           let textToWrite = getStoryBoard();
 
-            // Get the current content of the chat output
-            let chatOutput = document.getElementById("chatOutput").textContent;
-            let userPrompt = document.getElementById("userPrompt").value;
+           var textFileAsBlob = new Blob([textToWrite], { type: 'text/plain' });
+           var fileNameToSaveAs = "sessionStory.txt";
 
-            // Append user prompt even if empty to help understand history
-            textToWrite += "User Prompt:\n" + userPrompt + "\n\n";
+           var downloadLink = document.createElement("a");
+           downloadLink.download = fileNameToSaveAs;
+           downloadLink.innerHTML = "Download File";
 
-            //Append the chat ouptut (the back and forth)
-            textToWrite = "File Checkpoint:\n" + uploaded_content+  "\nSession Text:\n" + chatOutput;
+           if (window.webkitURL != null) {
+               // Chrome allows the link to be clicked
+               // without actually adding it to the DOM.
+               downloadLink.href = window.webkitURL.createObjectURL(textFileAsBlob);
+           }
+           else {
+               // Firefox requires the link to be added to the DOM
+               // before it can be clicked.
+               downloadLink.href = window.URL.createObjectURL(textFileAsBlob);
+               downloadLink.onclick = destroyClickedElement;
+               downloadLink.style.display = "none";
+               document.body.appendChild(downloadLink);
+           }
 
-            var textFileAsBlob = new Blob([textToWrite], { type: 'text/plain' });
-            var fileNameToSaveAs = "sessionStory.txt";
-
-            var downloadLink = document.createElement("a");
-            downloadLink.download = fileNameToSaveAs;
-            downloadLink.innerHTML = "Download File";
-
-            if (window.webkitURL != null) {
-                // Chrome allows the link to be clicked
-                // without actually adding it to the DOM.
-                downloadLink.href = window.webkitURL.createObjectURL(textFileAsBlob);
-            }
-            else {
-                // Firefox requires the link to be added to the DOM
-                // before it can be clicked.
-                downloadLink.href = window.URL.createObjectURL(textFileAsBlob);
-                downloadLink.onclick = destroyClickedElement;
-                downloadLink.style.display = "none";
-                document.body.appendChild(downloadLink);
-            }
-
-            downloadLink.click();
-        }
+           downloadLink.click();
+       }
 
 
         function uploadStory() {
-            const fileInput = document.getElementById("story_upload");
-            const chatOutput = document.getElementById("chatOutput");
-            const file = fileInput.files[0];
-
-            if (!file) {
-                alert("Please select a file.");
-                return;
-            }
-
-            const reader = new FileReader();
-
-            reader.onload = function(event) {
-                uploaded_content = event.target.result; // Capture upload
-                const fileContent = event.target.result;
-                chatOutput.textContent = "Loading Checkpoint...";  // Display loading message
-                sendCheckpointData(fileContent);
-            };
-
-            reader.onerror = function(event) {
-                chatOutput.textContent = "Error reading file: " + event.target.error;
-            };
-
-            reader.readAsText(file);
+            document.getElementById("story_upload").click(); // Trigger file input
         }
 
         function sendCheckpointData(fileContent) {
@@ -308,6 +276,32 @@
                  document.getElementById("chatOutput").textContent = "Error: " + error.message;
             });
         }
+
+        //Event listener to save data from upload
+        document.getElementById("story_upload").addEventListener("change", function() {
+           if (this.files && this.files[0]) {
+                const fileInput = document.getElementById("story_upload");
+                const chatOutput = document.getElementById("chatOutput");
+
+                const file = fileInput.files[0];
+
+                 const reader = new FileReader();
+
+                    reader.onload = function(event) {
+                        uploaded_content = event.target.result; // Capture upload
+                        const fileContent = event.target.result;
+                        chatOutput.textContent = "Loading Checkpoint...";  // Display loading message
+                         sendCheckpointData(fileContent);
+                    };
+
+                    reader.onerror = function(event) {
+                        chatOutput.textContent = "Error reading file: " + event.target.error;
+                    };
+
+                    reader.readAsText(file);
+            }
+        });
+
     </script>
 </head>
 <body>
