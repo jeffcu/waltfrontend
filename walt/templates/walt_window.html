@@ -278,8 +278,14 @@
         }
 
         //Event listener to save data from upload
-        document.getElementById("story_upload").removeEventListener("change", arguments.callee);
-        document.getElementById("story_upload").addEventListener("change", function() {
+       const storyUpload = document.getElementById("story_upload");
+       if (storyUpload) {
+            storyUpload.removeEventListener("change", handleFileUpload);
+            storyUpload.addEventListener("change", handleFileUpload);
+       }
+
+       //Separated function
+       function handleFileUpload (event) {
            if (this.files && this.files[0]) {
                 const fileInput = document.getElementById("story_upload");
                 const chatOutput = document.getElementById("chatOutput");
@@ -312,8 +318,7 @@
 
                     reader.readAsText(file);
             }
-        });
-
+       }
         window.onload = function() {
             document.getElementById("chatOutput").textContent = "";  // Clear default text
         };
