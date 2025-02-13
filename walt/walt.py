@@ -2,6 +2,7 @@ from flask import Blueprint, render_template, request, jsonify, session
 import os
 import openai  # Import the OpenAI library
 from flask import current_app
+import logging #Import logging tool for debugging
 
 walt_bp = Blueprint('walt', __name__, template_folder='templates')
 
@@ -42,17 +43,22 @@ def walt_analyze():
         session['conversation'] = [{"role": "system", "content": walt_prompt}]
 
     # Add the uploaded content (if any) as context
+    #Debug Code
     if uploaded_content:
-        session['conversation'].append({"role": "system", "content": f"Here is context from your biography: {uploaded_content}"})
-        print(f"UPLOADED CONTENT TO OPEN API")
+         session['conversation'].append({"role": "system", "content": f"Here is context from your biography: {uploaded_content}"})
+         print(f"UPLOADED CONTENT TO OPEN API:{uploaded_content}")
     else:
         print ("NO UPLOADED CONTENT!")
+
 
     # Add the user's message to the conversation
     session['conversation'].append({"role": "user", "content": user_input + ". Pick another chapter and let's discuss it."}) # Force chapter selection
 
     try:
         client = openai.Client()  # Use your preferred method to initialize the OpenAI client
+
+        # Log the messages being sent to OpenAI for debugging
+        logging.info(f"OpenAI Request Messages: {session['conversation']}")
 
         response = client.chat.completions.create(
             model="gpt-4o",  # Specify the model you want to use
@@ -70,7 +76,8 @@ def walt_analyze():
         return jsonify({"response": api_response})
 
     except Exception as e:
-        print(f"Error calling OpenAI: {e}")
+        # Log the full error for debugging.  You can also return this to Walt but might not be desired.
+        logging.error(f"OpenAI API Error: {e}", exc_info=True) # Log the full stack trace
         return jsonify({"error": str(e)}), 500
 
 @walt_bp.route('/walt_session_summary', methods=['POST'])

@@ -302,8 +302,8 @@
                             console.log ("File Content is loaded into uploaded content is:", uploaded_content)
                             const fileContent = event.target.result;
                             chatOutput.textContent = "Loading Checkpoint...";  // Display loading message
-                            sendCheckpointData(fileContent);
-                         }
+                           sendCheckpointData(fileContent);
+                                }
                          catch (error){
                               chatOutput.textContent = "Error loading file in eventListener" + error;
                          }
