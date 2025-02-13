@@ -1,6 +1,3 @@
-# Filename: walt/walt.py
-# Path: /walt/walt.py
-
 from flask import Blueprint, render_template, request, jsonify, session
 import os
 import openai  # Import the OpenAI library
@@ -27,6 +24,8 @@ def get_walt_prompt():
 @walt_bp.route('/walt_analyze', methods=['POST'])
 def walt_analyze():
     user_input = request.form.get('user_query')
+    uploaded_content = request.form.get('uploaded_content', '')  # Get the file content
+
     if not user_input:
         return jsonify({"error": "No user query provided"}), 400
 
@@ -41,6 +40,10 @@ def walt_analyze():
             return jsonify({"error": f"Error reading walt_prompt.txt: {str(e)}"}), 500
 
         session['conversation'] = [{"role": "system", "content": system_prompt}]
+
+    # Add the uploaded content (if any) as context
+    if uploaded_content:
+        session['conversation'].append({"role": "system", "content": f"Here is context from your biography: {uploaded_content}"})
 
     # Add the user's message to the conversation
     session['conversation'].append({"role": "user", "content": user_input})
@@ -67,7 +70,6 @@ def walt_analyze():
         print(f"Error calling OpenAI: {e}")
         return jsonify({"error": str(e)}), 500
 
-# Route to generate and return a session summary
 @walt_bp.route('/walt_session_summary', methods=['POST'])
 def walt_session_summary():
     session_content=""

@@ -174,11 +174,11 @@
             let chatOutput = document.getElementById("chatOutput");
 
             chatOutput.textContent = "Loading...";
-            sendToOpenAI(userInput, chatOutput);
+            sendToOpenAI(userInput, chatOutput, uploaded_content); // Send data
             document.getElementById("userPrompt").value = "";
         }
 
-        function sendToOpenAI(userInput, chatOutput) {
+         function sendToOpenAI(userInput, chatOutput, fileContent) {
             // Get CSRF token from cookie
             function getCookie(name) {
                 const value = `; ${document.cookie}`;
@@ -194,7 +194,7 @@
                     "Content-Type": "application/x-www-form-urlencoded",
                     "X-CSRFToken": csrfToken
                 },
-                body: "user_query=" + encodeURIComponent(userInput)
+                 body: "user_query=" + encodeURIComponent(userInput) + "&uploaded_content=" + encodeURIComponent(fileContent)  // Now send the file content
             })
             .then(response => response.json())
             .then(data => {
@@ -208,6 +208,7 @@
                 chatOutput.textContent = "Error: " + error.message;
             });
         }
+
 
          function getStoryBoard(){
             let chatOutput = document.getElementById("chatOutput").textContent;
@@ -301,6 +302,10 @@
                     reader.readAsText(file);
             }
         });
+
+        window.onload = function() {
+            document.getElementById("chatOutput").textContent = "";  // Clear default text
+        };
 
     </script>
 </head>
