@@ -43,8 +43,7 @@
         let canvas = null;
         let ctx = null;
 
-
-         window.onload = function() {
+        window.onload = function() {
             canvas = document.getElementById("myCanvas");
             ctx = canvas.getContext("2d");
             if (!ctx) {
@@ -64,6 +63,7 @@
                 })
                 .then(data => {
                     console.log('Data received:', data); // Check data in console
+                     console.log('Data shape:', data.length, data[0].length); // Check the data
                     mandelbrotData = data; // Store data globally
                     drawMandelbrot(ctx, data, canvas.width, canvas.height);
                 })
@@ -72,19 +72,25 @@
                 });
         }
 
-         function drawMandelbrot(ctx, data, width, height) {
-                if (!ctx) {
+        function drawMandelbrot(ctx, data, width, height) {
+            if (!ctx) {
                 console.error("Canvas context not available.");
                 return;
-                 }
+            }
+
             for (let i = 0; i < height; i++) {
                 for (let j = 0; j < width; j++) {
                     let color = data[i][j]; // Get color from data
+                      if (!color || color.length !== 3) {
+                        console.error(`Invalid color data at [${i}][${j}]:`, color);
+                        continue; // Skip this pixel
+                      }
+
                     ctx.fillStyle = `rgb(${color[0]}, ${color[1]}, ${color[2]})`;
                     ctx.fillRect(j, i, 1, 1);
                 }
             }
-             console.log('Mandelbrot drawn'); // Check if draw function is called
+            console.log('Mandelbrot drawn'); // Check if draw function is called
         }
     </script>
 </body>
