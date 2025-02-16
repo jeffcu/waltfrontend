@@ -370,6 +370,8 @@ Personality: You play the role of a are a gifted interviewer and biographer.  yo
 You always blend of empathy, meticulous research ability, excellent listening skills, adaptability, compelling storytelling, intellectual curiosity, unwavering integrity and ethics, exceptional communication skills, cultural and social awareness, and patience and perseverance. You love to help the user capture the great story of their life.  You have a knack of asking the right questions to get at peoples unique character.
 You ask great open ended questions and draw people out and discover their best story.  You talk to the person for 15 minutes each time.   During the 15 minutes you will, first confirm the story so far as a quick summary.
 
+Identity: Walt.   A friendly AI.
+
 Process:
 First: You start by sharing your name and asking theirs.  You remember the facts as their shared. Tell them you want to learn all about them and ask their permission to begin the interview.
 Second: Ask them to share the one thing they hope to be remembered for.
@@ -377,8 +379,8 @@ Third: Be an active learner, the ask them another great question like those belo
 Fourth: After 3-4 questions, you will then draft that Chapter of the Biography outline.
 Fifth: Each session you will focus on filling out one chapter at a time until the whole book is written. Always incorporate their hope to be remembered for along with the key moments to weave the life story together.  Explore their life and be pleasant and complimentary.
 Pull in historical context to help you ask quality questions.
-Sixth: After each session, draft the chapter you worked on.  The draft should fit in with all the other chapters written so far.  Pull historical events into the story where appropriate and to add color and context.
-Always keep a full copy of the work in progress as outlined.  Use Markdown format.
+Sixth: After each session when the user saves the checkpoint, draft the chapter you worked on.  The draft should fit in with all the other chapters written so far.  Pull historical events into the story where appropriate and to add color and context.  Rewrite the entire biography leaving To Be Supplied in any incomplete sections.
+Always out full copy of the work in progress when requests.  Use Markdown format.  After the Biographical text created so far, include a list of facts about the person that were discovered.
 
 You love completing a draft of each chapter of the story.  You cheer at the progress.
 You don't wait to ask question, you jump right in a start a chummy charming conversation with the user.
@@ -452,6 +454,71 @@ The Outline of The Biography:
 --- FILE: Procfile ---
 
 web: gunicorn virtual-lab:app
+
+--- FILE: onetimesetup.txt ---
+
+Prompt:
+
+I want you to generate a detailed, step-by-step guide for setting up a Mac environment to develop and deploy a Flask application using AI-generated code, with zero manual coding.
+
+The guide should be structured into clear sections and ordered logically to ensure a smooth setup process. Include command-line instructions, explanations of each tool, and any necessary configurations.
+
+Step-by-Step Setup Instructions Should Cover:
+
+1. Installing Essential Tools
+
+	•	Install Homebrew (if not installed)
+	•	Install Git using Homebrew
+	•	Install Heroku CLI using Homebrew
+	•	Install a code editor (recommend Atom or VS Code)
+
+2. Setting Up the Project Folder and Git
+
+	•	Open Terminal and create a new project directory
+	•	Navigate into the project directory
+	•	Initialize a Git repository inside the folder
+
+3. Setting Up Heroku
+
+	•	Log in to Heroku
+	•	Create a new Heroku app
+	•	Set up Git tracking for Heroku deployment
+
+4. Creating the Required Flask File Structure
+
+	•	Create folders and files:
+	•	my-ai-app/
+	•	static/ (for CSS, JS, images)
+	•	templates/ (for HTML files)
+	•	app.py (Flask app entry point)
+	•	requirements.txt (dependencies)
+	•	Procfile (Heroku startup instructions)
+	•	.gitignore (exclude unnecessary files)
+
+5. Installing and Configuring Python & Flask
+
+	•	Install Python (if not installed)
+	•	Create and activate a virtual environment
+	•	Install Flask, OpenAI, and Gunicorn
+
+6. Setting Up Heroku-Specific Configurations
+
+	•	Explain the role of Procfile and runtime.txt
+	•	Add required dependencies to requirements.txt
+	•	Set Heroku environment variables for API keys securely
+
+7. Preparing for AI Code Generation
+
+	•	Explain how combiner.py helps maintain AI accuracy
+	•	Show how to bundle project files and feed them to AI
+
+Output Format:
+
+	•	Use numbered steps with command-line examples
+	•	Explain each command in simple terms
+	•	Provide copy-paste-ready commands where applicable
+
+Make sure the instructions flow logically, ensuring that each step builds on the previous one so that a beginner can follow without confusion.
 
 --- FILE: virtual-lab 01.14.py ---
 
@@ -1103,13 +1170,11 @@ def format_pdf_content(summary_data):
 
 --- FILE: walt/walt.py ---
 
-# Filename: walt/walt.py
-# Location: walt/walt.py (inside the walt directory)
-
 from flask import Blueprint, render_template, request, jsonify, session
 import os
 import openai  # Import the OpenAI library
 from flask import current_app
+import logging #Import logging tool for debugging
 
 walt_bp = Blueprint('walt', __name__, template_folder='templates')
 
@@ -1132,26 +1197,40 @@ def get_walt_prompt():
 @walt_bp.route('/walt_analyze', methods=['POST'])
 def walt_analyze():
     user_input = request.form.get('user_query')
+    uploaded_content = request.form.get('uploaded_content', '')  # Get the file content
+
     if not user_input:
         return jsonify({"error": "No user query provided"}), 400
 
+    try:
+        with open('walt_prompt.txt', 'r', encoding='utf-8') as f:
+            walt_prompt = f.read()  # Read the walt_prompt.txt
+    except FileNotFoundError:
+        return jsonify({"error": "walt_prompt.txt not found!"}), 500
+    except Exception as e:
+        return jsonify({"error": f"Error reading walt_prompt.txt: {str(e)}"}), 500
+
     # Initialize conversation history in session if it doesn't exist
     if 'conversation' not in session:
-        try:
-            with open('walt_prompt.txt', 'r', encoding='utf-8') as f:
-                system_prompt = f.read()
-        except FileNotFoundError:
-            return jsonify({"error": "walt_prompt.txt not found!"}), 500
-        except Exception as e:
-            return jsonify({"error": f"Error reading walt_prompt.txt: {str(e)}"}), 500
+        session['conversation'] = [{"role": "system", "content": walt_prompt}]
 
-        session['conversation'] = [{"role": "system", "content": system_prompt}]
+    # Add the uploaded content (if any) as context
+    #Debug Code
+    if uploaded_content:
+         session['conversation'].append({"role": "system", "content": f"Here is context from your biography: {uploaded_content}"})
+         print(f"UPLOADED CONTENT TO OPEN API:{uploaded_content}")
+    else:
+        print ("NO UPLOADED CONTENT!")
+
 
     # Add the user's message to the conversation
-    session['conversation'].append({"role": "user", "content": user_input})
+    session['conversation'].append({"role": "user", "content": user_input + ". Pick another chapter and let's discuss it."}) # Force chapter selection
 
     try:
         client = openai.Client()  # Use your preferred method to initialize the OpenAI client
+
+        # Log the messages being sent to OpenAI for debugging
+        logging.info(f"OpenAI Request Messages: {session['conversation']}")
 
         response = client.chat.completions.create(
             model="gpt-4o",  # Specify the model you want to use
@@ -1169,10 +1248,10 @@ def walt_analyze():
         return jsonify({"response": api_response})
 
     except Exception as e:
-        print(f"Error calling OpenAI: {e}")
+        # Log the full error for debugging.  You can also return this to Walt but might not be desired.
+        logging.error(f"OpenAI API Error: {e}", exc_info=True) # Log the full stack trace
         return jsonify({"error": str(e)}), 500
 
-# Route to generate and return a session summary
 @walt_bp.route('/walt_session_summary', methods=['POST'])
 def walt_session_summary():
     session_content=""
@@ -1211,6 +1290,39 @@ def walt_session_summary():
         return jsonify({"error": str(e)}), 500
 
     return jsonify({"session_summary": f"{api_response}"})
+
+@walt_bp.route('/load_checkpoint', methods=['POST'])
+def load_checkpoint():
+    checkpoint_data = request.form.get('checkpoint_data')
+    if not checkpoint_data:
+        return jsonify({"error": "No checkpoint data received"}), 400
+
+    try:
+        # Extract user's name (crude, but functional for demonstration)
+        if "Name:" in checkpoint_data:
+           user_name = checkpoint_data.split("Name:")[1].split("\n")[0].strip()
+        else:
+            user_name = "User"
+
+        #Call OpenAPI to get summary
+        client = openai.Client()
+        response = client.chat.completions.create(
+            model="gpt-4o",  # Or your preferred model
+            messages=[
+                {"role": "system", "content": "You are a biography assistant. Summarize the provided checkpoint file and return the users name and what parts of their biography are in the file."},
+                {"role": "user", "content": checkpoint_data}
+            ],
+            temperature=0.7,
+            max_tokens=256,
+            top_p=1,
+        )
+        api_response = response.choices[0].message.content.strip()
+
+        return jsonify({"response": f"Welcome back, {user_name}!  Here's a summary of your progress:\n{api_response}"})
+
+    except Exception as e:
+        print(f"Error processing checkpoint: {e}")
+        return jsonify({"error": str(e)}), 500
 
 
 --- FILE: walt/templates/walt_window.html ---
@@ -1384,16 +1496,19 @@ def walt_session_summary():
         }
     </style>
     <script>
+        let uploaded_content = ""; //Global variable to store uploaded content
+        let storyUpload; // Declare storyUpload outside the event listener
+
         function submitPrompt() {
             let userInput = document.getElementById("userPrompt").value;
             let chatOutput = document.getElementById("chatOutput");
 
             chatOutput.textContent = "Loading...";
-            sendToOpenAI(userInput, chatOutput);
+            sendToOpenAI(userInput, chatOutput, uploaded_content); // Send data
             document.getElementById("userPrompt").value = "";
         }
 
-        function sendToOpenAI(userInput, chatOutput) {
+         function sendToOpenAI(userInput, chatOutput, fileContent) {
             // Get CSRF token from cookie
             function getCookie(name) {
                 const value = `; ${document.cookie}`;
@@ -1406,10 +1521,10 @@ def walt_session_summary():
             fetch("/walt_analyze", {
                 method: "POST",
                 headers: {
-                     "Content-Type": "application/x-www-form-urlencoded",
+                    "Content-Type": "application/x-www-form-urlencoded",
                     "X-CSRFToken": csrfToken
                 },
-                body: "user_query=" + encodeURIComponent(userInput)
+                 body: "user_query=" + encodeURIComponent(userInput) + "&uploaded_content=" + encodeURIComponent(fileContent)  // Now send the file content
             })
             .then(response => response.json())
             .then(data => {
@@ -1424,44 +1539,133 @@ def walt_session_summary():
             });
         }
 
+
          function getStoryBoard(){
             let chatOutput = document.getElementById("chatOutput").textContent;
             return chatOutput
         }
 
-        function saveTextAsFile() {
-             let textToWrite = getStoryBoard()
+       function saveTextAsFile() {
+           let textToWrite = getStoryBoard();
 
-            var textFileAsBlob = new Blob([textToWrite], { type: 'text/plain' });
-            var fileNameToSaveAs = "sessionStory.txt";
+           var textFileAsBlob = new Blob([textToWrite], { type: 'text/plain' });
+           var fileNameToSaveAs = "sessionStory.txt";
 
-            var downloadLink = document.createElement("a");
-            downloadLink.download = fileNameToSaveAs;
-            downloadLink.innerHTML = "Download File";
+           var downloadLink = document.createElement("a");
+           downloadLink.download = fileNameToSaveAs;
+           downloadLink.innerHTML = "Download File";
 
-            if (window.webkitURL != null) {
-                // Chrome allows the link to be clicked
-                // without actually adding it to the DOM.
-                downloadLink.href = window.webkitURL.createObjectURL(textFileAsBlob);
+           if (window.webkitURL != null) {
+               // Chrome allows the link to be clicked
+               // without actually adding it to the DOM.
+               downloadLink.href = window.webkitURL.createObjectURL(textFileAsBlob);
+           }
+           else {
+               // Firefox requires the link to be added to the DOM
+               // before it can be clicked.
+               downloadLink.href = window.URL.createObjectURL(textFileAsBlob);
+               downloadLink.onclick = destroyClickedElement;
+               downloadLink.style.display = "none";
+               document.body.appendChild(downloadLink);
+           }
+
+           downloadLink.click();
+       }
+
+       function sendCheckpointData(fileContent) {
+            // Get CSRF token from cookie
+            function getCookie(name) {
+                const value = `; ${document.cookie}`;
+                const parts = value.split(`; ${name}=`);
+                if (parts.length === 2) return parts.pop().split(';').shift();
             }
-            else {
-                // Firefox requires the link to be added to the DOM
-                // before it can be clicked.
-                downloadLink.href = window.URL.createObjectURL(textFileAsBlob);
-                downloadLink.onclick = destroyClickedElement;
-                downloadLink.style.display = "none";
-                document.body.appendChild(downloadLink);
-            }
 
-            downloadLink.click();
+            const csrfToken = getCookie('csrf_token');
+
+            fetch("/load_checkpoint", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    "X-CSRFToken": csrfToken  // Send CSRF token!
+                },
+                body: "checkpoint_data=" + encodeURIComponent(fileContent)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    document.getElementById("chatOutput").textContent = "Error: " + data.error;
+                } else {
+                    document.getElementById("chatOutput").textContent = data.response;
+                     sendLoadMessage()//Added message on upload
+                }
+            })
+            .catch(error => {
+                 document.getElementById("chatOutput").textContent = "Error: " + error.message;
+            });
         }
 
+           function sendLoadMessage() {
+            let chatOutput = document.getElementById("chatOutput");
+            chatOutput.textContent ="Oh I see! I'd forgotten what we already did. Wonderful";
+         }
+        // This function is triggered when the "Start at last Checkpoint" is pressed
         function uploadStory() {
-            document.getElementById("story_upload").click();
-        }
+             if (storyUpload) {
+                 console.log("Firing Upload Story Trigger");
+                 storyUpload.click(); //Programitcally fire "load a checkpoint file."
+              } else {
+                console.error("storyUpload element not found");
+              }
+
+          }
+         //Event Handling
+        document.addEventListener('DOMContentLoaded', function() {
+            storyUpload = document.getElementById("story_upload"); // Define at document load
+            if (storyUpload) {
+              //Event
+              storyUpload.addEventListener("change", function() {
+                if (this.files && this.files[0]) {
+                  const fileInput = document.getElementById("story_upload");
+                  const chatOutput = document.getElementById("chatOutput");
+
+                  const file = fileInput.files[0];
+
+                   const reader = new FileReader();
+                      //Set value for upload
+                     reader.onload = function(event) {
+                           try{
+                                console.log ("Story Uploaded to the Chat Output", event.target.result); //Check log before
+                                //Capture the file upload
+                                uploaded_content = event.target.result;
+
+                                //Display Load
+                                chatOutput.textContent = "Loading Checkpoint...";  // Display loading message
+
+                                //Load the checkpoint
+                                sendCheckpointData(event.target.result); // Send the data
+
+                            }
+
+                            catch (error){
+                                chatOutput.textContent = "Error loading file in eventListener" + error;
+                            }
+                     };
+
+                     reader.onerror = function(event) {
+                        chatOutput.textContent = "Error reading file: " + event.target.error;
+                         console.error("Error reading file:", event.target.error);
+                    };
+
+                    reader.readAsText(file);
+                 }
+              })
+            } else {
+               console.log("Story Upload does not exist")
+             }
+        })
 
         window.onload = function() {
-            document.getElementById("chatOutput").textContent = "Hi, I'm Walt. What's your name?";
+            document.getElementById("chatOutput").textContent = "";  // Clear default text
         };
     </script>
 </head>
@@ -1472,7 +1676,7 @@ def walt_session_summary():
        <div id="uploadButtonContainer">
         <button id="uploadButton" onclick="uploadStory()">Start at last Checkpoint</button>
     </div>
-    <input type="file" id="story_upload" name="story_upload" accept=".txt, .walt" onchange="this.form.submit()">
+    <input type="file" id="story_upload" name="story_upload" accept=".txt, .walt">
 
     <div class="chat-container">
          <div class="chat-area">

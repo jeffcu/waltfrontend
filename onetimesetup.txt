@@ -1,0 +1,62 @@
+Prompt:
+
+I want you to generate a detailed, step-by-step guide for setting up a Mac environment to develop and deploy a Flask application using AI-generated code, with zero manual coding.
+
+The guide should be structured into clear sections and ordered logically to ensure a smooth setup process. Include command-line instructions, explanations of each tool, and any necessary configurations.
+
+Step-by-Step Setup Instructions Should Cover:
+
+1. Installing Essential Tools
+
+	•	Install Homebrew (if not installed)
+	•	Install Git using Homebrew
+	•	Install Heroku CLI using Homebrew
+	•	Install a code editor (recommend Atom or VS Code)
+
+2. Setting Up the Project Folder and Git
+
+	•	Open Terminal and create a new project directory
+	•	Navigate into the project directory
+	•	Initialize a Git repository inside the folder
+
+3. Setting Up Heroku
+
+	•	Log in to Heroku
+	•	Create a new Heroku app
+	•	Set up Git tracking for Heroku deployment
+
+4. Creating the Required Flask File Structure
+
+	•	Create folders and files:
+	•	my-ai-app/
+	•	static/ (for CSS, JS, images)
+	•	templates/ (for HTML files)
+	•	app.py (Flask app entry point)
+	•	requirements.txt (dependencies)
+	•	Procfile (Heroku startup instructions)
+	•	.gitignore (exclude unnecessary files)
+
+5. Installing and Configuring Python & Flask
+
+	•	Install Python (if not installed)
+	•	Create and activate a virtual environment
+	•	Install Flask, OpenAI, and Gunicorn
+
+6. Setting Up Heroku-Specific Configurations
+
+	•	Explain the role of Procfile and runtime.txt
+	•	Add required dependencies to requirements.txt
+	•	Set Heroku environment variables for API keys securely
+
+7. Preparing for AI Code Generation
+
+	•	Explain how combiner.py helps maintain AI accuracy
+	•	Show how to bundle project files and feed them to AI
+
+Output Format:
+
+	•	Use numbered steps with command-line examples
+	•	Explain each command in simple terms
+	•	Provide copy-paste-ready commands where applicable
+
+Make sure the instructions flow logically, ensuring that each step builds on the previous one so that a beginner can follow without confusion.

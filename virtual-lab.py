@@ -1,13 +1,13 @@
-# Filename: virtual-lab.py
-# Location: virtual-lab.py (relative to root)
-from flask import Flask, request, jsonify, render_template, send_file, abort, session
 import os
+from flask import Flask, request, render_template, send_file, jsonify
+from dotenv import load_dotenv
+import numpy as np  # Import NumPy
+import json
 import logging
 import weasyprint
 from io import BytesIO
 from investment_analysis.services import InvestmentAnalysisService
-from investment_analysis.utils import format_pdf_content # take out, not being used
-from dotenv import load_dotenv
+#from investment_analysis.utils import format_pdf_content # take out, not being used
 from PyPDF2 import PdfReader
 from werkzeug.utils import secure_filename  # for secure file uploads
 from flask_wtf.csrf import CSRFProtect, generate_csrf  # Import CSRFProtect and generate_csrf
@@ -20,8 +20,12 @@ load_dotenv()
 # Setup logging
 logging.basicConfig(level=logging.DEBUG)
 
+
+# Initialize Flask application
 app = Flask(__name__)
-app.config['UPLOAD_FOLDER'] = 'uploads'  # Create an uploads folder
+app.config['UPLOAD_FOLDER'] = 'uploads'  # Folder to store uploaded files
+os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max upload size
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'a_very_secret_key')  # Set a secret key for CSRF
 
@@ -30,9 +34,6 @@ app.config['SESSION_TYPE'] = 'filesystem'  # Or 'redis', 'mongodb', etc.
 app.config['SESSION_PERMANENT'] = False  # Session expires when browser closes
 app.config['SESSION_KEY_PREFIX'] = 'walt_'  # Prevents conflicts with other session data
 Session(app) # Initialize Flask-Session
-
-# Create the uploads folder if it doesn't exist
-os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 # Initialize CSRF protection
 csrf = CSRFProtect()
@@ -52,6 +53,50 @@ if not openai_api_key:
 
 analysis_service = InvestmentAnalysisService(openai_api_key=openai_api_key)
 
+
+# Application version
+APP_VERSION = "0.1.15"  #increment for change
+
+
+@app.route('/dynamic')
+def dynamic():
+    return render_template('dynamic.html')
+
+@app.route('/dynamic_data')
+def dynamic_data():
+    #Option 1: Sine Wave Graph
+    #num_points = 500
+    #x = np.linspace(0, 10 * np.pi, num_points)
+    #y = np.sin(x)
+    #data = {'x': x.tolist(), 'y': y.tolist()}
+    #Option 2: Mandelbrot Set
+    width, height, max_iter = 128, 128, 50
+    mandelbrot_set = calculate_mandelbrot(width, height, max_iter)
+    data = mandelbrot_set.tolist()
+
+    return jsonify(data)
+
+
+#Mandelbrot Set Calculator Function
+def calculate_mandelbrot(width, height, max_iter):
+    x_min, x_max = -2.0, 1.0
+    y_min, y_max = -1.5, 1.5
+
+    image = np.zeros((height, width), dtype=np.uint8)  # Use NumPy array for image
+
+    x_range = np.linspace(x_min, x_max, width)
+    y_range = np.linspace(y_min, y_max, height)
+
+    for i in range(height):
+        for j in range(width):
+            c = complex(x_range[j], y_range[i])
+            z = 0
+            for k in range(max_iter):
+                z = z * z + c
+                if abs(z) > 2:
+                    image[i, j] = int(k * 255 / max_iter)  # Convert iteration count to grayscale
+                    break
+    return image
 
 # Home route redirecting to the gallery page
 @app.route('/')
@@ -216,17 +261,6 @@ def walt():
     else:
        return render_template('walt_window.html')
 
-
-# Error handlers
-@app.errorhandler(400)
-def bad_request(e):
-    return jsonify(error=str(e)), 400
-
-
-@app.errorhandler(500)
-def internal_server_error(e):
-    return jsonify(error=str(e)), 500
-
 # Register the walt blueprint
 app.register_blueprint(walt_bp)
 
@@ -234,4 +268,4 @@ app.register_blueprint(walt_bp)
 # Fix for Heroku: Bind to PORT
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port, debug=True)  # Debug mode for development
+    app.run(host="0.0.0.0", port=port, debug=True)
