@@ -137,6 +137,9 @@
         function openWaltWindow() {
             window.location.href = "/walt";
         }
+        function openDynamicGraph() {
+             window.location.href = "/dynamic";
+        }
     </script>
 </head>
 <body>
@@ -160,11 +163,12 @@
                 <a href="#" onclick="openJeffsArt('racecars.jpeg')">View Art</a>
             </div>
 
+            <!-- Dynamic Graph Button -->
             <div class="project-tile">
-                <img src="static/icons/green-button.jpeg" alt="API Test">
-                <h3>API Test</h3>
-                <p>Check API connection and response.</p>
-                <a href="#" onclick="openTestWindow()">API Test</a>
+                <img src="static/icons/green-button.jpeg" alt="Dynamic Graph">
+                <h3>Dynamic Graphing</h3>
+                <p>Explore dynamically generated graphs.</p>
+                <a href="#" onclick="openDynamicGraph()">Open App</a>
             </div>
 
            <!-- GPT Prototype Button -->
@@ -175,10 +179,18 @@
                 <a href="/angel_investment_analysis">Launch Project</a>
             </div>
 
-            {% for i in range(1, 14) %}
+            <!-- API Test Button -->
+            <div class="project-tile">
+                <img src="static/icons/green-button.jpeg" alt="API Test">
+                <h3>API Test</h3>
+                <p>Check API connection and response.</p>
+                <a href="#" onclick="openTestWindow()">API Test</a>
+            </div>
+
+            {% for i in range(1, 12) %}
             <div class="project-tile">
                 <img src="static/icons/red-button.jpeg" alt="Placeholder Project">
-                <h3>Placeholder Project {{ i + 2 }}</h3>
+                <h3>Placeholder Project {{ i + 4 }}</h3>
                 <p>Future exciting projects coming soon.</p>
                 <a href="#">Coming Soon</a>
             </div>
