@@ -68,7 +68,7 @@ def dynamic_data():
     #y = np.sin(x)
     #data = {'x': x.tolist(), 'y': y.tolist()}
     #Option 2: Mandelbrot Set
-    width, height, max_iter = 128, 128, 50  # Increased resolution
+    width, height, max_iter = 640, 640, 50  # Increased resolution
     mandelbrot_set = calculate_mandelbrot(width, height, max_iter)
     data = mandelbrot_set.tolist()
 
