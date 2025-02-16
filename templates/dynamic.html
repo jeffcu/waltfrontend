@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Colorized Mandelbrot Set</title>
+    <title>Dynamic Graph</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
         body {
@@ -16,17 +16,16 @@
         canvas {
             background-color: #000;
             border: 1px solid #ddd;
-            display: block; /* Ensure canvas is a block element */
-            margin: 0 auto; /* Center the canvas horizontally */
+            display: block;
+            margin: 10px auto;
         }
-
         button {
             display: block;
-            margin: 10px auto; /* Center the button horizontally */
+            margin: 10px auto;
             padding: 10px 15px;
             font-size: 16px;
             cursor: pointer;
-            background-color: #4CAF50; /* Green */
+            background-color: #4CAF50;
             color: white;
             border: none;
             border-radius: 5px;
@@ -35,22 +34,38 @@
 </head>
 <body>
     <h1>Colorized Mandelbrot Set</h1>
-    <canvas id="myCanvas" width="640" height="640"></canvas>
+    <canvas id="mandelbrotCanvas" width="640" height="640"></canvas>
     <button onclick="renderMandelbrot()">Re-render Mandelbrot</button>
 
+    <h2>Scrolling Sine Wave</h2>
+    <canvas id="sineCanvas" width="640" height="200"></canvas>
+
     <script>
-        let mandelbrotData = null; // Store Mandelbrot data globally
+        let mandelbrotData = null;
+        let sineData = null;
         let canvas = null;
         let ctx = null;
 
         window.onload = function() {
-            canvas = document.getElementById("myCanvas");
-            ctx = canvas.getContext("2d");
-            if (!ctx) {
+            // Initialize the canvas object
+            canvas = {
+                mandelbrot: document.getElementById("mandelbrotCanvas"),
+                sine: document.getElementById("sineCanvas")
+            };
+
+            //Initialize the drawing context
+            ctx = {
+                mandelbrot: canvas.mandelbrot.getContext("2d"),
+                sine: canvas.sine.getContext("2d")
+            };
+
+            //Safety Check
+            if (!ctx.mandelbrot || !ctx.sine) {
                 console.error("Failed to get 2D context. Canvas may not be supported.");
                 return;
             }
-            renderMandelbrot(); // Initial rendering
+            renderMandelbrot();
+            startSineAnimation();
         };
 
         function renderMandelbrot() {
@@ -62,21 +77,19 @@
                     return response.json();
                 })
                 .then(data => {
-                    console.log('Data received:', data); // Check data in console
-                    mandelbrotData = data; // Store data globally
-                    drawMandelbrot(ctx, data, canvas.width, canvas.height);
+                    mandelbrotData = data.mandelbrot; // Get mandelbrot data
+                    sineData = data.sine; // Get sine data
+                    drawMandelbrot(ctx.mandelbrot, mandelbrotData, canvas.mandelbrot.width, canvas.mandelbrot.height);
                 })
                 .catch(error => {
                     console.error('Fetch error:', error);
                 });
         }
-
         function drawMandelbrot(ctx, data, width, height) {
             if (!ctx) {
                 console.error("Canvas context not available.");
                 return;
             }
-
             for (let i = 0; i < height; i++) {
                 for (let j = 0; j < width; j++) {
                     let color = data[i][j]; // Get color from data
@@ -84,13 +97,50 @@
                         console.error(`Invalid color data at [${i}][${j}]:`, color);
                         continue; // Skip this pixel
                       }
-
                     ctx.fillStyle = `rgb(${color[0]}, ${color[1]}, ${color[2]})`;
                     ctx.fillRect(j, i, 1, 1);
                 }
             }
-            console.log('Mandelbrot drawn'); // Check if draw function is called
+             console.log('Mandelbrot drawn'); // Check if draw function is called
         }
+
+        // Sine Wave Animation
+
+            let waveOffset = 0; // Initial offset
+
+           function startSineAnimation() {
+              //Call the sine Wave with animation
+               drawScrollingSineWave(); // Initial draw
+              setInterval(drawScrollingSineWave, 20); // Adjust interval for speed
+
+              //Now for Animation
+              function drawScrollingSineWave() {
+                 const width = canvas.sine.width;
+                 const height = canvas.sine.height;
+
+                ctx.sine.clearRect(0, 0, width, height); // Clear canvas
+
+                 ctx.sine.beginPath();
+                ctx.sine.strokeStyle = 'cyan';
+
+                 const amplitude = height / 2 * 0.9;  // 90% of the height
+                 const frequency = 0.01;    // Adjust for wave density
+
+                 for (let x = 0; x < width; x++) {
+                    const y = amplitude * Math.sin((x + waveOffset) * frequency) + height / 2;
+                    if (x === 0) {
+                        ctx.sine.moveTo(x, y);
+                    } else {
+                         ctx.sine.lineTo(x, y);
+                    }
+                 }
+                 ctx.sine.stroke();
+
+                 waveOffset -= 1;  // Adjust for scroll left
+
+            }
+        }
+
     </script>
 </body>
 </html>

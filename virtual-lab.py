@@ -7,7 +7,7 @@ import logging
 import weasyprint
 from io import BytesIO
 from investment_analysis.services import InvestmentAnalysisService
-#from investment_analysis/utils import format_pdf_content # take out, not being used
+#from investment_analysis.utils import format_pdf_content # take out, not being used
 from PyPDF2 import PdfReader
 from werkzeug.utils import secure_filename  # for secure file uploads
 from flask_wtf.csrf import CSRFProtect, generate_csrf  # Import CSRFProtect and generate_csrf
@@ -78,16 +78,17 @@ def dynamic():
 def dynamic_data():
     global palette_index
     # Option 1: Sine Wave Graph
-    # num_points = 500
-    # x = np.linspace(0, 10 * np.pi, num_points)
-    # y = np.sin(x)
-    # data = {'x': x.tolist(), 'y': y.tolist()}
+    num_points = 640
+    x = np.linspace(0, 10 * np.pi, num_points)
+    y = np.sin(x)
+    sine_data = {'x': x.tolist(), 'y': y.tolist()}
     # Option 2: Mandelbrot Set
     width, height, max_iter = 640, 640, 50  # Increased resolution
     mandelbrot_set = calculate_mandelbrot(width, height, max_iter, palette_index)
-    data = mandelbrot_set.tolist()
+    mandelbrot_data = mandelbrot_set.tolist()
     palette_index = (palette_index + 1) % len(COLOR_PALETTES)  # Increment and loop
-    return jsonify(data)
+
+    return jsonify({'mandelbrot': mandelbrot_data, 'sine': sine_data})
 
 
 # Mandelbrot Set Calculator Function
