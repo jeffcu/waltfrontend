@@ -13,13 +13,13 @@ from werkzeug.utils import secure_filename  # for secure file uploads
 from flask_wtf.csrf import CSRFProtect, generate_csrf  # Import CSRFProtect and generate_csrf
 from walt.walt import walt_bp  # Import the walt blueprint
 from flask_session import Session # Import Flask-Session
+import colorsys #Import colorsys
 
 # Load environment variables
 load_dotenv()
 
 # Setup logging
 logging.basicConfig(level=logging.DEBUG)
-
 
 # Initialize Flask application
 app = Flask(__name__)
@@ -53,10 +53,8 @@ if not openai_api_key:
 
 analysis_service = InvestmentAnalysisService(openai_api_key=openai_api_key)
 
-
 # Application version
-APP_VERSION = "0.1.15"  #increment for change
-
+APP_VERSION = "0.1.16"  #increment for change
 
 @app.route('/dynamic')
 def dynamic():
@@ -70,7 +68,7 @@ def dynamic_data():
     #y = np.sin(x)
     #data = {'x': x.tolist(), 'y': y.tolist()}
     #Option 2: Mandelbrot Set
-    width, height, max_iter = 128, 128, 50
+    width, height, max_iter = 128, 128, 50  # Increased resolution
     mandelbrot_set = calculate_mandelbrot(width, height, max_iter)
     data = mandelbrot_set.tolist()
 
@@ -82,7 +80,7 @@ def calculate_mandelbrot(width, height, max_iter):
     x_min, x_max = -2.0, 1.0
     y_min, y_max = -1.5, 1.5
 
-    image = np.zeros((height, width), dtype=np.uint8)  # Use NumPy array for image
+    image = np.zeros((height, width, 3), dtype=np.uint8)  # 3 channels for RGB color
 
     x_range = np.linspace(x_min, x_max, width)
     y_range = np.linspace(y_min, y_max, height)
@@ -94,8 +92,14 @@ def calculate_mandelbrot(width, height, max_iter):
             for k in range(max_iter):
                 z = z * z + c
                 if abs(z) > 2:
-                    image[i, j] = int(k * 255 / max_iter)  # Convert iteration count to grayscale
+                    # Colorization based on iteration count:
+                    hue = (k % max_iter) / max_iter
+                    r, g, b = colorsys.hsv_to_rgb(hue, 1.0, 1.0)  # Full saturation and value
+                    image[i, j] = [int(r * 255), int(g * 255), int(b * 255)]
                     break
+            else:
+                image[i, j] = [0, 0, 0]  # Black if it belongs to the set
+
     return image
 
 # Home route redirecting to the gallery page
@@ -151,7 +155,7 @@ def angel_investment_analysis():
         except Exception as e:
             logging.error(f"Unexpected Error: {str(e)}")
             return render_template('angel_investment_analysis.html',
-                                   analysis_result=f"An unexpected error occurred: {str(e)}")
+                                   analysis_result=f"An unexpected error occurred: {str(e)}.")
 
     return render_template('angel_investment_analysis.html', analysis_result=None)
 
