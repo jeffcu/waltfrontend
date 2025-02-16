@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dynamic Graph</title>
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <title>Colorized Mandelbrot Set</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -16,24 +16,41 @@
         canvas {
             background-color: #000;
             border: 1px solid #ddd;
+            display: block; /* Ensure canvas is a block element */
+            margin: 0 auto; /* Center the canvas horizontally */
+        }
+
+        button {
+            display: block;
+            margin: 10px auto; /* Center the button horizontally */
+            padding: 10px 15px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #4CAF50; /* Green */
+            color: white;
+            border: none;
+            border-radius: 5px;
         }
     </style>
 </head>
 <body>
     <h1>Colorized Mandelbrot Set</h1>
     <canvas id="myCanvas" width="512" height="512"></canvas>
-        <button onclick="renderMandelbrot()">Re-render Mandelbrot</button>
+    <button onclick="renderMandelbrot()">Re-render Mandelbrot</button>
+
     <script>
         let mandelbrotData = null; // Store Mandelbrot data globally
+        let canvas = null;
+        let ctx = null;
 
-        window.onload = function() {
+
+         window.onload = function() {
+            canvas = document.getElementById("myCanvas");
+            ctx = canvas.getContext("2d");
             renderMandelbrot(); // Initial rendering
         };
 
         function renderMandelbrot() {
-            const canvas = document.getElementById("myCanvas");
-            const ctx = canvas.getContext("2d");
-
             fetch('/dynamic_data')
                 .then(response => response.json())
                 .then(data => {
@@ -42,7 +59,11 @@
                 });
         }
 
-        function drawMandelbrot(ctx, data, width, height) {
+         function drawMandelbrot(ctx, data, width, height) {
+                if (!ctx) {
+                console.error("Canvas context not available.");
+                return;
+                 }
             for (let i = 0; i < height; i++) {
                 for (let j = 0; j < width; j++) {
                     let color = data[i][j]; // Get color from data
