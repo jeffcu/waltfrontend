@@ -47,15 +47,28 @@
          window.onload = function() {
             canvas = document.getElementById("myCanvas");
             ctx = canvas.getContext("2d");
+            if (!ctx) {
+                console.error("Failed to get 2D context. Canvas may not be supported.");
+                return;
+            }
             renderMandelbrot(); // Initial rendering
         };
 
         function renderMandelbrot() {
             fetch('/dynamic_data')
-                .then(response => response.json())
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
                 .then(data => {
+                    console.log('Data received:', data); // Check data in console
                     mandelbrotData = data; // Store data globally
                     drawMandelbrot(ctx, data, canvas.width, canvas.height);
+                })
+                .catch(error => {
+                    console.error('Fetch error:', error);
                 });
         }
 
@@ -71,6 +84,7 @@
                     ctx.fillRect(j, i, 1, 1);
                 }
             }
+             console.log('Mandelbrot drawn'); // Check if draw function is called
         }
     </script>
 </body>
