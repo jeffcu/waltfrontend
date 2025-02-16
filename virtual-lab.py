@@ -7,13 +7,14 @@ import logging
 import weasyprint
 from io import BytesIO
 from investment_analysis.services import InvestmentAnalysisService
-#from investment_analysis.utils import format_pdf_content # take out, not being used
+#from investment_analysis/utils import format_pdf_content # take out, not being used
 from PyPDF2 import PdfReader
 from werkzeug.utils import secure_filename  # for secure file uploads
 from flask_wtf.csrf import CSRFProtect, generate_csrf  # Import CSRFProtect and generate_csrf
 from walt.walt import walt_bp  # Import the walt blueprint
 from flask_session import Session # Import Flask-Session
 import colorsys #Import colorsys
+import random
 
 # Load environment variables
 load_dotenv()
@@ -54,33 +55,48 @@ if not openai_api_key:
 analysis_service = InvestmentAnalysisService(openai_api_key=openai_api_key)
 
 # Application version
-APP_VERSION = "0.1.16"  #increment for change
+APP_VERSION = "0.1.17"  #increment for change
+
+# Define color palettes
+COLOR_PALETTES = [
+    ["#33FF33", "#FF3333", "#3333FF"],  # Green, Red, Blue
+    ["#FFFF33", "#33FFFF", "#FF33FF"],  # Yellow, Cyan, Magenta
+    ["#FF8000", "#8000FF", "#00FF80"],  # Orange, Violet, Spring Green
+    ["#808080", "#C0C0C0", "#FFFFFF"]   # Gray, Silver, White
+]
+
+# Initialize the palette index
+palette_index = 0
+
 
 @app.route('/dynamic')
 def dynamic():
     return render_template('dynamic.html')
 
+
 @app.route('/dynamic_data')
 def dynamic_data():
-    #Option 1: Sine Wave Graph
-    #num_points = 500
-    #x = np.linspace(0, 10 * np.pi, num_points)
-    #y = np.sin(x)
-    #data = {'x': x.tolist(), 'y': y.tolist()}
-    #Option 2: Mandelbrot Set
+    global palette_index
+    # Option 1: Sine Wave Graph
+    # num_points = 500
+    # x = np.linspace(0, 10 * np.pi, num_points)
+    # y = np.sin(x)
+    # data = {'x': x.tolist(), 'y': y.tolist()}
+    # Option 2: Mandelbrot Set
     width, height, max_iter = 640, 640, 50  # Increased resolution
-    mandelbrot_set = calculate_mandelbrot(width, height, max_iter)
+    mandelbrot_set = calculate_mandelbrot(width, height, max_iter, palette_index)
     data = mandelbrot_set.tolist()
-
+    palette_index = (palette_index + 1) % len(COLOR_PALETTES)  # Increment and loop
     return jsonify(data)
 
 
-#Mandelbrot Set Calculator Function
-def calculate_mandelbrot(width, height, max_iter):
+# Mandelbrot Set Calculator Function
+def calculate_mandelbrot(width, height, max_iter, palette_index):
     x_min, x_max = -2.0, 1.0
     y_min, y_max = -1.5, 1.5
 
     image = np.zeros((height, width, 3), dtype=np.uint8)  # 3 channels for RGB color
+    palette = COLOR_PALETTES[palette_index]
 
     x_range = np.linspace(x_min, x_max, width)
     y_range = np.linspace(y_min, y_max, height)
@@ -93,9 +109,12 @@ def calculate_mandelbrot(width, height, max_iter):
                 z = z * z + c
                 if abs(z) > 2:
                     # Colorization based on iteration count:
-                    hue = (k % max_iter) / max_iter
-                    r, g, b = colorsys.hsv_to_rgb(hue, 1.0, 1.0)  # Full saturation and value
-                    image[i, j] = [int(r * 255), int(g * 255), int(b * 255)]
+                    color = palette[k % len(palette)]  # Select color from palette
+
+                    # Convert hex to RGB
+                    color = color.lstrip('#')
+                    r, g, b = tuple(int(color[i:i + 2], 16) for i in (0, 2, 4))
+                    image[i, j] = [r, g, b]
                     break
             else:
                 image[i, j] = [0, 0, 0]  # Black if it belongs to the set
