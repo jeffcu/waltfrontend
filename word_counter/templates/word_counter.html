@@ -3,6 +3,7 @@
 <head>
     <title>Word Counter</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -86,14 +87,44 @@
         {% endif %}
 
         {% if word_counts %}
+            <canvas id="wordChart" width="400" height="200"></canvas>
+
             <div class="word-count">
                 <h2>Word Counts:</h2>
                 <ul>
-                    {% for word, count in word_counts.items() %}
-                        <li>{{ word }}: {{ count }}</li> <!-- Remove the csrf token from output-->
+                    {% for word, count in word_counts %}
+                        <li>{{ word }}: {{ count }}</li>
                     {% endfor %}
                 </ul>
             </div>
+            <script>
+                const ctx = document.getElementById('wordChart').getContext('2d');
+                const wordCounts = {{ word_counts|tojson }};
+
+                const labels = wordCounts.map(item => item[0]);
+                const data = wordCounts.map(item => item[1]);
+
+                new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Word Count',
+                            data: data,
+                            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                            borderColor: 'rgba(75, 192, 192, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+            </script>
         {% endif %}
     </div>
 </body>

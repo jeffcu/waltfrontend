@@ -27,9 +27,13 @@ def word_counter():
 
             # Count the words using Counter
             word_counts = Counter(words)
-            session['word_counts'] = word_counts  #Store words in session
+            # word_counts = Counter(words)
+            sorted_word_counts = sorted(word_counts.items(), key=lambda x: x[1], reverse=True)  # Sort by count in descending order
+            #session['word_counts'] = sorted_word_counts  #Store words in session
+            session['word_counts'] = sorted_word_counts #Use sorted session.
+
         except Exception as e:
             logging.error(f"Error processing file: {e}")
             return render_template('word_counter.html', form=form, error=str(e))
 
-    return render_template('word_counter.html', form=form, word_counts=word_counts)  # Pass form
+    return render_template('word_counter.html', form=form, word_counts=session.get('word_counts', None)) #Passes in the variable.
