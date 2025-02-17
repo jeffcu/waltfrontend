@@ -109,6 +109,7 @@ openai>=1.0.0
 Flask
 flask-wtf
 python-dotenv
+numpy
 PyPDF2
 weasyprint
 pytest
@@ -125,21 +126,23 @@ python-3.11.2
 
 --- FILE: virtual-lab.py ---
 
-# Filename: virtual-lab.py
-# Location: virtual-lab.py (relative to root)
-from flask import Flask, request, jsonify, render_template, send_file, abort, session
 import os
+from flask import Flask, request, render_template, send_file, jsonify
+from dotenv import load_dotenv
+import numpy as np  # Import NumPy
+import json
 import logging
 import weasyprint
 from io import BytesIO
 from investment_analysis.services import InvestmentAnalysisService
-from investment_analysis.utils import format_pdf_content # take out, not being used
-from dotenv import load_dotenv
+#from investment_analysis.utils import format_pdf_content # take out, not being used
 from PyPDF2 import PdfReader
 from werkzeug.utils import secure_filename  # for secure file uploads
 from flask_wtf.csrf import CSRFProtect, generate_csrf  # Import CSRFProtect and generate_csrf
 from walt.walt import walt_bp  # Import the walt blueprint
 from flask_session import Session # Import Flask-Session
+import colorsys #Import colorsys
+import random
 
 # Load environment variables
 load_dotenv()
@@ -147,8 +150,11 @@ load_dotenv()
 # Setup logging
 logging.basicConfig(level=logging.DEBUG)
 
+# Initialize Flask application
 app = Flask(__name__)
-app.config['UPLOAD_FOLDER'] = 'uploads'  # Create an uploads folder
+app.config['UPLOAD_FOLDER'] = 'uploads'  # Folder to store uploaded files
+os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max upload size
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'a_very_secret_key')  # Set a secret key for CSRF
 
@@ -157,9 +163,6 @@ app.config['SESSION_TYPE'] = 'filesystem'  # Or 'redis', 'mongodb', etc.
 app.config['SESSION_PERMANENT'] = False  # Session expires when browser closes
 app.config['SESSION_KEY_PREFIX'] = 'walt_'  # Prevents conflicts with other session data
 Session(app) # Initialize Flask-Session
-
-# Create the uploads folder if it doesn't exist
-os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 # Initialize CSRF protection
 csrf = CSRFProtect()
@@ -179,6 +182,73 @@ if not openai_api_key:
 
 analysis_service = InvestmentAnalysisService(openai_api_key=openai_api_key)
 
+# Application version
+APP_VERSION = "0.1.17"  #increment for change
+
+# Define color palettes
+COLOR_PALETTES = [
+    ["#33FF33", "#FF3333", "#3333FF"],  # Green, Red, Blue
+    ["#FFFF33", "#33FFFF", "#FF33FF"],  # Yellow, Cyan, Magenta
+    ["#FF8000", "#8000FF", "#00FF80"],  # Orange, Violet, Spring Green
+    ["#808080", "#C0C0C0", "#FFFFFF"]   # Gray, Silver, White
+]
+
+# Initialize the palette index
+palette_index = 0
+
+
+@app.route('/dynamic')
+def dynamic():
+    return render_template('dynamic.html')
+
+
+@app.route('/dynamic_data')
+def dynamic_data():
+    global palette_index
+    # Option 1: Sine Wave Graph
+    num_points = 640
+    x = np.linspace(0, 10 * np.pi, num_points)
+    y = np.sin(x)
+    sine_data = {'x': x.tolist(), 'y': y.tolist()}
+    # Option 2: Mandelbrot Set
+    width, height, max_iter = 640, 640, 50  # Increased resolution
+    mandelbrot_set = calculate_mandelbrot(width, height, max_iter, palette_index)
+    mandelbrot_data = mandelbrot_set.tolist()
+    palette_index = (palette_index + 1) % len(COLOR_PALETTES)  # Increment and loop
+
+    return jsonify({'mandelbrot': mandelbrot_data, 'sine': sine_data})
+
+
+# Mandelbrot Set Calculator Function
+def calculate_mandelbrot(width, height, max_iter, palette_index):
+    x_min, x_max = -2.0, 1.0
+    y_min, y_max = -1.5, 1.5
+
+    image = np.zeros((height, width, 3), dtype=np.uint8)  # 3 channels for RGB color
+    palette = COLOR_PALETTES[palette_index]
+
+    x_range = np.linspace(x_min, x_max, width)
+    y_range = np.linspace(y_min, y_max, height)
+
+    for i in range(height):
+        for j in range(width):
+            c = complex(x_range[j], y_range[i])
+            z = 0
+            for k in range(max_iter):
+                z = z * z + c
+                if abs(z) > 2:
+                    # Colorization based on iteration count:
+                    color = palette[k % len(palette)]  # Select color from palette
+
+                    # Convert hex to RGB
+                    color = color.lstrip('#')
+                    r, g, b = tuple(int(color[i:i + 2], 16) for i in (0, 2, 4))
+                    image[i, j] = [r, g, b]
+                    break
+            else:
+                image[i, j] = [0, 0, 0]  # Black if it belongs to the set
+
+    return image
 
 # Home route redirecting to the gallery page
 @app.route('/')
@@ -233,7 +303,7 @@ def angel_investment_analysis():
         except Exception as e:
             logging.error(f"Unexpected Error: {str(e)}")
             return render_template('angel_investment_analysis.html',
-                                   analysis_result=f"An unexpected error occurred: {str(e)}")
+                                   analysis_result=f"An unexpected error occurred: {str(e)}.")
 
     return render_template('angel_investment_analysis.html', analysis_result=None)
 
@@ -343,17 +413,6 @@ def walt():
     else:
        return render_template('walt_window.html')
 
-
-# Error handlers
-@app.errorhandler(400)
-def bad_request(e):
-    return jsonify(error=str(e)), 400
-
-
-@app.errorhandler(500)
-def internal_server_error(e):
-    return jsonify(error=str(e)), 500
-
 # Register the walt blueprint
 app.register_blueprint(walt_bp)
 
@@ -361,7 +420,7 @@ app.register_blueprint(walt_bp)
 # Fix for Heroku: Bind to PORT
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port, debug=True)  # Debug mode for development
+    app.run(host="0.0.0.0", port=port, debug=True)
 
 
 --- FILE: walt_prompt.txt ---
@@ -519,125 +578,6 @@ Output Format:
 	•	Provide copy-paste-ready commands where applicable
 
 Make sure the instructions flow logically, ensuring that each step builds on the previous one so that a beginner can follow without confusion.
-
---- FILE: virtual-lab 01.14.py ---
-
-import os
-from flask import Flask, request, render_template, send_file
-from dotenv import load_dotenv
-from weasyprint import HTML
-import re
-import unicodedata
-
-# Load environment variables
-load_dotenv()
-
-# Initialize Flask application
-app = Flask(__name__)
-app.config['UPLOAD_FOLDER'] = 'uploads'  # Folder to store uploaded files
-os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
-
-# Application version
-APP_VERSION = "0.1.14"
-
-def sanitize_text(text):
-    """Sanitize text to remove unwanted characters."""
-    text = unicodedata.normalize('NFKD', text)
-    return re.sub(r'[“”]', '"', text).replace("\u2022", "-").strip()
-
-def generate_pdf(content, filename="output.pdf"):
-    """Generate a styled PDF from HTML content."""
-    pdf_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-
-    # Properly formatted HTML content without f-strings
-    html_content = (
-        "<!DOCTYPE html>"
-        "<html lang='en'>"
-        "<head>"
-        "<style>"
-        "body { font-family: Arial, sans-serif; line-height: 1.6; margin: 1in; }"
-        "h1 { text-align: center; color: #0073e6; }"
-        "h2 { color: #333; margin-top: 20px; font-weight: bold; }"
-        "p, li { font-size: 12pt; color: #555; }"
-        "ul { margin-left: 20px; padding-left: 20px; list-style-type: disc; }"
-        "ul li { margin-bottom: 10px; }"
-        ".footer { margin-top: 20px; text-align: center; font-size: 10pt; color: #777; }"
-        "</style>"
-        "</head>"
-        "<body>"
-        "<h1>Analysis Report</h1>"
-        "<div>" + content.replace("\n", "<br>") + "</div>"
-        "<div class='footer'>Generated by Jeff's AI Workshop - Version " + APP_VERSION + "</div>"
-        "</body>"
-        "</html>"
-    )
-
-    HTML(string=html_content).write_pdf(pdf_path)
-    return pdf_path
-
-@app.route('/', methods=['GET', 'POST'])
-def home():
-    """Render the main interface."""
-    inputs = {}
-    api_response = ""
-    error = ""
-
-    # Default input values
-    default_meta_instructions = "You're an expert at understanding startup companies. You can summarize them quickly."
-    default_user_query = "Tell me about this company and its market. Summarize the company name and what other information you can determine from the provided passed information from their presentation."
-
-    if request.method == 'POST':
-        try:
-            # Get form inputs
-            meta_instructions = request.form.get('meta_instructions', default_meta_instructions).strip()
-            user_query = request.form.get('user_query', default_user_query).strip()
-
-            # Collect inputs
-            inputs = {
-                "Meta Instructions": meta_instructions,
-                "User Query": user_query
-            }
-
-            # Mock API response (replace with actual API call)
-            api_response = (
-                "Company Name: M&R Technology, Inc. - Infinity Shield\n"
-                "Market: Residential garage safety sensors in North America\n"
-                "Key Points:\n"
-                "- Developed the first full-coverage safety sensor for every garage in North America\n"
-                "- Addresses a $1 billion annual problem of car and door damage\n"
-                "- Features advanced technology with patented solutions\n"
-                "- No competing residential sensor in the market\n"
-                "- Strong barriers against competitors\n"
-                "- Business model includes direct-to-consumer sales, professional installers/distributors, and partnerships with insurance companies\n"
-                "- Sales projections include revenue of $168M and profit of $110M over five years\n"
-                "- Team includes experienced founders and key team members\n"
-                "- Seeking funding of $250k - $1M\n"
-            )
-
-        except Exception as e:
-            error = str(e)
-
-    return render_template('index.html', inputs=inputs, api_response=api_response, error=error, app_version=APP_VERSION)
-
-@app.route('/download', methods=['POST'])
-def download_pdf():
-    """Generate and download a PDF of the API response."""
-    try:
-        # Get API response
-        api_response = request.form.get('api_response', '')
-
-        # Generate PDF
-        filename = "analysis_report.pdf"
-        pdf_path = generate_pdf(api_response, filename=filename)
-
-        return send_file(pdf_path, as_attachment=True, download_name=filename)
-    except Exception as e:
-        return f"Error generating PDF: {str(e)}"
-
-if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port)
-
 
 --- FILE: icon_config.json ---
 
@@ -1869,172 +1809,6 @@ def load_checkpoint():
 </html>
 
 
---- FILE: templates/index old.html ---
-
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Jeff's AI Workshop - Angel Investor</title>
-    <style>
-        body {
-            background-color: #00274d;
-            font-family: 'Courier New', Courier, monospace;
-            color: #ffffff;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            margin: 0;
-            padding: 20px;
-            min-height: 100vh;
-            box-sizing: border-box;
-        }
-
-        .container {
-            width: 100%;
-            max-width: 800px;
-            background-color: #003366;
-            border: 5px solid #f9c74f;
-            border-radius: 15px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
-            padding: 20px;
-            overflow: auto;
-        }
-
-        h1 {
-            font-size: 2rem;
-            text-align: center;
-            color: #f9c74f;
-            margin-bottom: 20px;
-        }
-
-        textarea, input[type="file"], input[type="submit"] {
-            display: block;
-            width: 100%;
-            padding: 10px;
-            margin: 10px 0;
-            font-family: 'Courier New', Courier, monospace;
-            font-size: 1rem;
-            border: 2px solid #8d99ae;
-            border-radius: 5px;
-            background-color: #00274d;
-            color: #ffffff;
-        }
-
-        textarea {
-            resize: vertical;
-            height: 100px;
-        }
-
-        input[type="submit"] {
-            background-color: #f9c74f;
-            color: #00274d;
-            cursor: pointer;
-            font-weight: bold;
-        }
-
-        input[type="submit"]:hover {
-            background-color: #d6a92c;
-        }
-
-        .response-container {
-            margin-top: 20px;
-            background-color: #00509e;
-            border: 2px solid #f9c74f;
-            border-radius: 10px;
-            padding: 15px;
-            color: #ffffff;
-        }
-
-        .response-title {
-            font-weight: bold;
-            color: #f9c74f;
-        }
-
-        .error {
-            color: red;
-            font-weight: bold;
-            text-align: center;
-            margin-top: 10px;
-        }
-
-        .status-messages {
-            margin-top: 15px;
-            background-color: #004080;
-            border: 2px solid #f9c74f;
-            border-radius: 10px;
-            padding: 10px;
-        }
-
-        .status-message {
-            margin: 5px 0;
-            font-size: 0.9rem;
-        }
-
-        .loading {
-            text-align: center;
-            color: #f9c74f;
-            font-weight: bold;
-        }
-
-        html {
-            scroll-behavior: smooth;
-        }
-
-    </style>
-    <script>
-        function showLoading() {
-            const loading = document.getElementById('loading');
-            loading.style.display = 'block';
-        }
-    </script>
-</head>
-<body>
-    <div class="container">
-        <h1>Jeff's AI Workshop - Angel Investor</h1>
-        <p style="font-size: 0.9rem; color: #d6a92c; text-align: center;">Version {{ app_version }}</p>
-        <form method="post" action="/" enctype="multipart/form-data" onsubmit="showLoading()">
-            <label for="meta_instructions">Meta Instructions:</label>
-            <textarea id="meta_instructions" name="meta_instructions" rows="4">{{ meta_instructions }}</textarea>
-
-            <label for="user_query">Enter your query:</label>
-            <textarea id="user_query" name="user_query">{{ user_query }}</textarea>
-
-            <label for="uploaded_files">Upload files (optional):</label>
-            <input id="uploaded_files" name="uploaded_files" type="file" multiple>
-
-            <input type="submit" value="Analyze">
-        </form>
-
-        <div id="loading" class="loading" style="display: none;">Processing your request, please wait...</div>
-
-        {% if status_messages %}
-            <div class="status-messages">
-                <h3>Status Updates:</h3>
-                {% for message in status_messages %}
-                    <div class="status-message">{{ message }}</div>
-                {% endfor %}
-            </div>
-        {% endif %}
-
-        {% if error %}
-            <p class="error">Error: {{ error }}</p>
-        {% endif %}
-
-        {% if responses %}
-            {% for response in responses %}
-                <div class="response-container">
-                    <div class="response-title">{{ response.title }}</div>
-                    <div>{{ response.response }}</div>
-                </div>
-            {% endfor %}
-        {% endif %}
-    </div>
-</body>
-</html>
-
-
 --- FILE: templates/gallery.html ---
 
 <!-- Filename: gallery.html -->
@@ -2176,6 +1950,9 @@ def load_checkpoint():
         function openWaltWindow() {
             window.location.href = "/walt";
         }
+        function openDynamicGraph() {
+             window.location.href = "/dynamic";
+        }
     </script>
 </head>
 <body>
@@ -2199,11 +1976,12 @@ def load_checkpoint():
                 <a href="#" onclick="openJeffsArt('racecars.jpeg')">View Art</a>
             </div>
 
+            <!-- Dynamic Graph Button -->
             <div class="project-tile">
-                <img src="static/icons/green-button.jpeg" alt="API Test">
-                <h3>API Test</h3>
-                <p>Check API connection and response.</p>
-                <a href="#" onclick="openTestWindow()">API Test</a>
+                <img src="static/icons/green-button.jpeg" alt="Dynamic Graph">
+                <h3>Dynamic Graphing</h3>
+                <p>Explore dynamically generated graphs.</p>
+                <a href="#" onclick="openDynamicGraph()">Open App</a>
             </div>
 
            <!-- GPT Prototype Button -->
@@ -2214,16 +1992,174 @@ def load_checkpoint():
                 <a href="/angel_investment_analysis">Launch Project</a>
             </div>
 
-            {% for i in range(1, 14) %}
+            <!-- API Test Button -->
+            <div class="project-tile">
+                <img src="static/icons/green-button.jpeg" alt="API Test">
+                <h3>API Test</h3>
+                <p>Check API connection and response.</p>
+                <a href="#" onclick="openTestWindow()">API Test</a>
+            </div>
+
+            {% for i in range(1, 12) %}
             <div class="project-tile">
                 <img src="static/icons/red-button.jpeg" alt="Placeholder Project">
-                <h3>Placeholder Project {{ i + 2 }}</h3>
+                <h3>Placeholder Project {{ i + 4 }}</h3>
                 <p>Future exciting projects coming soon.</p>
                 <a href="#">Coming Soon</a>
             </div>
             {% endfor %}
         </div>
     </div>
+</body>
+</html>
+
+
+--- FILE: templates/dynamic.html ---
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Graph</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #1E2A38;
+            color: #E5E5E5;
+            padding: 20px;
+            text-align: center;
+        }
+        canvas {
+            background-color: #000;
+            border: 1px solid #ddd;
+            display: block;
+            margin: 10px auto;
+        }
+        button {
+            display: block;
+            margin: 10px auto;
+            padding: 10px 15px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Colorized Mandelbrot Set</h1>
+    <canvas id="mandelbrotCanvas" width="640" height="640"></canvas>
+    <button onclick="renderMandelbrot()">Re-render Mandelbrot</button>
+
+    <h2>Scrolling Sine Wave</h2>
+    <canvas id="sineCanvas" width="640" height="200"></canvas>
+
+    <script>
+        let mandelbrotData = null;
+        let sineData = null;
+        let canvas = null;
+        let ctx = null;
+
+        window.onload = function() {
+            // Initialize the canvas object
+            canvas = {
+                mandelbrot: document.getElementById("mandelbrotCanvas"),
+                sine: document.getElementById("sineCanvas")
+            };
+
+            //Initialize the drawing context
+            ctx = {
+                mandelbrot: canvas.mandelbrot.getContext("2d"),
+                sine: canvas.sine.getContext("2d")
+            };
+
+            //Safety Check
+            if (!ctx.mandelbrot || !ctx.sine) {
+                console.error("Failed to get 2D context. Canvas may not be supported.");
+                return;
+            }
+            renderMandelbrot();
+            startSineAnimation();
+        };
+
+        function renderMandelbrot() {
+            fetch('/dynamic_data')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    mandelbrotData = data.mandelbrot; // Get mandelbrot data
+                    sineData = data.sine; // Get sine data
+                    drawMandelbrot(ctx.mandelbrot, mandelbrotData, canvas.mandelbrot.width, canvas.mandelbrot.height);
+                })
+                .catch(error => {
+                    console.error('Fetch error:', error);
+                });
+        }
+        function drawMandelbrot(ctx, data, width, height) {
+            if (!ctx) {
+                console.error("Canvas context not available.");
+                return;
+            }
+            for (let i = 0; i < height; i++) {
+                for (let j = 0; j < width; j++) {
+                    let color = data[i][j]; // Get color from data
+                      if (!color || color.length !== 3) {
+                        console.error(`Invalid color data at [${i}][${j}]:`, color);
+                        continue; // Skip this pixel
+                      }
+                    ctx.fillStyle = `rgb(${color[0]}, ${color[1]}, ${color[2]})`;
+                    ctx.fillRect(j, i, 1, 1);
+                }
+            }
+             console.log('Mandelbrot drawn'); // Check if draw function is called
+        }
+
+        // Sine Wave Animation
+
+            let waveOffset = 0; // Initial offset
+
+           function startSineAnimation() {
+              //Call the sine Wave with animation
+               drawScrollingSineWave(); // Initial draw
+              setInterval(drawScrollingSineWave, 20); // Adjust interval for speed
+
+              //Now for Animation
+              function drawScrollingSineWave() {
+                 const width = canvas.sine.width;
+                 const height = canvas.sine.height;
+
+                ctx.sine.clearRect(0, 0, width, height); // Clear canvas
+
+                 ctx.sine.beginPath();
+                ctx.sine.strokeStyle = 'cyan';
+
+                 const amplitude = height / 2 * 0.9;  // 90% of the height
+                 const frequency = 0.01;    // Adjust for wave density
+
+                 for (let x = 0; x < width; x++) {
+                    const y = amplitude * Math.sin((x + waveOffset) * frequency) + height / 2;
+                    if (x === 0) {
+                        ctx.sine.moveTo(x, y);
+                    } else {
+                         ctx.sine.lineTo(x, y);
+                    }
+                 }
+                 ctx.sine.stroke();
+
+                 waveOffset -= 1;  // Adjust for scroll left
+
+            }
+        }
+
+    </script>
 </body>
 </html>
 
@@ -2593,192 +2529,6 @@ def load_checkpoint():
     <div id="output"></div>
     <br>
     <button onclick="window.close()">Close</button>
-</body>
-</html>
-
-
---- FILE: templates/index 01.14.html ---
-
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Jeff's AI Workshop</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #f4f4f9;
-            color: #333;
-        }
-
-        .container {
-            max-width: 800px;
-            margin: 50px auto;
-            padding: 20px;
-            background: #ffffff;
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        }
-
-        h1 {
-            font-size: 24px;
-            margin-bottom: 20px;
-            text-align: center;
-            color: #0073e6;
-        }
-
-        label {
-            font-weight: bold;
-            margin-top: 10px;
-            display: block;
-        }
-
-        input[type="text"], textarea {
-            width: 100%;
-            padding: 10px;
-            margin-top: 5px;
-            margin-bottom: 20px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-        }
-
-        input[type="file"] {
-            margin-top: 10px;
-            margin-bottom: 20px;
-        }
-
-        button {
-            display: block;
-            width: 100%;
-            background-color: #0073e6;
-            color: white;
-            padding: 10px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 16px;
-        }
-
-        button:hover {
-            background-color: #005bb5;
-        }
-
-        .output-box {
-            background: #f9f9f9;
-            border: 1px solid #ddd;
-            padding: 15px;
-            margin-top: 10px;
-            border-radius: 4px;
-            white-space: pre-wrap;
-            word-wrap: break-word;
-        }
-
-        .collapsible {
-            background-color: #555;
-            color: white;
-            cursor: pointer;
-            padding: 10px;
-            width: 100%;
-            border: none;
-            text-align: left;
-            outline: none;
-            font-size: 14px;
-            border-radius: 4px;
-            margin-top: 10px;
-        }
-
-        .active, .collapsible:hover {
-            background-color: #333;
-        }
-
-        .content {
-            padding: 0 18px;
-            display: none;
-            overflow: hidden;
-            background-color: #f4f4f9;
-            border: 1px solid #ddd;
-            margin-top: 10px;
-            border-radius: 4px;
-        }
-
-        .footer {
-            text-align: center;
-            margin-top: 20px;
-            font-size: 14px;
-            color: #777;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>Jeff's AI Workshop</h1>
-
-        <form method="POST" enctype="multipart/form-data" action="/">
-            <label for="meta_instructions">Meta Instructions</label>
-            <textarea id="meta_instructions" name="meta_instructions" rows="4" placeholder="Enter meta instructions here...">You're an expert at understanding startup companies. You can summarize them quickly.</textarea>
-
-            <label for="user_query">User Query</label>
-            <textarea id="user_query" name="user_query" rows="4" placeholder="Enter your query here...">Tell me about this company and its market. Summarize the company name and what other information you can determine from the provided passed information from their presentation.</textarea>
-
-            <label for="uploaded_files">Upload Files</label>
-            <input type="file" id="uploaded_files" name="uploaded_files" multiple>
-
-            <button type="submit">Analyze</button>
-        </form>
-
-        <form method="POST" action="/download">
-            <input type="hidden" name="meta_instructions" value="{{ inputs['Meta Instructions'] }}">
-            <input type="hidden" name="user_query" value="{{ inputs['User Query'] }}">
-            <input type="hidden" name="api_response" value="{{ api_response }}">
-            <button type="submit">Download PDF</button>
-        </form>
-
-        {% if inputs %}
-        <div class="output-box">
-            <strong>API Response:</strong>
-            <div>{{ api_response }}</div>
-        </div>
-
-        <button type="button" class="collapsible">Uploaded Content</button>
-        <div class="content">
-            <div class="output-box">{{ inputs['Uploaded Content'] }}</div>
-        </div>
-
-        <button type="button" class="collapsible">API Call Text</button>
-        <div class="content">
-            <div class="output-box">{{ api_call_text }}</div>
-        </div>
-        {% endif %}
-
-        {% if error %}
-        <div class="output-box" style="color: red;">
-            <strong>Error:</strong>
-            <div>{{ error }}</div>
-        </div>
-        {% endif %}
-
-        <div class="footer">
-            Version {{ app_version }}
-        </div>
-    </div>
-
-    <script>
-        const collapsibles = document.querySelectorAll(".collapsible");
-        collapsibles.forEach(collapsible => {
-            collapsible.addEventListener("click", function() {
-                this.classList.toggle("active");
-                const content = this.nextElementSibling;
-                if (content.style.display === "block") {
-                    content.style.display = "none";
-                } else {
-                    content.style.display = "block";
-                }
-            });
-        });
-    </script>
 </body>
 </html>
 

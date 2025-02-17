@@ -187,6 +187,14 @@
                 <a href="#" onclick="openTestWindow()">API Test</a>
             </div>
 
+            <!-- Word Counter Button -->
+            <div class="project-tile">
+                <img src="static/icons/amber-button.jpeg" alt="Word Counter App">
+                <h3>Word Counter</h3>
+                <p>Counts the unique words in a text file.</p>
+                <a href="{{ url_for('wc.word_counter') }}">Open App</a>
+            </div>
+
             {% for i in range(1, 12) %}
             <div class="project-tile">
                 <img src="static/icons/red-button.jpeg" alt="Placeholder Project">

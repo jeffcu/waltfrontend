@@ -16,6 +16,9 @@ from flask_session import Session # Import Flask-Session
 import colorsys #Import colorsys
 import random
 
+# Import Word Counter blueprint  <-- ADDED
+from word_counter.word_counter import wc_bp
+
 # Load environment variables
 load_dotenv()
 
@@ -92,7 +95,7 @@ def dynamic_data():
 
 
 # Mandelbrot Set Calculator Function
-def calculate_mandelbrot(width, height, max_iter, palette_index):
+def calculate_Mandelbrot(width, height, max_iter, palette_index):
     x_min, x_max = -2.0, 1.0
     y_min, y_max = -1.5, 1.5
 
@@ -288,6 +291,8 @@ def walt():
 # Register the walt blueprint
 app.register_blueprint(walt_bp)
 
+# Register the Word Counter blueprint  <-- ADDED
+app.register_blueprint(wc_bp)
 
 # Fix for Heroku: Bind to PORT
 if __name__ == '__main__':
