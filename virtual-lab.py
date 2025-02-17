@@ -39,11 +39,10 @@ app.config['SESSION_PERMANENT'] = False  # Session expires when browser closes
 app.config['SESSION_KEY_PREFIX'] = 'walt_'  # Prevents conflicts with other session data
 Session(app) # Initialize Flask-Session
 
-# Initialize CSRF protection
-csrf = CSRFProtect()
-csrf.init_app(app)
+# Initialize CSRF protection  <-- ADDED - IMPORTANT
+csrf = CSRFProtect(app)  # Initialize CSRF protection with the app  <-- CHANGED
 
-# Inject CSRF token into all templates
+# Inject CSRF token into all templates  <-- ADDED - IMPORTANT
 @app.after_request
 def inject_csrf_token(response):
     response.set_cookie('csrf_token', generate_csrf())  # Set a cookie to access the token
@@ -95,7 +94,7 @@ def dynamic_data():
 
 
 # Mandelbrot Set Calculator Function
-def calculate_Mandelbrot(width, height, max_iter, palette_index):
+def calculate_mandelbrot(width, height, max_iter, palette_index):
     x_min, x_max = -2.0, 1.0
     y_min, y_max = -1.5, 1.5
 
