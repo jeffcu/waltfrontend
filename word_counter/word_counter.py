@@ -1,27 +1,35 @@
-# word_counter/word_counter.py
-from flask import Blueprint, render_template, request
-import re  # For word splitting
+from flask import Blueprint, render_template, request, session
+import re
 from collections import Counter
 import logging
+from flask_wtf import FlaskForm
+from wtforms import FileField, SubmitField
+from wtforms.validators import InputRequired
 
 wc_bp = Blueprint('wc', __name__, template_folder='templates')  # Corrected name
 
+class UploadFileForm(FlaskForm):
+    file_upload = FileField('File', validators=[InputRequired()])
+    submit = SubmitField('Upload File')
+
 @wc_bp.route('/word_counter', methods=['GET', 'POST'])
 def word_counter():
-    word_counts = None # Initialize to None for the initial GET request.
-    if request.method == 'POST':
+    form = UploadFileForm()
+    word_counts = None
+
+    if form.validate_on_submit():
         try:
-            file = request.files['file_upload']
-            if file:
-                text = file.read().decode('utf-8')
+            file = form.file_upload.data
+            text = file.read().decode('utf-8')
 
-                # Clean and split the text into words:  Lowercase and split by spaces and punctuation
-                words = re.findall(r'\b\w+\b', text.lower())
+            # Clean and split the text into words:  Lowercase and split by spaces and punctuation
+            words = re.findall(r'\b\w+\b', text.lower())
 
-                # Count the words using Counter
-                word_counts = Counter(words)
+            # Count the words using Counter
+            word_counts = Counter(words)
+            session['word_counts'] = word_counts  #Store words in session
         except Exception as e:
             logging.error(f"Error processing file: {e}")
-            return render_template('word_counter.html', error=str(e))
+            return render_template('word_counter.html', form=form, error=str(e))
 
-    return render_template('word_counter.html', word_counts=word_counts)  # Pass word_counts to the template
+    return render_template('word_counter.html', form=form, word_counts=word_counts)  # Pass form
