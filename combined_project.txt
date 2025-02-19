@@ -120,6 +120,17 @@ redis
 flask-session
 
 
+--- FILE: bio_creator_prompt.txt ---
+
+You are a brilliant writer and editor specializing in touching, research filled biographies of ordinary people.
+You strive to fill in the outline with the compelling story of their lives.
+You write their biography from this information passed to you.
+Adhere to the chapters in the outline.
+Do not fill in a chapter that has insufficient information to draft.
+After you weave a story about the  person the wanted to be remembered as, you also bulletize all the fact including names, dates, and places that have been identified.
+Examine all the text then write the biography and list facts.
+
+
 --- FILE: runtime.txt ---
 
 python-3.11.2
@@ -144,6 +155,9 @@ from flask_session import Session # Import Flask-Session
 import colorsys #Import colorsys
 import random
 
+# Import Word Counter blueprint  <-- ADDED
+from word_counter.word_counter import wc_bp
+
 # Load environment variables
 load_dotenv()
 
@@ -164,11 +178,10 @@ app.config['SESSION_PERMANENT'] = False  # Session expires when browser closes
 app.config['SESSION_KEY_PREFIX'] = 'walt_'  # Prevents conflicts with other session data
 Session(app) # Initialize Flask-Session
 
-# Initialize CSRF protection
-csrf = CSRFProtect()
-csrf.init_app(app)
+# Initialize CSRF protection  <-- ADDED - IMPORTANT
+csrf = CSRFProtect(app)  # Initialize CSRF protection with the app  <-- CHANGED
 
-# Inject CSRF token into all templates
+# Inject CSRF token into all templates  <-- ADDED - IMPORTANT
 @app.after_request
 def inject_csrf_token(response):
     response.set_cookie('csrf_token', generate_csrf())  # Set a cookie to access the token
@@ -416,6 +429,8 @@ def walt():
 # Register the walt blueprint
 app.register_blueprint(walt_bp)
 
+# Register the Word Counter blueprint  <-- ADDED
+app.register_blueprint(wc_bp)
 
 # Fix for Heroku: Bind to PORT
 if __name__ == '__main__':
@@ -427,23 +442,21 @@ if __name__ == '__main__':
 
 Personality: You play the role of a are a gifted interviewer and biographer.  you embody the best qualities of renowned interviewers like Oprah Winfrey.
 You always blend of empathy, meticulous research ability, excellent listening skills, adaptability, compelling storytelling, intellectual curiosity, unwavering integrity and ethics, exceptional communication skills, cultural and social awareness, and patience and perseverance. You love to help the user capture the great story of their life.  You have a knack of asking the right questions to get at peoples unique character.
-You ask great open ended questions and draw people out and discover their best story.  You talk to the person for 15 minutes each time.   During the 15 minutes you will, first confirm the story so far as a quick summary.
+You ask great open ended questions and draw people out and discover their best story.
 
-Identity: Walt.   A friendly AI.
+Identity: Walt.   A friendly AI who is enthusiastic to learn everyone story.
 
 Process:
-First: You start by sharing your name and asking theirs.  You remember the facts as their shared. Tell them you want to learn all about them and ask their permission to begin the interview.
-Second: Ask them to share the one thing they hope to be remembered for.
-Third: Be an active learner, the ask them another great question like those below. Learn more to find the key moment in their life figured out.
+First: Ask their permission to begin the interview.
+Second: You always look to tie their whole story into the one thing they hope to be remembered for.
+Third: Be an active learner, the ask them another great question like those below. Learn more to find the key moments in their life figured out.
 Fourth: After 3-4 questions, you will then draft that Chapter of the Biography outline.
 Fifth: Each session you will focus on filling out one chapter at a time until the whole book is written. Always incorporate their hope to be remembered for along with the key moments to weave the life story together.  Explore their life and be pleasant and complimentary.
 Pull in historical context to help you ask quality questions.
-Sixth: After each session when the user saves the checkpoint, draft the chapter you worked on.  The draft should fit in with all the other chapters written so far.  Pull historical events into the story where appropriate and to add color and context.  Rewrite the entire biography leaving To Be Supplied in any incomplete sections.
-Always out full copy of the work in progress when requests.  Use Markdown format.  After the Biographical text created so far, include a list of facts about the person that were discovered.
 
 You love completing a draft of each chapter of the story.  You cheer at the progress.
-You don't wait to ask question, you jump right in a start a chummy charming conversation with the user.
-Your role is to uncover, reveal and illustratively document what you learned.  You are 90% about active listening and 10% talking.   But figure out the story and ask questions that fill it in a cleverly and truthfully as possible.
+Your role is to uncover, reveal and illustratively document what you learned.
+Figure out the story and ask questions that fill it in a cleverly and truthfully as possible.
 
 
 Here are examples of questions you use to get people to open up.
@@ -1108,6 +1121,188 @@ def format_pdf_content(summary_data):
     return formatted_text + "</div>"
 
 
+--- FILE: word_counter/__init__.py ---
+
+
+
+--- FILE: word_counter/word_counter.py ---
+
+from flask import Blueprint, render_template, request, session
+import re
+from collections import Counter
+import logging
+from flask_wtf import FlaskForm
+from wtforms import FileField, SubmitField
+from wtforms.validators import InputRequired
+
+wc_bp = Blueprint('wc', __name__, template_folder='templates')  # Corrected name
+
+class UploadFileForm(FlaskForm):
+    file_upload = FileField('File', validators=[InputRequired()])
+    submit = SubmitField('Upload File')
+
+@wc_bp.route('/word_counter', methods=['GET', 'POST'])
+def word_counter():
+    form = UploadFileForm()
+    word_counts = None
+
+    if form.validate_on_submit():
+        try:
+            file = form.file_upload.data
+            text = file.read().decode('utf-8')
+
+            # Clean and split the text into words:  Lowercase and split by spaces and punctuation
+            words = re.findall(r'\b\w+\b', text.lower())
+
+            # Count the words using Counter
+            word_counts = Counter(words)
+            # word_counts = Counter(words)
+            sorted_word_counts = sorted(word_counts.items(), key=lambda x: x[1], reverse=True)  # Sort by count in descending order
+            #session['word_counts'] = sorted_word_counts  #Store words in session
+            session['word_counts'] = sorted_word_counts #Use sorted session.
+
+        except Exception as e:
+            logging.error(f"Error processing file: {e}")
+            return render_template('word_counter.html', form=form, error=str(e))
+
+    return render_template('word_counter.html', form=form, word_counts=session.get('word_counts', None)) #Passes in the variable.
+
+
+--- FILE: word_counter/templates/word_counter.html ---
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Word Counter</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #1E2A38;
+            color: #E5E5E5;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .container {
+            max-width: 800px;
+            padding: 20px;
+            background: #2A3D55;
+            border-radius: 12px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+            margin: 20px auto;
+        }
+
+        h1 {
+            color: #2D9CDB;
+        }
+
+        .word-count {
+            text-align: left;
+        }
+
+        .word-count ul {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        .word-count li {
+            padding: 5px 0;
+            border-bottom: 1px solid #4C657E;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 10px;
+            color: #D9E1EC;
+        }
+
+        input[type="file"] {
+            background-color: #3d597a;
+            color: #D9E1EC;
+            padding: 10px;
+            border-radius: 6px;
+            border: none;
+            margin-bottom: 20px;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #27AE60;
+            color: white;
+            border: none;
+            border-radius: 6px;
+        }
+
+        .error {
+            color: red;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Word Counter</h1>
+
+        <form method="POST" enctype="multipart/form-data">
+            {{ form.csrf_token }}  <!-- HERE:  Print the field in the form-->
+            <label for="file_upload">Upload a text file:</label>
+            {{ form.file_upload }}
+            {{ form.submit() }}
+        </form>
+
+        {% if error %}
+            <p class="error">Error: {{ error }}</p>
+        {% endif %}
+
+        {% if word_counts %}
+            <canvas id="wordChart" width="400" height="200"></canvas>
+
+            <div class="word-count">
+                <h2>Word Counts:</h2>
+                <ul>
+                    {% for word, count in word_counts %}
+                        <li>{{ word }}: {{ count }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            <script>
+                const ctx = document.getElementById('wordChart').getContext('2d');
+                const wordCounts = {{ word_counts|tojson }};
+
+                const labels = wordCounts.map(item => item[0]);
+                const data = wordCounts.map(item => item[1]);
+
+                new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Word Count',
+                            data: data,
+                            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                            borderColor: 'rgba(75, 192, 192, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+            </script>
+        {% endif %}
+    </div>
+</body>
+</html>
+
+
 --- FILE: walt/walt.py ---
 
 from flask import Blueprint, render_template, request, jsonify, session
@@ -1152,7 +1347,11 @@ def walt_analyze():
 
     # Initialize conversation history in session if it doesn't exist
     if 'conversation' not in session:
-        session['conversation'] = [{"role": "system", "content": walt_prompt}]
+        # Load initial greeting
+        initial_greeting = "Hi I'm Walt. What's your name?"
+
+        session['conversation'] = [{"role": "system", "content": walt_prompt}, #Get prompt
+                                     {"role": "assistant", "content": initial_greeting}] #Default state
 
     # Add the uploaded content (if any) as context
     #Debug Code
@@ -1258,11 +1457,94 @@ def load_checkpoint():
         )
         api_response = response.choices[0].message.content.strip()
 
-        return jsonify({"response": f"Welcome back, {user_name}!  Here's a summary of your progress:\n{api_response}"})
+        # Load the Walt Prompt
+        try:
+            with open('walt_prompt.txt', 'r', encoding='utf-8') as f:
+                walt_prompt = f.read()  # Read the walt_prompt.txt
+        except FileNotFoundError:
+                return jsonify({"error": "walt_prompt.txt not found!"}), 500
+        except Exception as e:
+                return jsonify({"error": f"Error reading walt_prompt.txt: {str(e)}"}), 500
+
+        #Update the conversation history with the new state
+        session['conversation'] = [{"role": "system", "content": walt_prompt}, #Load walt prompt
+                                   {"role": "assistant", "content":f"Welcome back, {user_name}! Hi, I am Walt. Let's continue your story."}]#Update initial phrase
+
+        return jsonify({"response": f"Welcome back, {user_name}! Hi, I am Walt. Let's continue your story."}) #Update the user
 
     except Exception as e:
         print(f"Error processing checkpoint: {e}")
         return jsonify({"error": str(e)}), 500
+
+@walt_bp.route('/create_checkpoint', methods=['POST']) #New route
+def create_checkpoint():
+    try:
+        client = openai.Client()  # Use your preferred method to initialize the OpenAI client
+        # 1. Load the three files
+        try:
+            with open('walt_prompt.txt', 'r', encoding='utf-8') as f:
+                walt_prompt = f.read()
+            with open('walt/bio_creator_prompt.txt', 'r', encoding='utf-8') as f: #Load the new prompt
+                bio_creator_prompt = f.read()
+        except FileNotFoundError as e:
+            return jsonify({"error": f"Required prompt file not found: {e}"}), 500
+        except Exception as e:
+            return jsonify({"error": f"Error reading prompt file: {e}"}), 500
+
+        # 2. Get the session
+        session_info = session.get('conversation', [])
+
+        # 3. Consolidate content
+        consolidated_content = bio_creator_prompt #Start here
+        consolidated_content += "\n --- Previous Checkpoint Data --- \n"
+        #Get the story content if uploaded.
+        if 'file_content' in session:
+             consolidated_content+= session['file_content'] #Tack file content
+        else:
+             consolidated_content+= "No Checkpoint Data Found"
+        consolidated_content += "\n --- Begin Walt Session Data --- \n"
+        consolidated_content += str(session_info) #Load Session data for this run
+
+        # 4. Call OpenAPI
+
+        response = client.chat.completions.create(
+            model="gpt-4o",  # Or your preferred model
+            messages=[
+                {"role": "system", "content": walt_prompt}, #Use basic instruction
+                {"role": "user", "content": f"Create the next version of the Checkpoint file. Please consolidate and organize this information: {consolidated_content}"}
+            ],
+            temperature=0.7,
+            max_tokens=2000, #Up the ante
+            top_p=1,
+        )
+        revised_content = response.choices[0].message.content.strip()
+
+        # 5. Return the Prompted Results
+        return jsonify({"checkpoint_data": revised_content})
+    except Exception as e:
+        logging.error(f"Error creating checkpoint: {e}", exc_info=True)
+        return jsonify({"error": str(e)}), 500
+
+@walt_bp.route('/saveTextAsFile', methods=['POST']) #Updated route to send value for create checkpoint.
+def saveTextAsFile():
+        # Get the content from create checkpoint and display
+       try:
+            data = request.get_json() #Get from Ajax not function
+            checkpoint_data = data.get('checkpoint_data') #Get the string
+
+            if not checkpoint_data: #Trap potential issue
+                return jsonify({"error": "No checkpoint data to save"}), 400
+
+            # Create the new file with checkpoint_data from OpenAPI
+            textFileAsBlob = checkpoint_data.encode('utf-8') #Encode data.
+            fileNameToSaveAs = "sessionStory.txt"
+
+            # 5. Return data (to front end)
+            return jsonify({"fileContent": f"{textFileAsBlob.decode()}"}) #All set
+
+       except Exception as e:
+            logging.error(f"Error return and saving checkpoint from saveTextAsFile: {e}", exc_info=True)
+            return jsonify({"error": str(e)}), 500 #Shot error
 
 
 --- FILE: walt/templates/walt_window.html ---
@@ -1357,7 +1639,7 @@ def load_checkpoint():
             white-space: pre-wrap;
             overflow-y: auto;
             box-sizing: border-box;
-            font-size: 1.2em;
+            font-size: 16pt; /* Font size set to 16pt */
             align-items: flex-start;
         }
 
@@ -1380,7 +1662,7 @@ def load_checkpoint():
             resize: vertical;
             flex: 1;
             box-sizing: border-box;
-            font-size: 1.2em;
+            font-size: 16pt; /* Font size set to 16pt */
            background-color: #3d597a; /* Light blue */
             color: #D9E1EC;
         }
@@ -1436,6 +1718,7 @@ def load_checkpoint():
         }
     </style>
     <script>
+        // All the code here is to ensure it is loaded at the top level scope.
         let uploaded_content = ""; //Global variable to store uploaded content
         let storyUpload; // Declare storyUpload outside the event listener
 
@@ -1485,32 +1768,55 @@ def load_checkpoint():
             return chatOutput
         }
 
-       function saveTextAsFile() {
-           let textToWrite = getStoryBoard();
+        function saveTextAsFile() {
+         // Get CSRF token from cookie
+         alert("Save Event is firing");
+         function getCookie(name) {
+              const value = `; ${document.cookie}`;
+              const parts = value.split(`; ${name}=`);
+              if (parts.length === 2) return parts.pop().split(';').shift();
+         }
 
-           var textFileAsBlob = new Blob([textToWrite], { type: 'text/plain' });
-           var fileNameToSaveAs = "sessionStory.txt";
+         const csrfToken = getCookie('csrf_token');
 
-           var downloadLink = document.createElement("a");
-           downloadLink.download = fileNameToSaveAs;
-           downloadLink.innerHTML = "Download File";
+          fetch("/create_checkpoint", {
+               method: "POST",
+               headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": csrfToken
+               },
+               body: JSON.stringify({})  // Send an empty object, only trigger a job.  No data is needed.
+          })
+          .then(response => response.json())
+          .then(data => {
+               if (data.error) {
+                    alert("Error creating checkpoint: " + data.error);
+               } else {
+                    //The string returns.  Now handle this properly.
+                     var textFileAsBlob = new Blob([data["checkpoint_data"]], { type: 'text/plain' }); #Get text
+                     var fileNameToSaveAs = "sessionStory.txt"; #Name it
 
-           if (window.webkitURL != null) {
-               // Chrome allows the link to be clicked
-               // without actually adding it to the DOM.
-               downloadLink.href = window.webkitURL.createObjectURL(textFileAsBlob);
-           }
-           else {
-               // Firefox requires the link to be added to the DOM
-               // before it can be clicked.
-               downloadLink.href = window.URL.createObjectURL(textFileAsBlob);
-               downloadLink.onclick = destroyClickedElement;
-               downloadLink.style.display = "none";
-               document.body.appendChild(downloadLink);
-           }
+                     var downloadLink = document.createElement("a"); #Create element
+                     downloadLink.download = fileNameToSaveAs; #Call this
+                     downloadLink.innerHTML = "Download File"; #Let him know what to do.
 
-           downloadLink.click();
-       }
+                     if (window.webkitURL != null) { #Other requirements
+                          downloadLink.href = window.webkitURL.createObjectURL(textFileAsBlob);
+                     }
+                     else {
+                          downloadLink.href = window.URL.createObjectURL(textFileAsBlob);
+                          downloadLink.onclick = destroyClickedElement;
+                          downloadLink.style.display = "none";
+                          document.body.appendChild(downloadLink);
+                     }
+
+                     downloadLink.click();
+               }
+          })
+          .catch(error => {
+               alert("Error: " + error.message);
+          });
+     }
 
        function sendCheckpointData(fileContent) {
             // Get CSRF token from cookie
@@ -1548,60 +1854,62 @@ def load_checkpoint():
             let chatOutput = document.getElementById("chatOutput");
             chatOutput.textContent ="Oh I see! I'd forgotten what we already did. Wonderful";
          }
-        // This function is triggered when the "Start at last Checkpoint" is pressed
-        function uploadStory() {
-             if (storyUpload) {
-                 console.log("Firing Upload Story Trigger");
-                 storyUpload.click(); //Programitcally fire "load a checkpoint file."
-              } else {
-                console.error("storyUpload element not found");
-              }
+         // This function is triggered when the "Start at last Checkpoint" is pressed
+         function uploadStory() {
+              console.log("Firing Upload Story Trigger");
+              if (storyUpload) {
+                  storyUpload.click(); //Programitcally fire "load a checkpoint file."
+               } else {
+                 console.error("storyUpload element not found");
+               }
 
-          }
-         //Event Handling
+           }
+        //Event Handling
         document.addEventListener('DOMContentLoaded', function() {
             storyUpload = document.getElementById("story_upload"); // Define at document load
+             console.log("Story Upload: Document is loaded");
             if (storyUpload) {
-              //Event
-              storyUpload.addEventListener("change", function() {
-                if (this.files && this.files[0]) {
-                  const fileInput = document.getElementById("story_upload");
-                  const chatOutput = document.getElementById("chatOutput");
+               //Event
+               storyUpload.addEventListener("change", function() {
+                    console.log("Event Listener Triggered");
+                    if (this.files && this.files[0]) {
+                      const fileInput = document.getElementById("story_upload");
+                      const chatOutput = document.getElementById("chatOutput");
 
-                  const file = fileInput.files[0];
+                      const file = fileInput.files[0];
 
-                   const reader = new FileReader();
-                      //Set value for upload
-                     reader.onload = function(event) {
-                           try{
-                                console.log ("Story Uploaded to the Chat Output", event.target.result); //Check log before
-                                //Capture the file upload
-                                uploaded_content = event.target.result;
+                       const reader = new FileReader();
+                          //Set value for upload
+                         reader.onload = function(event) {
+                               try{
+                                    console.log ("Story Uploaded to the Chat Output", event.target.result); //Check log before
+                                    //Capture the file upload
+                                    uploaded_content = event.target.result;
 
-                                //Display Load
-                                chatOutput.textContent = "Loading Checkpoint...";  // Display loading message
+                                    //Display Load
+                                    chatOutput.textContent = "Loading Checkpoint...";  // Display loading message
 
-                                //Load the checkpoint
-                                sendCheckpointData(event.target.result); // Send the data
+                                    //Load the checkpoint
+                                    sendCheckpointData(event.target.result); // Send the data
 
-                            }
+                                }
 
-                            catch (error){
-                                chatOutput.textContent = "Error loading file in eventListener" + error;
-                            }
-                     };
+                                catch (error){
+                                    chatOutput.textContent = "Error loading file in eventListener" + error;
+                                }
+                         };
 
-                     reader.onerror = function(event) {
-                        chatOutput.textContent = "Error reading file: " + event.target.error;
-                         console.error("Error reading file:", event.target.error);
-                    };
+                         reader.onerror = function(event) {
+                            chatOutput.textContent = "Error reading file: " + event.target.error;
+                             console.error("Error reading file:", event.target.error);
+                        };
 
-                    reader.readAsText(file);
-                 }
-              })
+                        reader.readAsText(file);
+                     }
+                  })
             } else {
                console.log("Story Upload does not exist")
-             }
+            }
         })
 
         window.onload = function() {
@@ -1998,6 +2306,14 @@ def load_checkpoint():
                 <h3>API Test</h3>
                 <p>Check API connection and response.</p>
                 <a href="#" onclick="openTestWindow()">API Test</a>
+            </div>
+
+            <!-- Word Counter Button -->
+            <div class="project-tile">
+                <img src="static/icons/amber-button.jpeg" alt="Word Counter App">
+                <h3>Word Counter</h3>
+                <p>Counts the unique words in a text file.</p>
+                <a href="{{ url_for('wc.word_counter') }}">Open App</a>
             </div>
 
             {% for i in range(1, 12) %}

@@ -1,3 +1,5 @@
+--- FILE: walt/templates/walt_window.html ---
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -218,54 +220,56 @@
         }
 
         function saveTextAsFile() {
-         // Get CSRF token from cookie
-         alert("Save Event is firing");
-         function getCookie(name) {
-              const value = `; ${document.cookie}`;
-              const parts = value.split(`; ${name}=`);
-              if (parts.length === 2) return parts.pop().split(';').shift();
-         }
+            // Get CSRF token from cookie
+            alert("Save Event is firing");
 
-         const csrfToken = getCookie('csrf_token');
+            function getCookie(name) {
+                const value = `; ${document.cookie}`;
+                const parts = value.split(`; ${name}=`);
+                if (parts.length === 2) return parts.pop().split(';').shift();
+            }
 
-          fetch("/create_checkpoint", {
-               method: "POST",
-               headers: {
+            const csrfToken = getCookie('csrf_token');
+
+            fetch("/create_checkpoint", {
+                method: "POST",
+                headers: {
                     "Content-Type": "application/json",
                     "X-CSRFToken": csrfToken
-               },
-               body: JSON.stringify({})  // Send an empty object, only trigger a job.  No data is needed.
-          })
-          .then(response => response.json())
-          .then(data => {
-               if (data.error) {
+                },
+                body: JSON.stringify({})  // Send an empty object, only trigger a job.  No data is needed.
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
                     alert("Error creating checkpoint: " + data.error);
-               } else {
+                } else {
                     //The string returns.  Now handle this properly.
-                     var textFileAsBlob = new Blob([data["checkpoint_data"]], { type: 'text/plain' }); #Get text
-                     var fileNameToSaveAs = "sessionStory.txt"; #Name it
+                    const textFileAsBlob = new Blob([data["checkpoint_data"]], { type: 'text/plain' });
+                    const fileNameToSaveAs = "sessionStory.txt";
 
-                     var downloadLink = document.createElement("a"); #Create element
-                     downloadLink.download = fileNameToSaveAs; #Call this
-                     downloadLink.innerHTML = "Download File"; #Let him know what to do.
+                    const downloadLink = document.createElement("a");
+                    downloadLink.download = fileNameToSaveAs;
+                    downloadLink.innerHTML = "Download File";
+                    downloadLink.href = window.URL.createObjectURL(textFileAsBlob);
+                    downloadLink.style.display = "none"; // Hide the link
 
-                     if (window.webkitURL != null) { #Other requirements
-                          downloadLink.href = window.webkitURL.createObjectURL(textFileAsBlob);
-                     }
-                     else {
-                          downloadLink.href = window.URL.createObjectURL(textFileAsBlob);
-                          downloadLink.onclick = destroyClickedElement;
-                          downloadLink.style.display = "none";
-                          document.body.appendChild(downloadLink);
-                     }
+                    document.body.appendChild(downloadLink); // Append to the document
+                    downloadLink.click(); // Programmatically trigger the click
+                    document.body.removeChild(downloadLink); // Clean up by removing the link
 
-                     downloadLink.click();
-               }
-          })
-          .catch(error => {
-               alert("Error: " + error.message);
-          });
-     }
+                }
+            })
+            .catch(error => {
+                alert("Error: " + error.message);
+            });
+        }
+
+        //No Function defintion
+        function destroyClickedElement(event)
+        {
+            document.body.removeChild(event.target);
+        }
 
        function sendCheckpointData(fileContent) {
             // Get CSRF token from cookie
@@ -319,7 +323,7 @@
              console.log("Story Upload: Document is loaded");
             if (storyUpload) {
                //Event
-               storyUpload.addEventListener("change", function() {
+               storyUpload.addEventListener("change", function(event) { //Make sure event is captured
                     console.log("Event Listener Triggered");
                     if (this.files && this.files[0]) {
                       const fileInput = document.getElementById("story_upload");
