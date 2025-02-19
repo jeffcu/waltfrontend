@@ -1,4 +1,3 @@
---- FILE: walt/walt.py ---
 from flask import Blueprint, render_template, request, jsonify, session
 import os
 import openai
