@@ -167,6 +167,21 @@
             font-size: 1.2em;
             display:none; /*Hides the shape*/
         }
+        #checkpointOutput {
+            width: 90%;
+            max-height: 200px;
+            margin: 10px auto;
+            padding: 10px;
+            border: 1px solid #4C657E;
+            border-radius: 6px;
+            background-color: #2A3D55;
+            color: #D9E1EC;
+            text-align: left;
+            white-space: pre-wrap;
+            overflow-y: auto;
+            box-sizing: border-box;
+            font-size: 1.2em;
+        }
     </style>
     <script>
         // All the code here is to ensure it is loaded at the top level scope.
@@ -221,7 +236,6 @@
 
        function saveTextAsFile() {
             // Get CSRF token from cookie
-
             function getCookie(name) {
                 const value = `; ${document.cookie}`;
                 const parts = value.split(`; ${name}=`);
@@ -229,7 +243,7 @@
             }
 
             const csrfToken = getCookie('csrf_token');
-
+             let checkpointOutput = document.getElementById("checkpointOutput");  // Get the output window element
             fetch("/create_checkpoint", {
                 method: "POST",
                 headers: {
@@ -245,7 +259,8 @@
                 } else {
                     // The server returns the JSON string, so use it directly
                     const fileContent = data["fileContent"];
-                    console.log ("fileContent", fileContent)
+                    checkpointOutput.textContent = fileContent;  // Set the checkpoint output window text.
+
                     const textFileAsBlob = new Blob([fileContent], { type: 'text/plain' });
                     const fileNameToSaveAs = "sessionStory.txt";
 
@@ -390,7 +405,11 @@
     </div>
 
     <h3 class="dataNote">Note: No data is saved by this application, the only memory is through this file alone.</h3>
-    <div style = "text-align:center">  <button id="saveButton" onclick="saveTextAsFile()" >Create Checkpoint File</button></div>
+    <div style = "text-align:center">
+        <button id="saveButton" onclick="saveTextAsFile()">Create Checkpoint File</button>
+    </div>
+
+    <div id="checkpointOutput"></div> <!-- Added new output window for displaying checkpoint text -->
     <div id="sessionSummary"></div>
 </body>
 </html>

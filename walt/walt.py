@@ -34,8 +34,8 @@ def walt_analyze():
     try:
         with open('walt_prompt.txt', 'r', encoding='utf-8') as f:
             walt_prompt = f.read()
-    except FileNotFoundError:
-        return jsonify({"error": "walt_prompt.txt not found!"}), 500
+        except FileNotFoundError:
+            return jsonify({"error": "walt_prompt.txt not found!"}), 500
     except Exception as e:
         return jsonify({"error": f"Error reading walt_prompt.txt: {str(e)}"}), 500
 
@@ -58,7 +58,7 @@ def walt_analyze():
 
         response = client.chat.completions.create(
             model="gpt-4o",
-            messages=session['conversation'],
+            messages=[session['conversation']],
             temperature=0.7,
             max_tokens=256,
             top_p=1
