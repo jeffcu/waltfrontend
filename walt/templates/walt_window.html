@@ -1,3 +1,4 @@
+--- FILE: walt/templates/walt_window.html ---
 <!DOCTYPE html>
 <html>
 <head>
@@ -221,7 +222,6 @@
 
         function saveTextAsFile() {
             // Get CSRF token from cookie
-            alert("Save Event is firing");
 
             function getCookie(name) {
                 const value = `; ${document.cookie}`;
@@ -237,15 +237,16 @@
                     "Content-Type": "application/json",
                     "X-CSRFToken": csrfToken
                 },
-                body: JSON.stringify({})  // Send an empty object, only trigger a job.  No data is needed.
+                body: JSON.stringify({})  // Send an empty object to trigger checkpoint creation
             })
             .then(response => response.json())
             .then(data => {
                 if (data.error) {
                     alert("Error creating checkpoint: " + data.error);
                 } else {
-                    //The string returns.  Now handle this properly.
-                    const textFileAsBlob = new Blob([data["checkpoint_data"]], { type: 'text/plain' });
+                    // The server returns the JSON string, so use it directly
+                    const fileContent = data["fileContent"];
+                    const textFileAsBlob = new Blob([fileContent], { type: 'text/plain' });
                     const fileNameToSaveAs = "sessionStory.txt";
 
                     const downloadLink = document.createElement("a");
@@ -254,10 +255,9 @@
                     downloadLink.href = window.URL.createObjectURL(textFileAsBlob);
                     downloadLink.style.display = "none"; // Hide the link
 
-                    document.body.appendChild(downloadLink); // Append to the document
-                    downloadLink.click(); // Programmatically trigger the click
-                    document.body.removeChild(downloadLink); // Clean up by removing the link
-
+                    document.body.appendChild(downloadLink);
+                    downloadLink.click();
+                    document.body.removeChild(downloadLink);
                 }
             })
             .catch(error => {
@@ -265,45 +265,44 @@
             });
         }
 
-        //No Function defintion
-        function destroyClickedElement(event)
-        {
-            document.body.removeChild(event.target);
-        }
-
-       function sendCheckpointData(fileContent) {
-            // Get CSRF token from cookie
-            function getCookie(name) {
-                const value = `; ${document.cookie}`;
-                const parts = value.split(`; ${name}=`);
-                if (parts.length === 2) return parts.pop().split(';').shift();
-            }
-
-            const csrfToken = getCookie('csrf_token');
-
-            fetch("/load_checkpoint", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/x-www-form-urlencoded",
-                    "X-CSRFToken": csrfToken  // Send CSRF token!
-                },
-                body: "checkpoint_data=" + encodeURIComponent(fileContent)
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.error) {
-                    document.getElementById("chatOutput").textContent = "Error: " + data.error;
-                } else {
-                    document.getElementById("chatOutput").textContent = data.response;
-                     sendLoadMessage()//Added message on upload
+        function sendCheckpointData(fileContent) {
+              try {
+                // Get CSRF token from cookie
+                function getCookie(name) {
+                    const value = `; ${document.cookie}`;
+                    const parts = value.split(`; ${name}=`);
+                    if (parts.length === 2) return parts.pop().split(';').shift();
                 }
-            })
-            .catch(error => {
-                 document.getElementById("chatOutput").textContent = "Error: " + error.message;
-            });
+
+                const csrfToken = getCookie('csrf_token');
+
+                fetch("/load_checkpoint", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/x-www-form-urlencoded",
+                        "X-CSRFToken": csrfToken
+                    },
+                    body: "checkpoint_data=" + encodeURIComponent(fileContent)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        document.getElementById("chatOutput").textContent = "Error: " + data.error;
+                    } else {
+                        document.getElementById("chatOutput").textContent = data.response;
+                        sendLoadMessage(); // Added message on upload
+                    }
+                })
+                .catch(error => {
+                    document.getElementById("chatOutput").textContent = "Error: " + error.message;
+                });
+            } catch (error) {
+                console.error("Error in sendCheckpointData:", error);
+                document.getElementById("chatOutput").textContent = "Error loading checkpoint.";
+            }
         }
 
-           function sendLoadMessage() {
+        function sendLoadMessage() {
             let chatOutput = document.getElementById("chatOutput");
             chatOutput.textContent ="Oh I see! I'd forgotten what we already did. Wonderful";
          }
@@ -343,8 +342,7 @@
                                     chatOutput.textContent = "Loading Checkpoint...";  // Display loading message
 
                                     //Load the checkpoint
-                                    sendCheckpointData(event.target.result); // Send the data
-
+                                     sendCheckpointData(event.target.result);
                                 }
 
                                 catch (error){

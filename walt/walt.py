@@ -1,3 +1,4 @@
+--- FILE: walt/walt.py ---
 from flask import Blueprint, render_template, request, jsonify, session
 import os
 import openai
@@ -145,7 +146,43 @@ def load_checkpoint():
         #Update the conversation history with the new state
         session['conversation'].append({"role": "assistant", "content":welcome_phrase}) #Update initial phrase
 
-        return jsonify({"response": welcome_phrase})  #Update the user
+        return jsonify({"response": welcome_phrase})
 
     except Exception as e:
-        print(f"Error processing
+        print(f"Error processing checkpoint: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@walt_bp.route('/create_checkpoint', methods=['POST'])
+def create_checkpoint():
+    try:
+        # Create a dictionary to hold the session data and file content
+        checkpoint_data = {
+            'conversation': session.get('conversation', []),
+            'file_content': session.get('file_content', '')
+        }
+
+        # Serialize the dictionary to JSON
+        checkpoint_json = json.dumps(checkpoint_data)
+
+        # Return the JSON string
+        return jsonify({"checkpoint_data": checkpoint_json})
+
+    except Exception as e:
+        logging.error(f"Error creating checkpoint: {e}", exc_info=True)
+        return jsonify({"error": str(e)}), 500
+
+@walt_bp.route('/saveTextAsFile', methods=['POST'])
+def saveTextAsFile():
+    try:
+        data = request.get_json()
+        checkpoint_data = data.get('checkpoint_data')
+
+        if not checkpoint_data:
+            return jsonify({"error": "No checkpoint data to save"}), 400
+
+        # Return the checkpoint data directly (it's already a JSON string)
+        return jsonify({"fileContent": checkpoint_data})
+
+    except Exception as e:
+        logging.error(f"Error return and saving checkpoint from saveTextAsFile: {e}", exc_info=True)
+        return jsonify({"error": str(e)}), 500
