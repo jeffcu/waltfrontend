@@ -1,4 +1,4 @@
-
+--- START OF FILE walt/templates/walt_window.html ---
 <!DOCTYPE html>
 <html>
 <head>
@@ -215,6 +215,21 @@
             box-sizing: border-box;
             font-size: 1.2em;
         }
+        #apiOutputBox { /* NEW API OUTPUT BOX STYLE */
+            width: 90%;
+            margin: 10px auto;
+            padding: 10px;
+            border: 1px solid #4C657E;
+            border-radius: 6px;
+            background-color: #4C657E; /* Different background for API output */
+            color: #D9E1EC;
+            text-align: left;
+            white-space: pre-wrap;
+            overflow-y: auto;
+            max-height: 200px;
+            box-sizing: border-box;
+            font-size: 1.2em;
+        }
     </style>
     <script>
         // All the code here is to ensure it is loaded at the top level scope.
@@ -276,24 +291,31 @@
             }
 
             const csrfToken = getCookie('csrf_token');
-             let checkpointOutput = document.getElementById("checkpointOutput");  // Get the output window element
-            fetch("/create_checkpoint", {
+             let checkpointOutput = document.getElementById("checkpointOutput");  // Get the checkpoint output window element
+             let apiOutputBox = document.getElementById("apiOutputBox"); // Get the new API output box
+
+             apiOutputBox.textContent = "Processing Checkpoint and Calling API..."; // Indicate processing
+
+            fetch("/walt_process_checkpoint", { // Call the NEW route
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                     "X-CSRFToken": csrfToken
                 },
-                body: JSON.stringify({})  // Send an empty object to trigger checkpoint creation
+                body: JSON.stringify({})  // Send an empty object, server gets session data
             })
             .then(response => response.json())
             .then(data => {
                 if (data.error) {
                     alert("Error creating checkpoint: " + data.error);
+                    apiOutputBox.textContent = "API Error: " + data.error; // Display API error in the box
                 } else {
-                    // The server returns the JSON string, which is just text now.
-                    const fileContent = data["checkpoint_data"]; // Changed to checkpoint_data
+                    // The server returns the JSON with checkpoint_data and api_response
+                    const fileContent = data["checkpoint_data"];
                     checkpointOutput.textContent = fileContent;  // Set the checkpoint output window text.
                     console.log("fileContent from server", fileContent)
+
+                    apiOutputBox.textContent = data["api_response"]; // Display API response in the new box
 
                     const textFileAsBlob = new Blob([fileContent], { type: 'text/plain' });
                     const fileNameToSaveAs = "sessionStory.txt";
@@ -311,6 +333,7 @@
             })
             .catch(error => {
                 alert("Error: " + error.message);
+                apiOutputBox.textContent = "Fetch Error: " + error.message; // Display fetch error
             });
         }
 
@@ -343,7 +366,7 @@
                     }
                 })
                 .catch(error => {
-                    document.getElementById("chatOutput").textContent = "Error loading checkpoint.";
+                    document.getElementById("chatOutput").textContent = "Error: " + error.message;
                 });
             } catch (error) {
                 console.error("Error in sendCheckpointData:", error);
@@ -476,12 +499,13 @@
 
     <h3 class="dataNote">Note: No data is saved by this application, the only memory is through this file alone.</h3>
     <div style = "text-align:center">
-        <button id="saveButton" onclick="saveTextAsFile()">Create Checkpoint File</button>
+        <button id="saveButton" onclick="saveTextAsFile()">Create Checkpoint File and Analyze</button>
         <button id="appendButton" onclick="appendToCheckpointFile()">Append to Checkpoint File</button>  <!-- NEW BUTTON -->
     </div>
 
     <div id="checkpointOutput"></div>
-    <div id="combinedOutput"></div> <!-- NEW OUTPUT WINDOW -->
+    <div id="combinedOutput"></div>
+    <div id="apiOutputBox"></div> <!-- NEW API OUTPUT BOX ADDED HERE -->
     <div id="sessionSummary"></div>
 </body>
 </html>

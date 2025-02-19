@@ -5,6 +5,7 @@ import os
 import openai
 import logging
 import json  # Import the json module
+from werkzeug.utils import secure_filename # For secure filename handling
 
 walt_bp = Blueprint('walt', __name__, template_folder='templates')
 
@@ -104,8 +105,6 @@ def walt_session_summary():
         print(f"Error calling OpenAI: {e}")
         return jsonify({"error": str(e)}), 500
 
-    return jsonify({"session_summary": f"{api_response}"})
-
 @walt_bp.route('/load_checkpoint', methods=['POST'])
 def load_checkpoint():
     checkpoint_data = request.form.get('checkpoint_data')
@@ -167,7 +166,51 @@ def create_checkpoint():
         return jsonify({"error": str(e)}), 500
 
 @walt_bp.route('/saveTextAsFile', methods=['POST'])
-def saveTextAsFile():
+def saveTextAsFile(): # RENAME to walt_process_checkpoint for clarity in JS, but keep route name
+    try:
+        checkpoint_data_text = session.get('file_content', '') # Get file_content directly as text
+        bio_prompt_content = ""
+        try:
+            with open('walt/bio_creator_prompt.txt', 'r', encoding='utf-8') as f: # Read bio_creator_prompt.txt
+                bio_prompt_content = f.read()
+        except Exception as e:
+            logging.error(f"Error reading bio_creator_prompt.txt: {e}")
+            bio_prompt_content = "Error loading bio creator prompt." # Fallback if file not read
+
+        conversation_text = "" # Get conversation text for API call
+        current_conversation = session.get('conversation', [])
+        for message in current_conversation:
+            if message['role'] in ['user', 'assistant']: # Filter for user and assistant roles
+                conversation_text += f"{message['role']}: {message['content']}\n"
+
+        api_input_text = bio_prompt_content + "\n\n" + checkpoint_data_text + "\n\n--- CONVERSATION ---\n\n" + conversation_text # Combine for API
+
+        client = openai.Client() # Call OpenAI API for processing
+        response = client.chat.completions.create(
+            model="gpt-4o",
+            messages=[{"role": "user", "content": api_input_text}], # Send combined text as user input
+            max_tokens=500, # Adjust as needed
+        )
+        api_response_text = response.choices[0].message.content.strip() # Extract API response
+
+        combined_checkpoint_content = bio_prompt_content + "\n\n" + checkpoint_data_text # Recreate combined content for file save (without API response)
+
+        # Handle file download as before
+        file_content_for_download = combined_checkpoint_content # File content for download is without API response
+
+        return jsonify({ # Return both checkpoint data (for file) and api response (for display)
+            "checkpoint_data": file_content_for_download,
+            "api_response": api_response_text
+        })
+
+
+    except Exception as e:
+        logging.error(f"Error processing checkpoint and calling API: {e}", exc_info=True)
+        return jsonify({"error": str(e)}), 500
+
+
+@walt_bp.route('/saveTextAsFileDownload', methods=['POST']) # Keep old route for file download part only
+def saveTextAsFileDownload(): # Keep separate function for actual download
     try:
         data = request.get_json()
         checkpoint_data = data.get('checkpoint_data') # Expect plain text directly
@@ -176,12 +219,13 @@ def saveTextAsFile():
             return jsonify({"error": "No checkpoint data to save"}), 400
 
         # Return the checkpoint data directly as text
-        logging.info(f"Checkpoint data being sent: {checkpoint_data[:50]}...") #Debug log start of data
-        return jsonify({"fileContent": checkpoint_data}) # Return text directly
+        logging.info(f"Checkpoint data being sent for download: {checkpoint_data[:50]}...") #Debug log start of data
+        return jsonify({"fileContent": checkpoint_data}) # Return text directly for download
 
     except Exception as e:
-        logging.error(f"Error return and saving checkpoint from saveTextAsFile: {e}", exc_info=True)
+        logging.error(f"Error return and saving checkpoint from saveTextAsFileDownload: {e}", exc_info=True)
         return jsonify({"error": str(e)}), 500
+
 
 @walt_bp.route('/append_to_checkpoint', methods=['POST'])  # NEW ROUTE
 def append_to_checkpoint():
