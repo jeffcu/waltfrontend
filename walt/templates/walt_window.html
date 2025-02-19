@@ -167,6 +167,7 @@
         }
     </style>
     <script>
+        // All the code here is to ensure it is loaded at the top level scope.
         let uploaded_content = ""; //Global variable to store uploaded content
         let storyUpload; // Declare storyUpload outside the event listener
 
@@ -217,8 +218,8 @@
         }
 
         function saveTextAsFile() {
-            alert("Save Event is firing");
          // Get CSRF token from cookie
+         alert("Save Event is firing");
          function getCookie(name) {
               const value = `; ${document.cookie}`;
               const parts = value.split(`; ${name}=`);
