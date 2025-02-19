@@ -1,4 +1,3 @@
---- START OF FILE walt/walt.py ---
 # walt/walt.py
 from flask import Blueprint, render_template, request, jsonify, session
 import os
@@ -181,5 +180,3 @@ def saveTextAsFile():
     except Exception as e:
         logging.error(f"Error return and saving checkpoint from saveTextAsFile: {e}", exc_info=True)
         return jsonify({"error": str(e)}), 500
-
---- END OF FILE walt/walt.py ---
