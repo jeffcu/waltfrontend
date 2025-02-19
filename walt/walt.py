@@ -55,11 +55,25 @@ def walt_analyze():
 
     try:
         client = openai.Client()
+
+        # Log the messages being sent to OpenAI for debugging
         logging.info(f"OpenAI Request Messages: {session['conversation']}")
+
+        # Check the format of the messages
+        if not isinstance(session['conversation'], list):
+            logging.error("session['conversation'] is not a list!")
+            return jsonify({"error": "Internal error: Conversation data is corrupted."}), 500
+        for i, message in enumerate(session['conversation']):
+            if not isinstance(message, dict):
+                logging.error(f"session['conversation'][{i}] is not a dict!")
+                return jsonify({"error": "Internal error: Conversation data is corrupted."}), 500
+            if 'role' not in message or 'content' not in message:
+                logging.error(f"session['conversation'][{i}] is missing 'role' or 'content'!")
+                return jsonify({"error": "Internal error: Conversation data is corrupted."}), 500
 
         response = client.chat.completions.create(
             model="gpt-4o",
-            messages=[session['conversation']],
+            messages=session['conversation'],
             temperature=0.7,
             max_tokens=256,
             top_p=1
