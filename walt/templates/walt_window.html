@@ -217,8 +217,8 @@
         }
 
         function saveTextAsFile() {
+            alert("Save Event is firing");
          // Get CSRF token from cookie
-         alert("Save Event is firing");
          function getCookie(name) {
               const value = `; ${document.cookie}`;
               const parts = value.split(`; ${name}=`);
@@ -302,62 +302,62 @@
             let chatOutput = document.getElementById("chatOutput");
             chatOutput.textContent ="Oh I see! I'd forgotten what we already did. Wonderful";
          }
-        // This function is triggered when the "Start at last Checkpoint" is pressed
-        function uploadStory() {
-             if (storyUpload) {
-                 console.log("Firing Upload Story Trigger");
-                 storyUpload.click(); //Programitcally fire "load a checkpoint file."
-              } else {
-                console.error("storyUpload element not found");
-              }
+         // This function is triggered when the "Start at last Checkpoint" is pressed
+         function uploadStory() {
+              console.log("Firing Upload Story Trigger");
+              if (storyUpload) {
+                  storyUpload.click(); //Programitcally fire "load a checkpoint file."
+               } else {
+                 console.error("storyUpload element not found");
+               }
 
-          }
-         //Event Handling
+           }
+        //Event Handling
         document.addEventListener('DOMContentLoaded', function() {
             storyUpload = document.getElementById("story_upload"); // Define at document load
+             console.log("Story Upload: Document is loaded");
             if (storyUpload) {
-               console.log("Story Upload: Document is loaded");
                //Event
                storyUpload.addEventListener("change", function() {
-                    console.log("Event Listener Triggered")
-                if (this.files && this.files[0]) {
-                  const fileInput = document.getElementById("story_upload");
-                  const chatOutput = document.getElementById("chatOutput");
+                    console.log("Event Listener Triggered");
+                    if (this.files && this.files[0]) {
+                      const fileInput = document.getElementById("story_upload");
+                      const chatOutput = document.getElementById("chatOutput");
 
-                  const file = fileInput.files[0];
+                      const file = fileInput.files[0];
 
-                   const reader = new FileReader();
-                      //Set value for upload
-                     reader.onload = function(event) {
-                           try{
-                                console.log ("Story Uploaded to the Chat Output", event.target.result); //Check log before
-                                //Capture the file upload
-                                uploaded_content = event.target.result;
+                       const reader = new FileReader();
+                          //Set value for upload
+                         reader.onload = function(event) {
+                               try{
+                                    console.log ("Story Uploaded to the Chat Output", event.target.result); //Check log before
+                                    //Capture the file upload
+                                    uploaded_content = event.target.result;
 
-                                //Display Load
-                                chatOutput.textContent = "Loading Checkpoint...";  // Display loading message
+                                    //Display Load
+                                    chatOutput.textContent = "Loading Checkpoint...";  // Display loading message
 
-                                //Load the checkpoint
-                                sendCheckpointData(event.target.result); // Send the data
+                                    //Load the checkpoint
+                                    sendCheckpointData(event.target.result); // Send the data
 
-                            }
+                                }
 
-                            catch (error){
-                                chatOutput.textContent = "Error loading file in eventListener" + error;
-                            }
-                     };
+                                catch (error){
+                                    chatOutput.textContent = "Error loading file in eventListener" + error;
+                                }
+                         };
 
-                     reader.onerror = function(event) {
-                        chatOutput.textContent = "Error reading file: " + event.target.error;
-                         console.error("Error reading file:", event.target.error);
-                    };
+                         reader.onerror = function(event) {
+                            chatOutput.textContent = "Error reading file: " + event.target.error;
+                             console.error("Error reading file:", event.target.error);
+                        };
 
-                    reader.readAsText(file);
-                 }
-              })
+                        reader.readAsText(file);
+                     }
+                  })
             } else {
                console.log("Story Upload does not exist")
-             }
+            }
         })
 
         window.onload = function() {
