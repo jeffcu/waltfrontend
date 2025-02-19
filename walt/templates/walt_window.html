@@ -30,7 +30,7 @@
         }
 
         #uploadButtonContainer {
-            text-align: right;
+            text-align: center; /* Center the button */
             margin-bottom: 20px;
         }
 
@@ -42,10 +42,10 @@
             color: white;
             border: none;
             border-radius: 6px;
-            height: auto; /* Make height adjust to content */
-            width: 2in;
-            line-height: 1.2; /* Adjust line height for readability */
-            white-space: normal; /* Allow text to wrap */
+            /* Make height one line and width auto adjust */
+            height: auto;
+            width: auto;
+            white-space: nowrap; /* Prevent text wrapping */
         }
 
         input[type="file"] {
@@ -147,8 +147,10 @@
             color: white;
             border: none;
             border-radius: 6px;
-            width: 2in;
-            box-sizing: border-box;
+            /* Make height one line and width auto adjust */
+            height: auto;
+            width: auto;
+            white-space: nowrap; /* Prevent text wrapping */
         }
 
         #sessionSummary {
@@ -390,7 +392,7 @@
     </div>
 
     <h3 class="dataNote">Note: No data is saved by this application, the only memory is through this file alone.</h3>
-    <button id="saveButton" onclick="saveTextAsFile()" >Create Checkpoint File</button>
+    <div style = "text-align:center">  <button id="saveButton" onclick="saveTextAsFile()" >Create Checkpoint File</button></div>
     <div id="sessionSummary"></div>
 </body>
 </html>

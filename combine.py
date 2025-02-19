@@ -29,6 +29,10 @@ def combine_files(base_directory, output_file):
                     try:
                         with open(filepath, 'r', encoding='utf-8') as infile:
                             content = infile.read()
+                            # Exclude the "--- FILE: ..." line for HTML files
+                            if ext == '.html':
+                                lines = content.splitlines()
+                                content = '\n'.join(line for line in lines if not line.startswith('--- FILE:'))
                             outfile.write(f"\n\n--- FILE: {relative_path} ---\n\n")
                             outfile.write(content)
                     except Exception as e:
