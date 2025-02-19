@@ -184,51 +184,23 @@
             font-size: 1.2em;
             display:none; /*Hides the shape*/
         }
-        #checkpointOutput {
-            width: 90%;
-            max-height: 200px;
-            margin: 10px auto;
-            padding: 10px;
-            border: 1px solid #4C657E;
-            border-radius: 6px;
-            background-color: #2A3D55;
-            color: #D9E1EC;
-            text-align: left;
-            white-space: pre-wrap;
-            overflow-y: auto;
-            box-sizing: border-box;
-            font-size: 1.2em;
-        }
-        #combinedOutput { /* New output window style */
+        /* REMOVED checkpointOutput id and style */
+        #combinedOutput { /* Renamed from combinedOutput to checkpointOutput, now for combined output */
             width: 90%;
             margin: 10px auto;
             padding: 10px;
             border: 1px solid #4C657E;
             border-radius: 6px;
-            background-color: #3d597a; /* Slightly different background */
+            background-color: #4C657E; /* Changed to API output style */
             color: #D9E1EC;
             text-align: left;
             white-space: pre-wrap;
             overflow-y: auto; /* Enable scroll if content overflows */
-            max-height: 200px; /* Limit height and enable scroll */
+            max-height: 250px; /* Increased max height */
             box-sizing: border-box;
             font-size: 1.2em;
         }
-        #apiOutputBox { /* NEW API OUTPUT BOX STYLE */
-            width: 90%;
-            margin: 10px auto;
-            padding: 10px;
-            border: 1px solid #4C657E;
-            border-radius: 6px;
-            background-color: #4C657E; /* Different background for API output */
-            color: #D9E1EC;
-            text-align: left;
-            white-space: pre-wrap;
-            overflow-y: auto;
-            max-height: 200px;
-            box-sizing: border-box;
-            font-size: 1.2em;
-        }
+        /* REMOVED apiOutputBox styles */
     </style>
     <script>
         // All the code here is to ensure it is loaded at the top level scope.
@@ -290,10 +262,10 @@
             }
 
             const csrfToken = getCookie('csrf_token');
-             let checkpointOutput = document.getElementById("checkpointOutput");  // Get the checkpoint output window element
-             let apiOutputBox = document.getElementById("apiOutputBox"); // Get the new API output box
+             let checkpointOutput = document.getElementById("combinedOutput");  // Get the combined output window now
 
-             apiOutputBox.textContent = "Processing Checkpoint and Calling API..."; // Indicate processing
+
+            checkpointOutput.textContent = "Processing Checkpoint and Calling API..."; // Indicate processing
 
             fetch("/walt_process_checkpoint", { // Call the NEW route
                 method: "POST",
@@ -309,15 +281,14 @@
                     const data = JSON.parse(textResponse); // Try to parse as JSON first (for structured responses)
                     if (data.error) {
                         alert("Error creating checkpoint: " + data.error);
-                        apiOutputBox.textContent = "API Error: " + data.error; // Display API error
+                        checkpointOutput.textContent = "API Error: " + data.error; // Display API error in the combined box
                     } else {
                         // If valid JSON, handle as before
                         const fileContent = data["checkpoint_data"];
-                        checkpointOutput.textContent = fileContent;
-                        console.log("fileContent from server", fileContent);
 
-                        apiOutputBox.textContent = data["api_response"]; // Display API response (assuming text in api_response)
+                        checkpointOutput.textContent = data["api_response"]; // Now display API response in the combined box
 
+                        console.log("fileContent from server", fileContent)
 
                         const textFileAsBlob = new Blob([fileContent], { type: 'text/plain' });
                         const fileNameToSaveAs = "sessionStory.txt";
@@ -335,8 +306,7 @@
                 } catch (e) {
                     // If JSON parsing fails, treat the whole response as plain text
                     console.warn("Response is not JSON, treating as plain text:", textResponse);
-                    checkpointOutput.textContent = "Checkpoint File Ready (Text)"; // Indicate checkpoint file is ready even if API fails or returns non-JSON
-                    apiOutputBox.textContent = textResponse; // Display the raw text response in apiOutputBox
+                    checkpointOutput.textContent = textResponse; // Display the raw text response in combinedOutput
                      // Still trigger file download for checkpoint even if API response is not JSON
                      fetch('/saveTextAsFileDownload', { // Call download endpoint separately
                         method: 'POST',
@@ -369,7 +339,7 @@
                 }
             })
             .catch(error => {
-                apiOutputBox.textContent = "Fetch Error: " + error.message; // Display fetch error
+                checkpointOutput.textContent = "Fetch Error: " + error.message; // Display fetch error in combinedOutput
             });
         }
 
@@ -402,7 +372,7 @@
                     }
                 })
                 .catch(error => {
-                    document.getElementById("chatOutput").textContent = "Error: " + error.message;
+                    document.getElementById("chatOutput").textContent = "Error loading checkpoint.";
                 });
             } catch (error) {
                 console.error("Error in sendCheckpointData:", error);
@@ -539,9 +509,7 @@
         <button id="appendButton" onclick="appendToCheckpointFile()">Append to Checkpoint File</button>  <!-- NEW BUTTON -->
     </div>
 
-    <div id="checkpointOutput"></div>
-    <div id="combinedOutput"></div>
-    <div id="apiOutputBox"></div> <!-- NEW API OUTPUT BOX ADDED HERE -->
+    <div id="combinedOutput"></div>  <!-- combinedOutput is now the main output, showing API results -->
     <div id="sessionSummary"></div>
 </body>
 </html>

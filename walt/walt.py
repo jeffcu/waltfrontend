@@ -195,14 +195,14 @@ def walt_process_checkpoint(): # RENAME function as well
 
         api_response_text_safe = api_response_text.replace("<", "<").replace(">", ">") # Escape HTML - VERY BASIC, consider better library for production
 
-        combined_checkpoint_content = bio_prompt_content + "\n\n" + checkpoint_data_text # Recreate combined content for file save (without API response)
+        combined_checkpoint_content = bio_prompt_content + "\n\n" + checkpoint_data_text + "\n\n--- API ANALYSIS ---\n\n" + api_response_text_safe # Recreate combined content FOR DISPLAY - include API response
 
-        # Handle file download as before
-        file_content_for_download = combined_checkpoint_content # File content for download is without API response
+        # Handle file download as before - file save DOES NOT include API response
+        file_content_for_download = bio_prompt_content + "\n\n" + checkpoint_data_text # File content for download is WITHOUT API response
 
         return jsonify({ # Return both checkpoint data (for file) and api response (for display)
             "checkpoint_data": file_content_for_download,
-            "api_response": api_response_text_safe # Return escaped text for display
+            "api_response": combined_checkpoint_content # Return COMBINED text (checkpoint + API response) for display
         })
 
 
