@@ -17,10 +17,11 @@ def get_walt_prompt():
         with open('walt_prompt.txt', 'r', encoding='utf-8') as f:
             prompt_text = f.read()
         return prompt_text
-    except FileNotFoundError:
+    except FileNotFoundError as e:
+        logging.error(f"Error reading walt_prompt.txt: {str(e)}") #Added logging here
         return jsonify({"error": "walt_prompt.txt not found!"}), 404
     except Exception as e:
-        logging.error(f"Error reading walt_prompt.txt: {str(e)}") #Added logging here
+        logging.error(f"General error in get_walt_prompt: {str(e)}")
         return jsonify({"error": f"Error reading walt_prompt.txt: {str(e)}"}), 500
 
 @walt_bp.route('/walt_analyze', methods=['POST'])
@@ -34,8 +35,8 @@ def walt_analyze():
     try:
         with open('walt_prompt.txt', 'r', encoding='utf-8') as f:
             walt_prompt = f.read()
-        except FileNotFoundError:
-            return jsonify({"error": "walt_prompt.txt not found!"}), 500
+    except FileNotFoundError:
+        return jsonify({"error": "walt_prompt.txt not found!"}), 500
     except Exception as e:
         return jsonify({"error": f"Error reading walt_prompt.txt: {str(e)}"}), 500
 
