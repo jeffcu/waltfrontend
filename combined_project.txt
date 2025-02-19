@@ -75,6 +75,10 @@ def combine_files(base_directory, output_file):
                     try:
                         with open(filepath, 'r', encoding='utf-8') as infile:
                             content = infile.read()
+                            # Exclude the "--- FILE: ..." line for HTML files
+                            if ext == '.html':
+                                lines = content.splitlines()
+                                content = '\n'.join(line for line in lines if not line.startswith('--- FILE:'))
                             outfile.write(f"\n\n--- FILE: {relative_path} ---\n\n")
                             outfile.write(content)
                     except Exception as e:
@@ -436,12 +440,12 @@ You ask great open ended questions and draw people out and discover their best s
 Identity: Walt.   A friendly AI who is enthusiastic to learn everyone story.
 
 Process:
-First: Ask their permission to begin the interview.
-Second: You always look to tie their whole story into the one thing they hope to be remembered for.
-Third: Be an active learner, the ask them another great question like those below. Learn more to find the key moments in their life figured out.
-Fourth: After 3-4 questions, you will then draft that Chapter of the Biography outline.
+First: Ask their permission to begin the interview and clarify their full name.
+Second: You always tie their whole story into the one thing they hope to be remembered for.
+Third: Be an active learner, at the start of each session focus on one incomplete chapter.  Then ask them one great question like those below. Focus on finding the key moments in their life.
+Fourth: Follow the one big question with more indepth questions about their answer.  Each follow-up question should help you  draft one Chapter of the Biography outline.
 Fifth: Each session you will focus on filling out one chapter at a time until the whole book is written. Always incorporate their hope to be remembered for along with the key moments to weave the life story together.  Explore their life and be pleasant and complimentary.
-Pull in historical context to help you ask quality questions.
+Pull in historical context to help you ask quality questions and add relevant historical context to the chapter where appropriate.
 
 You love completing a draft of each chapter of the story.  You cheer at the progress.
 Your role is to uncover, reveal and illustratively document what you learned.
@@ -1413,7 +1417,6 @@ def word_counter():
 </body>
 </html>
 
-
 --- FILE: walt/bio_creator_prompt.txt ---
 
 You are a brilliant writer and editor specializing in touching, research filled biographies of ordinary people.
@@ -1671,8 +1674,6 @@ def saveTextAsFile():
 
 --- FILE: walt/templates/walt_window.html ---
 
---- FILE: walt/templates/walt_window.html ---
-
 <!DOCTYPE html>
 <html>
 <head>
@@ -1705,7 +1706,7 @@ def saveTextAsFile():
         }
 
         #uploadButtonContainer {
-            text-align: right;
+            text-align: center; /* Center the button */
             margin-bottom: 20px;
         }
 
@@ -1717,10 +1718,10 @@ def saveTextAsFile():
             color: white;
             border: none;
             border-radius: 6px;
-            height: auto; /* Make height adjust to content */
-            width: 2in;
-            line-height: 1.2; /* Adjust line height for readability */
-            white-space: normal; /* Allow text to wrap */
+            /* Make height one line and width auto adjust */
+            height: auto;
+            width: auto;
+            white-space: nowrap; /* Prevent text wrapping */
         }
 
         input[type="file"] {
@@ -1822,8 +1823,10 @@ def saveTextAsFile():
             color: white;
             border: none;
             border-radius: 6px;
-            width: 2in;
-            box-sizing: border-box;
+            /* Make height one line and width auto adjust */
+            height: auto;
+            width: auto;
+            white-space: nowrap; /* Prevent text wrapping */
         }
 
         #sessionSummary {
@@ -2065,11 +2068,10 @@ def saveTextAsFile():
     </div>
 
     <h3 class="dataNote">Note: No data is saved by this application, the only memory is through this file alone.</h3>
-    <button id="saveButton" onclick="saveTextAsFile()" >Create Checkpoint File</button>
+    <div style = "text-align:center">  <button id="saveButton" onclick="saveTextAsFile()" >Create Checkpoint File</button></div>
     <div id="sessionSummary"></div>
 </body>
 </html>
-
 
 --- FILE: templates/index.html ---
 
@@ -2241,7 +2243,6 @@ def saveTextAsFile():
     </footer>
 </body>
 </html>
-
 
 --- FILE: templates/gallery.html ---
 
@@ -2455,7 +2456,6 @@ def saveTextAsFile():
 </body>
 </html>
 
-
 --- FILE: templates/dynamic.html ---
 
 <!DOCTYPE html>
@@ -2604,7 +2604,6 @@ def saveTextAsFile():
     </script>
 </body>
 </html>
-
 
 --- FILE: templates/angel_investment_analysis.html ---
 
@@ -2886,7 +2885,6 @@ def saveTextAsFile():
 
 </html>
 
-
 --- FILE: templates/api_test_window.html ---
 
 <!DOCTYPE html>
@@ -2974,7 +2972,6 @@ def saveTextAsFile():
 </body>
 </html>
 
-
 --- FILE: templates/jeffsart_image.html ---
 
 <!-- Filename: jeffsart_image.html -->
@@ -3007,7 +3004,6 @@ def saveTextAsFile():
     <img src="{{ url_for('static', filename=image_path) }}" alt="Jeff's Art">
 </body>
 </html>
-
 
 --- STATIC FILES ---
 
