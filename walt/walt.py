@@ -1,4 +1,3 @@
-
 # walt/walt.py
 from flask import Blueprint, render_template, request, jsonify, session
 import os
@@ -126,8 +125,7 @@ def load_checkpoint():
 
         # Restore the session - treat as a simple string.  NO JSON PARSING
         session['file_content'] = checkpoint_data #ADDED:  Load this first
-        session['conversation'] = [{"role": "system", "content": walt_prompt},
-                                     {"role": "user", "content": checkpoint_data}]#Treat as input not JSON
+        session['conversation'] = [{"role": "system", "content": walt_prompt}] # Removed checkpoint_data from conversation init
 
         session.modified = True
 
@@ -148,18 +146,10 @@ def load_checkpoint():
 @walt_bp.route('/create_checkpoint', methods=['POST'])
 def create_checkpoint():
     try:
-        # Create a dictionary to hold the session data and file content
-        checkpoint_data = {
-            'conversation': session.get('conversation', []),
-            'file_content': session.get('file_content', '')
-        }
+        checkpoint_data_text = session.get('file_content', '') # Get file_content directly as text
+        logging.info(f"Checkpoint data being created: {checkpoint_data_text[:50]}...") # Log start of data
 
-        # Serialize the dictionary to JSON
-        checkpoint_json = json.dumps(checkpoint_data)
-        logging.info(f"Checkpoint data being created: {checkpoint_json}") # Log JSON data
-
-        # Return the JSON string
-        return jsonify({"checkpoint_data": checkpoint_json})
+        return jsonify({"checkpoint_data": checkpoint_data_text}) # Return text directly
 
     except Exception as e:
         logging.error(f"Error creating checkpoint: {e}", exc_info=True)
@@ -169,14 +159,14 @@ def create_checkpoint():
 def saveTextAsFile():
     try:
         data = request.get_json()
-        checkpoint_data = data.get('checkpoint_data')
+        checkpoint_data = data.get('checkpoint_data') # Expect plain text directly
 
         if not checkpoint_data:
             return jsonify({"error": "No checkpoint data to save"}), 400
 
-        # Return the checkpoint data directly (it's already a JSON string)
-        logging.info(f"Checkpoint data being sent: {checkpoint_data}") #Debug log
-        return jsonify({"fileContent": checkpoint_data})
+        # Return the checkpoint data directly as text
+        logging.info(f"Checkpoint data being sent: {checkpoint_data[:50]}...") #Debug log start of data
+        return jsonify({"fileContent": checkpoint_data}) # Return text directly
 
     except Exception as e:
         logging.error(f"Error return and saving checkpoint from saveTextAsFile: {e}", exc_info=True)
@@ -190,7 +180,8 @@ def append_to_checkpoint():
 
         conversation_text = ""
         for message in current_conversation:
-            conversation_text += f"{message['role']}: {message['content']}\n"
+            if message['role'] in ['user', 'assistant']: # Filter for user and assistant roles
+                conversation_text += f"{message['role']}: {message['content']}\n"
 
         combined_content = file_content + "\n\n--- APPENDED CONVERSATION ---\n\n" + conversation_text
 
