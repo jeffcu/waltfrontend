@@ -218,6 +218,7 @@
 
         function saveTextAsFile() {
          // Get CSRF token from cookie
+         alert("Save Event is firing");
          function getCookie(name) {
               const value = `; ${document.cookie}`;
               const parts = value.split(`; ${name}=`);
@@ -315,8 +316,10 @@
         document.addEventListener('DOMContentLoaded', function() {
             storyUpload = document.getElementById("story_upload"); // Define at document load
             if (storyUpload) {
-              //Event
-              storyUpload.addEventListener("change", function() {
+               console.log("Story Upload: Document is loaded");
+               //Event
+               storyUpload.addEventListener("change", function() {
+                    console.log("Event Listener Triggered")
                 if (this.files && this.files[0]) {
                   const fileInput = document.getElementById("story_upload");
                   const chatOutput = document.getElementById("chatOutput");
