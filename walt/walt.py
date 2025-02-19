@@ -1,3 +1,4 @@
+
 # walt/walt.py
 from flask import Blueprint, render_template, request, jsonify, session
 import os
@@ -179,4 +180,25 @@ def saveTextAsFile():
 
     except Exception as e:
         logging.error(f"Error return and saving checkpoint from saveTextAsFile: {e}", exc_info=True)
+        return jsonify({"error": str(e)}), 500
+
+@walt_bp.route('/append_to_checkpoint', methods=['POST'])  # NEW ROUTE
+def append_to_checkpoint():
+    try:
+        current_conversation = session.get('conversation', [])
+        file_content = session.get('file_content', '')
+
+        conversation_text = ""
+        for message in current_conversation:
+            conversation_text += f"{message['role']}: {message['content']}\n"
+
+        combined_content = file_content + "\n\n--- APPENDED CONVERSATION ---\n\n" + conversation_text
+
+        session['file_content'] = combined_content # Update session with combined content
+        session.modified = True # Ensure session is saved
+
+        return jsonify({"combined_content": combined_content})
+
+    except Exception as e:
+        logging.error(f"Error appending to checkpoint: {e}", exc_info=True)
         return jsonify({"error": str(e)}), 500
