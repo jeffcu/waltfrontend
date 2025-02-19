@@ -111,21 +111,6 @@ def load_checkpoint():
         return jsonify({"error": "No checkpoint data received"}), 400
 
     try:
-        # Check if checkpoint_data is empty
-        if not checkpoint_data.strip():
-            return jsonify({"error": "Checkpoint data is empty."}), 400
-
-        # Attempt to deserialize the JSON data
-        try:
-            checkpoint = json.loads(checkpoint_data)
-        except json.JSONDecodeError as e:
-            logging.error(f"JSONDecodeError: {e}")
-            return jsonify({"error": f"Invalid JSON format in checkpoint file: {str(e)}"}), 400
-
-        # Extract session data and file content
-        session_data = checkpoint.get('conversation', [])
-        file_content = checkpoint.get('file_content', '')
-
         # Load the Walt Prompt
         try:
             with open('walt_prompt.txt', 'r', encoding='utf-8') as f:
@@ -136,20 +121,15 @@ def load_checkpoint():
             logging.error(f"Error reading walt_prompt.txt in load_checkpoint: {str(e)}")
             return jsonify({"error": f"Error reading walt_prompt.txt: {str(e)}"}), 500
 
-        # Restore the session
-        session['conversation'] = session_data
-        session['file_content'] = file_content
+        # Restore the session - treat as a simple string.  NO JSON PARSING
+        session['file_content'] = checkpoint_data #ADDED:  Load this first
+        session['conversation'] = [{"role": "system", "content": walt_prompt},
+                                     {"role": "user", "content": checkpoint_data}]#Treat as input not JSON
+
         session.modified = True
 
         # Extract user's name (from the loaded session or use a default)
         user_name = "User"  # Default
-        for item in session_data:
-            if item.get('role') == 'assistant' and "Hi I'm Walt" in item.get('content', ''):  # Find initial greeting
-                parts = item['content'].split("Hi I'm Walt. What's your name?")
-                if len(parts) > 1:
-                    user_name = parts[0].replace("Welcome back,", "").replace("Hi, I am Walt. Let's continue your story.", "").strip().replace("!", "") #New phrase
-                    break
-
         #Welcome them back
         welcome_phrase = f"Welcome back, {user_name}! Hi, I am Walt. Let's continue your story."
 
