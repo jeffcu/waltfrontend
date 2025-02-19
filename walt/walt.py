@@ -1,3 +1,4 @@
+--- START OF FILE walt/walt.py ---
 # walt/walt.py
 from flask import Blueprint, render_template, request, jsonify, session
 import os
@@ -59,7 +60,7 @@ def walt_analyze():
 
         response = client.chat.completions.create(
             model="gpt-4o",
-            messages=[session['conversation']],
+            messages=session['conversation'], # <--- CORRECTED LINE: Removed extra list brackets
             temperature=0.7,
             max_tokens=256,
             top_p=1
@@ -180,3 +181,5 @@ def saveTextAsFile():
     except Exception as e:
         logging.error(f"Error return and saving checkpoint from saveTextAsFile: {e}", exc_info=True)
         return jsonify({"error": str(e)}), 500
+
+--- END OF FILE walt/walt.py ---
