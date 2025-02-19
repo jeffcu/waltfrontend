@@ -111,8 +111,16 @@ def load_checkpoint():
         return jsonify({"error": "No checkpoint data received"}), 400
 
     try:
-        # Deserialize the JSON data
-        checkpoint = json.loads(checkpoint_data)
+        # Check if checkpoint_data is empty
+        if not checkpoint_data.strip():
+            return jsonify({"error": "Checkpoint data is empty."}), 400
+
+        # Attempt to deserialize the JSON data
+        try:
+            checkpoint = json.loads(checkpoint_data)
+        except json.JSONDecodeError as e:
+            logging.error(f"JSONDecodeError: {e}")
+            return jsonify({"error": f"Invalid JSON format in checkpoint file: {str(e)}"}), 400
 
         # Extract session data and file content
         session_data = checkpoint.get('conversation', [])
