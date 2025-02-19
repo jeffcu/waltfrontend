@@ -168,3 +168,73 @@ def load_checkpoint():
     except Exception as e:
         print(f"Error processing checkpoint: {e}")
         return jsonify({"error": str(e)}), 500
+
+@walt_bp.route('/create_checkpoint', methods=['POST']) #New route
+def create_checkpoint():
+    try:
+        client = openai.Client()  # Use your preferred method to initialize the OpenAI client
+        # 1. Load the three files
+        try:
+            with open('walt_prompt.txt', 'r', encoding='utf-8') as f:
+                walt_prompt = f.read()
+            with open('walt/bio_creator_prompt.txt', 'r', encoding='utf-8') as f: #Load the new prompt
+                bio_creator_prompt = f.read()
+        except FileNotFoundError as e:
+            return jsonify({"error": f"Required prompt file not found: {e}"}), 500
+        except Exception as e:
+            return jsonify({"error": f"Error reading prompt file: {e}"}), 500
+
+        # 2. Get the session
+        session_info = session.get('conversation', [])
+
+        # 3. Consolidate content
+        consolidated_content = bio_creator_prompt #Start here
+        consolidated_content += "\n --- Previous Checkpoint Data --- \n"
+        #Get the story content if uploaded.
+        if 'file_content' in session:
+             consolidated_content+= session['file_content'] #Tack file content
+        else:
+             consolidated_content+= "No Checkpoint Data Found"
+        consolidated_content += "\n --- Begin Walt Session Data --- \n"
+        consolidated_content += str(session_info) #Load Session data for this run
+
+        # 4. Call OpenAPI
+
+        response = client.chat.completions.create(
+            model="gpt-4o",  # Or your preferred model
+            messages=[
+                {"role": "system", "content": walt_prompt}, #Use basic instruction
+                {"role": "user", "content": f"Create the next version of the Checkpoint file. Please consolidate and organize this information: {consolidated_content}"}
+            ],
+            temperature=0.7,
+            max_tokens=2000, #Up the ante
+            top_p=1,
+        )
+        revised_content = response.choices[0].message.content.strip()
+
+        # 5. Return the Prompted Results
+        return jsonify({"checkpoint_data": revised_content})
+    except Exception as e:
+        logging.error(f"Error creating checkpoint: {e}", exc_info=True)
+        return jsonify({"error": str(e)}), 500
+
+@walt_bp.route('/saveTextAsFile', methods=['POST']) #Updated route to send value for create checkpoint.
+def saveTextAsFile():
+        # Get the content from create checkpoint and display
+       try:
+            data = request.get_json() #Get from Ajax not function
+            checkpoint_data = data.get('checkpoint_data') #Get the string
+
+            if not checkpoint_data: #Trap potential issue
+                return jsonify({"error": "No checkpoint data to save"}), 400
+
+            # Create the new file with checkpoint_data from OpenAPI
+            textFileAsBlob = checkpoint_data.encode('utf-8') #Encode data.
+            fileNameToSaveAs = "sessionStory.txt"
+
+            # 5. Return data (to front end)
+            return jsonify({"fileContent": f"{textFileAsBlob.decode()}"}) #All set
+
+       except Exception as e:
+            logging.error(f"Error return and saving checkpoint from saveTextAsFile: {e}", exc_info=True)
+            return jsonify({"error": str(e)}), 500 #Shot error
