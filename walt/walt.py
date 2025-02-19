@@ -171,6 +171,7 @@ def saveTextAsFile():
             return jsonify({"error": "No checkpoint data to save"}), 400
 
         # Return the checkpoint data directly (it's already a JSON string)
+        logging.info(f"Checkpoint data being sent: {checkpoint_data}") #Debug log
         return jsonify({"fileContent": checkpoint_data})
 
     except Exception as e:

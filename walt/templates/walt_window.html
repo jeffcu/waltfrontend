@@ -245,6 +245,7 @@
                 } else {
                     // The server returns the JSON string, so use it directly
                     const fileContent = data["fileContent"];
+                    console.log ("fileContent", fileContent)
                     const textFileAsBlob = new Blob([fileContent], { type: 'text/plain' });
                     const fileNameToSaveAs = "sessionStory.txt";
 
