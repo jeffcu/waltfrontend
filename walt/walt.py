@@ -40,7 +40,11 @@ def walt_analyze():
 
     # Initialize conversation history in session if it doesn't exist
     if 'conversation' not in session:
-        session['conversation'] = [{"role": "system", "content": walt_prompt}]
+        # Load initial greeting
+        initial_greeting = "Hi I'm Walt. What's your name?"
+
+        session['conversation'] = [{"role": "system", "content": walt_prompt}, #Get prompt
+                                     {"role": "assistant", "content": initial_greeting}] #Default state
 
     # Add the uploaded content (if any) as context
     #Debug Code
@@ -146,7 +150,20 @@ def load_checkpoint():
         )
         api_response = response.choices[0].message.content.strip()
 
-        return jsonify({"response": f"Welcome back, {user_name}!  Here's a summary of your progress:\n{api_response}"})
+        # Load the Walt Prompt
+        try:
+            with open('walt_prompt.txt', 'r', encoding='utf-8') as f:
+                walt_prompt = f.read()  # Read the walt_prompt.txt
+        except FileNotFoundError:
+                return jsonify({"error": "walt_prompt.txt not found!"}), 500
+        except Exception as e:
+                return jsonify({"error": f"Error reading walt_prompt.txt: {str(e)}"}), 500
+
+        #Update the conversation history with the new state
+        session['conversation'] = [{"role": "system", "content": walt_prompt}, #Load walt prompt
+                                   {"role": "assistant", "content":f"Welcome back, {user_name}! Hi, I am Walt. Let's continue your story."}]#Update initial phrase
+
+        return jsonify({"response": f"Welcome back, {user_name}! Hi, I am Walt. Let's continue your story."}) #Update the user
 
     except Exception as e:
         print(f"Error processing checkpoint: {e}")
