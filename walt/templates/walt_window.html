@@ -290,8 +290,8 @@
                 if (data.error) {
                     alert("Error creating checkpoint: " + data.error);
                 } else {
-                    // The server returns the JSON string, so use it directly
-                    const fileContent = data["fileContent"];
+                    // The server returns the JSON string, which is just text now.
+                    const fileContent = data["checkpoint_data"]; // Changed to checkpoint_data
                     checkpointOutput.textContent = fileContent;  // Set the checkpoint output window text.
                     console.log("fileContent from server", fileContent)
 
@@ -343,7 +343,7 @@
                     }
                 })
                 .catch(error => {
-                    document.getElementById("chatOutput").textContent = "Error: " + error.message;
+                    document.getElementById("chatOutput").textContent = "Error loading checkpoint.";
                 });
             } catch (error) {
                 console.error("Error in sendCheckpointData:", error);

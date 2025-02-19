@@ -1,3 +1,4 @@
+
 # walt/walt.py
 from flask import Blueprint, render_template, request, jsonify, session
 import os
@@ -147,9 +148,19 @@ def load_checkpoint():
 def create_checkpoint():
     try:
         checkpoint_data_text = session.get('file_content', '') # Get file_content directly as text
-        logging.info(f"Checkpoint data being created: {checkpoint_data_text[:50]}...") # Log start of data
+        bio_prompt_content = ""
+        try:
+            with open('walt/bio_creator_prompt.txt', 'r', encoding='utf-8') as f: # ADDED: Read bio_creator_prompt.txt
+                bio_prompt_content = f.read()
+        except Exception as e:
+            logging.error(f"Error reading bio_creator_prompt.txt: {e}")
+            bio_prompt_content = "Error loading bio creator prompt." # Fallback if file not read
 
-        return jsonify({"checkpoint_data": checkpoint_data_text}) # Return text directly
+        combined_checkpoint_content = bio_prompt_content + "\n\n" + checkpoint_data_text # Combined content
+
+        logging.info(f"Checkpoint data being created: {combined_checkpoint_content[:100]}...") # Log start of data
+
+        return jsonify({"checkpoint_data": combined_checkpoint_content}) # Return combined text
 
     except Exception as e:
         logging.error(f"Error creating checkpoint: {e}", exc_info=True)
@@ -183,7 +194,15 @@ def append_to_checkpoint():
             if message['role'] in ['user', 'assistant']: # Filter for user and assistant roles
                 conversation_text += f"{message['role']}: {message['content']}\n"
 
-        combined_content = file_content + "\n\n--- APPENDED CONVERSATION ---\n\n" + conversation_text
+        bio_prompt_content = "" # ADDED: Read bio_creator_prompt.txt for append
+        try:
+            with open('walt/bio_creator_prompt.txt', 'r', encoding='utf-8') as f:
+                bio_prompt_content = f.read()
+        except Exception as e:
+            logging.error(f"Error reading bio_creator_prompt.txt for append: {e}")
+            bio_prompt_content = "Error loading bio creator prompt."
+
+        combined_content = bio_prompt_content + "\n\n" + file_content + "\n\n--- APPENDED CONVERSATION ---\n\n" + conversation_text # Prepend bio_creator_prompt
 
         session['file_content'] = combined_content # Update session with combined content
         session.modified = True # Ensure session is saved
