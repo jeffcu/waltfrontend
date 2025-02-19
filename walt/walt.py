@@ -165,8 +165,8 @@ def create_checkpoint():
         logging.error(f"Error creating checkpoint: {e}", exc_info=True)
         return jsonify({"error": str(e)}), 500
 
-@walt_bp.route('/saveTextAsFile', methods=['POST'])
-def saveTextAsFile(): # RENAME to walt_process_checkpoint for clarity in JS, but keep route name
+@walt_bp.route('/walt_process_checkpoint', methods=['POST']) # RENAME saveTextAsFile to walt_process_checkpoint
+def walt_process_checkpoint(): # RENAME function as well
     try:
         checkpoint_data_text = session.get('file_content', '') # Get file_content directly as text
         bio_prompt_content = ""
@@ -193,6 +193,8 @@ def saveTextAsFile(): # RENAME to walt_process_checkpoint for clarity in JS, but
         )
         api_response_text = response.choices[0].message.content.strip() # Extract API response
 
+        api_response_text_safe = api_response_text.replace("<", "<").replace(">", ">") # Escape HTML - VERY BASIC, consider better library for production
+
         combined_checkpoint_content = bio_prompt_content + "\n\n" + checkpoint_data_text # Recreate combined content for file save (without API response)
 
         # Handle file download as before
@@ -200,7 +202,7 @@ def saveTextAsFile(): # RENAME to walt_process_checkpoint for clarity in JS, but
 
         return jsonify({ # Return both checkpoint data (for file) and api response (for display)
             "checkpoint_data": file_content_for_download,
-            "api_response": api_response_text
+            "api_response": api_response_text_safe # Return escaped text for display
         })
 
 

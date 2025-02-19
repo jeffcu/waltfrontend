@@ -1,4 +1,3 @@
---- START OF FILE walt/templates/walt_window.html ---
 <!DOCTYPE html>
 <html>
 <head>
@@ -304,35 +303,72 @@
                 },
                 body: JSON.stringify({})  // Send an empty object, server gets session data
             })
-            .then(response => response.json())
-            .then(data => {
-                if (data.error) {
-                    alert("Error creating checkpoint: " + data.error);
-                    apiOutputBox.textContent = "API Error: " + data.error; // Display API error in the box
-                } else {
-                    // The server returns the JSON with checkpoint_data and api_response
-                    const fileContent = data["checkpoint_data"];
-                    checkpointOutput.textContent = fileContent;  // Set the checkpoint output window text.
-                    console.log("fileContent from server", fileContent)
+            .then(response => response.text()) // Changed to .text() to handle plain text API responses
+            .then(textResponse => { // Handle text response, not JSON
+                try {
+                    const data = JSON.parse(textResponse); // Try to parse as JSON first (for structured responses)
+                    if (data.error) {
+                        alert("Error creating checkpoint: " + data.error);
+                        apiOutputBox.textContent = "API Error: " + data.error; // Display API error
+                    } else {
+                        // If valid JSON, handle as before
+                        const fileContent = data["checkpoint_data"];
+                        checkpointOutput.textContent = fileContent;
+                        console.log("fileContent from server", fileContent);
 
-                    apiOutputBox.textContent = data["api_response"]; // Display API response in the new box
+                        apiOutputBox.textContent = data["api_response"]; // Display API response (assuming text in api_response)
 
-                    const textFileAsBlob = new Blob([fileContent], { type: 'text/plain' });
-                    const fileNameToSaveAs = "sessionStory.txt";
 
-                    const downloadLink = document.createElement("a");
-                    downloadLink.download = fileNameToSaveAs;
-                    downloadLink.innerHTML = "Download File";
-                    downloadLink.href = window.URL.createObjectURL(textFileAsBlob);
-                    downloadLink.style.display = "none"; // Hide the link
+                        const textFileAsBlob = new Blob([fileContent], { type: 'text/plain' });
+                        const fileNameToSaveAs = "sessionStory.txt";
 
-                    document.body.appendChild(downloadLink);
-                    downloadLink.click();
-                    document.body.removeChild(downloadLink);
+                        const downloadLink = document.createElement("a");
+                        downloadLink.download = fileNameToSaveAs;
+                        downloadLink.innerHTML = "Download File";
+                        downloadLink.href = window.URL.createObjectURL(textFileAsBlob);
+                        downloadLink.style.display = "none";
+
+                        document.body.appendChild(downloadLink);
+                        downloadLink.click();
+                        document.body.removeChild(downloadLink);
+                    }
+                } catch (e) {
+                    // If JSON parsing fails, treat the whole response as plain text
+                    console.warn("Response is not JSON, treating as plain text:", textResponse);
+                    checkpointOutput.textContent = "Checkpoint File Ready (Text)"; // Indicate checkpoint file is ready even if API fails or returns non-JSON
+                    apiOutputBox.textContent = textResponse; // Display the raw text response in apiOutputBox
+                     // Still trigger file download for checkpoint even if API response is not JSON
+                     fetch('/saveTextAsFileDownload', { // Call download endpoint separately
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': csrfToken
+                        },
+                        body: JSON.stringify({ checkpoint_data: checkpointOutput.textContent }) // Send current checkpoint text for download
+                    })
+                    .then(downloadResponse => downloadResponse.json()) // Expect JSON for download trigger
+                    .then(downloadData => {
+                        if (downloadData.fileContent) {
+                            const textFileAsBlob = new Blob([downloadData.fileContent], { type: 'text/plain' });
+                            const fileNameToSaveAs = "sessionStory.txt";
+                            const downloadLink = document.createElement("a");
+                            downloadLink.download = fileNameToSaveAs;
+                            downloadLink.innerHTML = "Download File";
+                            downloadLink.href = window.URL.createObjectURL(textFileAsBlob);
+                            downloadLink.style.display = "none";
+                            document.body.appendChild(downloadLink);
+                            downloadLink.click();
+                            document.body.removeChild(downloadLink);
+                        } else if (downloadData.error) {
+                            alert("Error triggering download after API issue: " + downloadData.error);
+                        }
+                    })
+                    .catch(downloadError => {
+                        alert("Error triggering download after API issue: " + downloadError.message);
+                    });
                 }
             })
             .catch(error => {
-                alert("Error: " + error.message);
                 apiOutputBox.textContent = "Fetch Error: " + error.message; // Display fetch error
             });
         }
