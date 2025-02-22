@@ -201,6 +201,21 @@
             box-sizing: border-box;
             font-size: 1.2em;
         }
+        #combinedOutput { /* combinedOutput is now for appended conversation */
+            width: 90%;
+            margin: 10px auto;
+            padding: 10px;
+            border: 1px solid #4C657E;
+            border-radius: 6px;
+            background-color: #3d597a; /* Style for appended conversation output */
+            color: #D9E1EC;
+            text-align: left;
+            white-space: pre-wrap;
+            overflow-y: auto;
+            max-height: 200px; /* Adjust max height as needed */
+            box-sizing: border-box;
+            font-size: 1.2em;
+        }
 
     </style>
     <script>
@@ -510,8 +525,12 @@
         <button id="appendButton" onclick="appendToCheckpointFile()">Append to Checkpoint File</button>  <!-- NEW BUTTON -->
     </div>
 
+    <h2>API Analysis Results & Checkpoint File Content</h2>  <!-- Label for checkpointOutput -->
     <div id="checkpointOutput"></div>  <!-- checkpointOutput is now the combined output window -->
+
+    <h2>Appended Conversation</h2>  <!-- Label for combinedOutput -->
     <div id="combinedOutput"></div>  <!-- combinedOutput is now for appended conversation -->
+
     <div id="sessionSummary"></div>
 </body>
 </html>
