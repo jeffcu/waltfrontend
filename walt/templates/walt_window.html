@@ -153,22 +153,6 @@
             width: auto;
             white-space: nowrap; /* Prevent text wrapping */
         }
-        #appendButton { /* New button style - same as saveButton for now */
-            text-align: center;
-            align-self: center;
-            margin-top: 10px;
-            padding: 10px 20px;
-            font-size: 16px;
-            cursor: pointer;
-            background-color: #27AE60;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            /* Make height one line and width auto adjust */
-            height: auto;
-            width: auto;
-            white-space: nowrap; /* Prevent text wrapping */
-        }
 
 
         #sessionSummary {
@@ -201,21 +185,7 @@
             box-sizing: border-box;
             font-size: 1.2em;
         }
-        #combinedOutput { /* combinedOutput is now for appended conversation */
-            width: 90%;
-            margin: 10px auto;
-            padding: 10px;
-            border: 1px solid #4C657E;
-            border-radius: 6px;
-            background-color: #3d597a; /* Style for appended conversation output */
-            color: #D9E1EC;
-            text-align: left;
-            white-space: pre-wrap;
-            overflow-y: auto;
-            max-height: 200px; /* Adjust max height as needed */
-            box-sizing: border-box;
-            font-size: 1.2em;
-        }
+
 
     </style>
     <script>
@@ -411,40 +381,6 @@
 
            }
 
-         function appendToCheckpointFile() {
-            // Get CSRF token from cookie
-            function getCookie(name) {
-                const value = `; ${document.cookie}`;
-                const parts = value.split(`; ${name}=`);
-                if (parts.length === 2) return parts.pop().split(';').shift();
-            }
-            const csrfToken = getCookie('csrf_token');
-            const combinedOutputArea = document.getElementById("combinedOutput"); // Output area
-
-            fetch("/append_to_checkpoint", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "X-CSRFToken": csrfToken
-                },
-                body: JSON.stringify({}) // Send empty JSON, server gets session data
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.error) {
-                    alert("Error appending to checkpoint: " + data.error);
-                    combinedOutputArea.textContent = "Error: " + data.error; // Display error
-                } else {
-                    combinedOutputArea.textContent = data.combined_content; // Display combined content
-                     // Optionally, trigger download or other actions here if needed
-                }
-            })
-            .catch(error => {
-                alert("Error: " + error.message);
-                combinedOutputArea.textContent = "Error: " + error.message; // Display error
-            });
-         }
-
 
         //Event Handling
         document.addEventListener('DOMContentLoaded', function() {
@@ -522,14 +458,11 @@
     <h3 class="dataNote">Note: No data is saved by this application, the only memory is through this file alone.</h3>
     <div style = "text-align:center">
         <button id="saveButton" onclick="saveTextAsFile()">Create Checkpoint File and Analyze</button>
-        <button id="appendButton" onclick="appendToCheckpointFile()">Append to Checkpoint File</button>  <!-- NEW BUTTON -->
     </div>
 
     <h2>API Analysis Results & Checkpoint File Content</h2>  <!-- Label for checkpointOutput -->
     <div id="checkpointOutput"></div>  <!-- checkpointOutput is now the combined output window -->
 
-    <h2>Appended Conversation</h2>  <!-- Label for combinedOutput -->
-    <div id="combinedOutput"></div>  <!-- combinedOutput is now for appended conversation -->
 
     <div id="sessionSummary"></div>
 </body>
