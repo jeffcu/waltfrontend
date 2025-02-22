@@ -177,35 +177,33 @@ def walt_process_checkpoint(): # RENAME function as well
             logging.error(f"Error reading bio_prompt.txt: {e}")
             bio_prompt_content = "Error loading bio creator prompt." # Fallback if file not read
 
-
-        conversation_text = "" # Get conversation text for API call - NOT USED NOW for API Prompt
+        conversation_text = "" # Get conversation text for API call
         current_conversation = session.get('conversation', [])
         for message in current_conversation:
             if message['role'] in ['user', 'assistant']: # Filter for user and assistant roles
-                conversation_text += f"{message['role']}: {message['content']}\n" # Not used in API Prompt
+                conversation_text += f"{message['role']}: {message['content']}\n"
 
-        # API Input is JUST the biography text for rewriting/analysis - No Prompt now.
-        api_input_text = checkpoint_data_text # Send ONLY the biography text for analysis - CHANGED - No bio_prompt_content or conversation
+        api_input_text = checkpoint_data_text # API Input is JUST the biography text
 
-        client = openai.Client() # Call OpenAI API for processing
+        client = openai.Client() # Call OpenAI API
         response = client.chat.completions.create(
             model="gpt-4o",
-            messages=[{"role": "user", "content": api_input_text}], # Send ONLY biography text
-            max_tokens=500, # Adjust as needed
+            messages=[{"role": "user", "content": api_input_text}], # Send biography text
+            max_tokens=500,
         )
-        api_response_text = response.choices[0].message.content.strip() # Extract API response
+        api_response_text = response.choices[0].message.content.strip() # API response
 
-        api_response_text_safe = api_response_text.replace("<", "<").replace(">", ">") # Escape HTML - VERY BASIC, consider better library for production
+        api_response_text_safe = api_response_text.replace("<", "<").replace(">", ">") # Escape HTML
 
-        # Content for display is now JUST the API response
-        combined_output_content = api_response_text_safe # Display is JUST API response - CHANGED - No bio_prompt_content
+        # Content for display is now JUST the API response - CORRECT
+        combined_output_content = bio_prompt_content + "\n\n--- API ANALYSIS ---\n\n" + api_response_text_safe # Display API response
 
-        # File content for download is still just the story, no prompt or API analysis
-        file_content_for_download = checkpoint_data_text # File content for download is still just the story - UNCHANGED
+        # File content for download is now the COMBINED DISPLAY CONTENT - CORRECT
+        file_content_for_download = combined_output_content # File content is now COMBINED DISPLAY CONTENT - CHANGED
 
-        return jsonify({ # Return both checkpoint data (for file) and api response (for display)
-            "checkpoint_data": file_content_for_download, #<-- CHECKED - Correct data for download
-            "api_response": combined_output_content # Return COMBINED text (prompt + API response) for display - REPLACED
+        return jsonify({ # Return checkpoint data (for file) and api response (for display)
+            "checkpoint_data": file_content_for_download, #<-- CHANGED - Now sending combined DISPLAY content for download
+            "api_response": combined_output_content # Display API response - Correct
         })
 
 
@@ -215,7 +213,7 @@ def walt_process_checkpoint(): # RENAME function as well
 
 
 @walt_bp.route('/saveTextAsFileDownload', methods=['POST']) # Keep old route for file download part only
-def saveTextAsFileDownload(): # Keep separate function for actual download
+def saveTextAsFileDownload(): # Keep separate function for actual download - UNCHANGED
     try:
         data = request.get_json()
         checkpoint_data = data.get('checkpoint_data') # Expect plain text directly
@@ -232,7 +230,7 @@ def saveTextAsFileDownload(): # Keep separate function for actual download
         return jsonify({"error": str(e)}), 500
 
 
-@walt_bp.route('/append_to_checkpoint', methods=['POST'])  # NEW ROUTE
+@walt_bp.route('/append_to_checkpoint', methods=['POST'])  # NEW ROUTE - UNCHANGED
 def append_to_checkpoint():
     try:
         current_conversation = session.get('conversation', [])
