@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -184,8 +185,8 @@
             font-size: 1.2em;
             display:none; /*Hides the shape*/
         }
-        /* REMOVED checkpointOutput id and style */
-        #combinedOutput { /* Renamed from combinedOutput to checkpointOutput, now for combined output */
+
+        #checkpointOutput { /* Renamed from combinedOutput to checkpointOutput, now for combined output */
             width: 90%;
             margin: 10px auto;
             padding: 10px;
@@ -200,7 +201,7 @@
             box-sizing: border-box;
             font-size: 1.2em;
         }
-        /* REMOVED apiOutputBox styles */
+
     </style>
     <script>
         // All the code here is to ensure it is loaded at the top level scope.
@@ -262,7 +263,7 @@
             }
 
             const csrfToken = getCookie('csrf_token');
-             let checkpointOutput = document.getElementById("combinedOutput");  // Get the combined output window now
+             let checkpointOutput = document.getElementById("checkpointOutput");  // Get the combined output window now
 
 
             checkpointOutput.textContent = "Processing Checkpoint and Calling API..."; // Indicate processing
@@ -509,7 +510,8 @@
         <button id="appendButton" onclick="appendToCheckpointFile()">Append to Checkpoint File</button>  <!-- NEW BUTTON -->
     </div>
 
-    <div id="combinedOutput"></div>  <!-- combinedOutput is now the main output, showing API results -->
+    <div id="checkpointOutput"></div>  <!-- checkpointOutput is now the combined output window -->
+    <div id="combinedOutput"></div>  <!-- combinedOutput is now for appended conversation -->
     <div id="sessionSummary"></div>
 </body>
 </html>
