@@ -168,13 +168,13 @@ def create_checkpoint():
 @walt_bp.route('/walt_process_checkpoint', methods=['POST']) # RENAME saveTextAsFile to walt_process_checkpoint
 def walt_process_checkpoint(): # RENAME function as well
     try:
-        checkpoint_data_text = session.get('file_content', '') # Get file_content directly as text #<-- CHECKED - Session file content should have story
+        checkpoint_data_text = session.get('file_content', '') # Get file_content directly as text
         bio_prompt_content = ""
         try:
             with open('walt/bio_creator_prompt.txt', 'r', encoding='utf-8') as f: # Read bio_creator_prompt.txt
                 bio_prompt_content = f.read()
         except Exception as e:
-            logging.error(f"Error reading bio_creator_prompt.txt: {e}")
+            logging.error(f"Error reading bio_prompt.txt: {e}")
             bio_prompt_content = "Error loading bio creator prompt." # Fallback if file not read
 
         conversation_text = "" # Get conversation text for API call
@@ -199,10 +199,10 @@ def walt_process_checkpoint(): # RENAME function as well
         combined_output_content = bio_prompt_content + "\n\n--- API ANALYSIS ---\n\n" + api_response_text_safe # Combined content for display is NOW just prompt + API response
 
         # Handle file download as before - file save DOES NOT include API response
-        file_content_for_download = bio_prompt_content + "\n\n" + checkpoint_data_text # File content for download is WITHOUT API response #<-- CHECKED - This is correct
+        file_content_for_download = checkpoint_data_text # File content for download is just the story, no prompt #<--- CHANGED:  No bio_prompt_content
 
         return jsonify({ # Return both checkpoint data (for file) and api response (for display)
-            "checkpoint_data": file_content_for_download, #<-- CHECKED - Correct data for download
+            "checkpoint_data": file_content_for_download, #<--- CHANGED: Send just story for download
             "api_response": combined_output_content # Return COMBINED text (prompt + API response) for display - REPLACED
         })
 
@@ -249,7 +249,7 @@ def append_to_checkpoint():
             logging.error(f"Error reading bio_prompt_content.txt for append: {e}")
             bio_prompt_content = "Error loading bio creator prompt."
 
-        combined_content = bio_prompt_content + "\n\n" + file_content + "\n\n--- APPENDED CONVERSATION ---\n\n" + conversation_text # Prepend bio_creator_prompt
+        combined_content = bio_prompt_content + "\n\n" + file_content + "\n\n--- APPENDED CONVERSATION ---\n\n" + conversation_text # Prepend bio_prompt_content
 
         session['file_content'] = combined_content # Update session with combined content
         session.modified = True # Ensure session is saved
