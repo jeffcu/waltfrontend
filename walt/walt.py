@@ -1,4 +1,3 @@
-
 # walt/walt.py
 from flask import Blueprint, render_template, request, jsonify, session
 import os
@@ -37,8 +36,8 @@ def walt_analyze():
     try:
         with open('walt_prompt.txt', 'r', encoding='utf-8') as f:
             walt_prompt = f.read()
-        except FileNotFoundError:
-            return jsonify({"error": "walt_prompt.txt not found!"}), 500
+    except FileNotFoundError:
+        return jsonify({"error": "walt_prompt.txt not found!"}), 500
     except Exception as e:
         return jsonify({"error": f"Error reading walt_prompt.txt: {str(e)}"}), 500
 
@@ -117,10 +116,10 @@ def load_checkpoint():
             with open('walt_prompt.txt', 'r', encoding='utf-8') as f:
                 walt_prompt = f.read()
         except FileNotFoundError as e:
-            logging.error(f"Error reading walt_prompt.txt in load_checkpoint: {str(e)}")
+            logging.error(f"Error reading walt_prompt.txt: {str(e)}")
             return jsonify({"error": f"Error reading walt_prompt.txt: {str(e)}"}), 500
         except Exception as e:
-            logging.error(f"General error in load_checkpoint: {str(e)}")
+            logging.error(f"General error in get_walt_prompt: {str(e)}")
             return jsonify({"error": str(e)}), 500
 
         # Restore the session - treat as a simple string.  NO JSON PARSING
