@@ -229,6 +229,3 @@ def saveTextAsFileDownload(): # Keep separate function for actual download - UNC
     except Exception as e:
         logging.error(f"Error return and saving checkpoint from saveTextAsFileDownload: {e}", exc_info=True)
         return jsonify({"error": str(e)}), 500
-
-
-# REMOVE append_to_checkpoint route and function - DELETED
