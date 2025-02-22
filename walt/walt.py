@@ -177,32 +177,34 @@ def walt_process_checkpoint(): # RENAME function as well
             logging.error(f"Error reading bio_prompt.txt: {e}")
             bio_prompt_content = "Error loading bio creator prompt." # Fallback if file not read
 
-        conversation_text = "" # Get conversation text for API call
+
+        conversation_text = "" # Get conversation text for API call - NOT USED NOW for API Prompt
         current_conversation = session.get('conversation', [])
         for message in current_conversation:
             if message['role'] in ['user', 'assistant']: # Filter for user and assistant roles
-                conversation_text += f"{message['role']}: {message['content']}\n"
+                conversation_text += f"{message['role']}: {message['content']}\n" # Not used in API Prompt
 
-        api_input_text = bio_prompt_content + "\n\n" + checkpoint_data_text + "\n\n--- CONVERSATION ---\n\n" + conversation_text # Combine for API
+        # API Input is JUST the biography text for rewriting/analysis - No Prompt now.
+        api_input_text = checkpoint_data_text # Send ONLY the biography text for analysis - CHANGED - No bio_prompt_content or conversation
 
         client = openai.Client() # Call OpenAI API for processing
         response = client.chat.completions.create(
             model="gpt-4o",
-            messages=[{"role": "user", "content": api_input_text}], # Send combined text as user input
+            messages=[{"role": "user", "content": api_input_text}], # Send ONLY biography text
             max_tokens=500, # Adjust as needed
         )
         api_response_text = response.choices[0].message.content.strip() # Extract API response
 
         api_response_text_safe = api_response_text.replace("<", "<").replace(">", ">") # Escape HTML - VERY BASIC, consider better library for production
 
-        # Recreate combined content FOR DISPLAY - now API response replaces checkpoint content in display
-        combined_output_content = bio_prompt_content + "\n\n--- API ANALYSIS ---\n\n" + api_response_text_safe # Combined content for display is NOW just prompt + API response
+        # Content for display is now JUST the API response
+        combined_output_content = api_response_text_safe # Display is JUST API response - CHANGED - No bio_prompt_content
 
-        # Handle file download as before - file save DOES NOT include API response
-        file_content_for_download = checkpoint_data_text # File content for download is just the story, no prompt #<--- CHANGED:  No bio_prompt_content
+        # File content for download is still just the story, no prompt or API analysis
+        file_content_for_download = checkpoint_data_text # File content for download is still just the story - UNCHANGED
 
         return jsonify({ # Return both checkpoint data (for file) and api response (for display)
-            "checkpoint_data": file_content_for_download, #<--- CHANGED: Send just story for download
+            "checkpoint_data": file_content_for_download, #<-- CHECKED - Correct data for download
             "api_response": combined_output_content # Return COMBINED text (prompt + API response) for display - REPLACED
         })
 
