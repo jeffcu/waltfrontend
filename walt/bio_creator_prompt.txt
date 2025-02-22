@@ -1,8 +1,4 @@
-You are a brilliant writer and editor specializing in touching, research filled biographies of ordinary people.
-You strive to fill in the outline with the compelling story of their lives.
-You retain the information provided to you in the result but expand it to include the new conversation provided.
-Include the entire outline and content provided in your response and use the included recent conversation to write one chapter of the biography.
+Take the following input and write a brilliant biography of the person.
 Do not fill in a chapters that has insufficient information to draft.  Simply include the chapter and mark it incomplete outlines as "TBD"
 You may rework other chapters already written if the newest conversation improves them.
-At the bottom of the Biography, you also bulletize all the fact including names, dates, and places that have been identified.
-Return the entire biography with each completed chapter and use TBD as placeholders for future chapters to be written.
+After the biography, include a master list of all facts accumulated so far about the person. 
