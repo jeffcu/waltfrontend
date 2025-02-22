@@ -183,27 +183,30 @@ def walt_process_checkpoint(): # RENAME function as well
             if message['role'] in ['user', 'assistant']: # Filter for user and assistant roles
                 conversation_text += f"{message['role']}: {message['content']}\n"
 
-        api_input_text = checkpoint_data_text # API Input is JUST the biography text
+        api_input_text = bio_prompt_content + "\n\n" + checkpoint_data_text + "\n\n--- CONVERSATION ---\n\n" + conversation_text # Combine for API - **RE-ADD BIO PROMPT**
 
-        client = openai.Client() # Call OpenAI API
+        logging.debug(f"API Input Text: {api_input_text[:500]}...") # Log first 500 chars of API input # <-- ADDED LOGGING
+
+        client = openai.Client() # Call OpenAI API for processing
         response = client.chat.completions.create(
             model="gpt-4o",
-            messages=[{"role": "user", "content": api_input_text}], # Send biography text
-            max_tokens=500,
+            messages=[{"role": "user", "content": api_input_text}], # Send combined text as user input - **RE-ADD BIO PROMPT**
+            temperature=0.7, # ADD TEMPERATURE
+            max_tokens=700, # ADJUST MAX TOKENS - Increased to 700
         )
         api_response_text = response.choices[0].message.content.strip() # API response
 
         api_response_text_safe = api_response_text.replace("<", "<").replace(">", ">") # Escape HTML
 
         # Content for display is now JUST the API response - CORRECT
-        combined_output_content = bio_prompt_content + "\n\n--- API ANALYSIS ---\n\n" + api_response_text_safe # Display API response
+        combined_output_content = api_response_text_safe # Display is JUST API response - CORRECT
 
         # File content for download is now the COMBINED DISPLAY CONTENT - CORRECT
         file_content_for_download = combined_output_content # File content is now COMBINED DISPLAY CONTENT - CHANGED
 
         return jsonify({ # Return checkpoint data (for file) and api response (for display)
             "checkpoint_data": file_content_for_download, #<-- CHANGED - Now sending combined DISPLAY content for download
-            "api_response": combined_output_content # Display API response - Correct
+            "api_response": combined_output_content # Return COMBINED text (prompt + API response) for display - REPLACED
         })
 
 
