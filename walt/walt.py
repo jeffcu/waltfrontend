@@ -43,7 +43,7 @@ def walt_analyze():
     uploaded_content = request.form.get('uploaded_content', '')
     desired_tone = request.form.get('tone', 'default')  # Get tone from request
 
-    if not user_query:
+    if not user_input: # Corrected line - using user_input
         return jsonify({"error": "No user query provided"}), 400
 
     try:
