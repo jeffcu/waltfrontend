@@ -1,4 +1,4 @@
-
+--- START OF FILE walt/walt.py ---
 # walt/walt.py
 from flask import Blueprint, render_template, request, jsonify, session
 import os
@@ -226,15 +226,17 @@ def create_checkpoint():
 
 @walt_bp.route('/walt_process_checkpoint', methods=['POST']) # RENAME saveTextAsFile to walt_process_checkpoint
 def walt_process_checkpoint(): # RENAME function as well
+    checkpoint_data_text = session.get('file_content', '') # Get file_content directly as text
+    bio_prompt_content = ""
+    api_response_text_safe = "" # Initialize to handle cases where API call fails
+
     try:
-        checkpoint_data_text = session.get('file_content', '') # Get file_content directly as text
-        bio_prompt_content = ""
         try:
             with open('walt/bio_creator_prompt.txt', 'r', encoding='utf-8') as f: # Read bio_creator_prompt.txt
                 bio_prompt_content = f.read()
         except Exception as e:
             logging.error(f"Error reading bio_prompt.txt: {e}")
-            bio_prompt_content = "Error loading bio creator prompt." # Fallback if file not read
+            return jsonify({"error": f"Error loading bio creator prompt: {str(e)}"}), 500 # Return JSON error
 
         conversation_text = "" # Get conversation text for API call
         current_conversation = session.get('conversation', [])
@@ -242,12 +244,10 @@ def walt_process_checkpoint(): # RENAME function as well
             if message['role'] in ['user', 'assistant']: # Filter for user and assistant roles
                 conversation_text += f"{message['role']}: {message['content']}\n"
 
-        # Improvement #4: Tone aware biography creation
         desired_tone = request.form.get('tone', 'default')
         tone_instruction = ""
         if desired_tone != 'default':
             tone_instruction = f" Write the biography in a {desired_tone} tone."
-
 
         api_input_text = bio_prompt_content + tone_instruction + "\n\n" + checkpoint_data_text + "\n\n--- CONVERSATION ---\n\n" + conversation_text # Combine for API
 
@@ -256,31 +256,29 @@ def walt_process_checkpoint(): # RENAME function as well
             model="gpt-4o",
             messages=[{"role": "user", "content": api_input_text}], # Send combined text prompt
             temperature=0.7,
-            max_tokens=700, # Increased max tokens
+            max_tokens=700,
         )
         api_response_text = response.choices[0].message.content.strip() # API response
 
         api_response_text_safe = api_response_text.replace("<", "<").replace(">", ">") # Escape HTML
 
-        # File content for download - **APPEND instead of OVERWRITE**
         file_content_for_download = checkpoint_data_text + "\n\n" + api_response_text_safe # Append API response to existing content
 
-        # Output window displays the *combined* content (existing + new response)
         combined_output_content = file_content_for_download # Display combined content
 
-        # --- FIX: UPDATE SESSION['file_content'] with the *combined* content ---
         session['file_content'] = file_content_for_download
         session.modified = True # Ensure session is marked as modified
 
         return jsonify({ # Return checkpoint data (for file) and api response (for display)
-            "checkpoint_data": file_content_for_download, #<-- Now sending COMBINED content for download
+            "checkpoint_data": file_content_for_download,
             "api_response": combined_output_content # Return COMBINED content for display
         })
 
-
     except Exception as e:
         logging.error(f"Error processing checkpoint and calling API: {e}", exc_info=True)
-        return jsonify({"error": str(e)}), 500
+        error_message = f"Error processing checkpoint and calling API: {str(e)}"
+        api_response_text_safe = error_message # Still set a safe error message for display.
+        return jsonify({"error": error_message, "api_response": api_response_text_safe}), 500 # Return JSON error with message and safe response for display
 
 
 @walt_bp.route('/saveTextAsFileDownload', methods=['POST']) # Keep old route for file download part only
