@@ -1,17 +1,27 @@
 # walt/walt.py
-# walt/walt.py
 from flask import Blueprint, render_template, request, jsonify, session
 import os
 import openai
 import logging
-import json  # Import the json module
-from werkzeug.utils import secure_filename # For secure filename handling
+import json
+from werkzeug.utils import secure_filename
 
 walt_bp = Blueprint('walt', __name__, template_folder='templates')
 
 @walt_bp.route('/walt')
 def walt_window():
-    return render_template('walt_window.html', biography_outline=get_biography_outline()) # Pass outline to template
+    if 'conversation' not in session:
+        # New session (new user)
+        initial_greeting = "Hi, I'm Walt!  It's wonderful to meet you. I'm excited to help you write your biography. To get started, could you tell me your name?"
+        session['conversation'] = [{"role": "system", "content": get_walt_prompt()},
+                                     {"role": "assistant", "content": initial_greeting}]
+        session['biography_outline'] = get_biography_outline()
+        session.modified = True # Important for session modifications to be saved
+        return render_template('walt_window.html', biography_outline=get_biography_outline(), initial_message=initial_greeting) # Pass initial message
+    else:
+        # Existing session (returning user - less common direct /walt access, but handling)
+        return render_template('walt_window.html', biography_outline=get_biography_outline(), initial_message=None) # No initial message needed
+
 
 @walt_bp.route('/get_walt_prompt')
 def get_walt_prompt():
@@ -20,7 +30,7 @@ def get_walt_prompt():
             prompt_text = f.read()
         return prompt_text
     except FileNotFoundError as e:
-        logging.error(f"Error reading walt_prompt.txt: {str(e)}") #Added logging here
+        logging.error(f"Error reading walt_prompt.txt: {str(e)}")
         return jsonify({"error": "walt_prompt.txt not found!"}), 404
     except Exception as e:
         logging.error(f"General error in get_walt_prompt: {str(e)}")
@@ -153,22 +163,39 @@ def load_checkpoint():
             return jsonify({"error": str(e)}), 500
 
         # Restore the session - treat as a simple string.  NO JSON PARSING
-        session['file_content'] = checkpoint_data #ADDED:  Load this first
-        session['conversation'] = [{"role": "system", "content": walt_prompt}] # Removed checkpoint_data from conversation init
-        session['biography_outline'] = get_biography_outline() # Restore outline (Improvement #5)
-
+        session['file_content'] = checkpoint_data
+        session['conversation'] = [{"role": "system", "content": walt_prompt}]
+        session['biography_outline'] = get_biography_outline()
 
         session.modified = True
 
-        # Extract user's name (from the loaded session or use a default)
-        user_name = "User"  # Default
-        #Welcome them back
-        welcome_phrase = f"Welcome back, {user_name}! Hi, I am Walt. Let's continue your story."
+        # Try to extract user's name from conversation history (basic approach)
+        user_name = "friend"  # Default if name not found
+        for message in reversed(session['conversation']): # Check conversation history for name
+            if message['role'] == 'assistant' and "What's your name?" in message['content']:
+                previous_user_message = session['conversation'][session['conversation'].index(message) -1] if session['conversation'].index(message) > 0 else None # Get user's message before "What's your name?"
+                if previous_user_message and previous_user_message['role'] == 'user':
+                     user_name_potential = previous_user_message['content'].strip()
+                     if user_name_potential: #Basic name validation
+                        user_name = user_name_potential
+                        break # Exit once name found
+
+
+        # Generate a simple progress summary (basic example - improve later)
+        chapters_discussed = 0
+        for chapter_data in session['biography_outline']:
+            if chapter_data['status'] == 'Complete': # Assuming you'll have a 'status' field and update it elsewhere
+                chapters_discussed += 1
+        progress_summary = f"So far, we've made progress on {chapters_discussed} chapters of your biography." if chapters_discussed > 0 else "We're ready to pick up where we left off."
+
+
+        #Welcome them back with personalized message and summary
+        welcome_phrase = f"Welcome back, {user_name}! Hi, I am Walt. It's great to continue your story. {progress_summary} Ready to jump back in?"
 
         #Update the conversation history with the new state
         session['conversation'].append({"role": "assistant", "content":welcome_phrase})
 
-        return jsonify({"response": welcome_phrase, "biography_outline": session['biography_outline']}) # Send outline
+        return jsonify({"response": welcome_phrase, "biography_outline": session['biography_outline']})
 
     except Exception as e:
         print(f"Error processing checkpoint: {e}")
@@ -240,6 +267,10 @@ def walt_process_checkpoint(): # RENAME function as well
         # Output window displays the downloaded file content - CHANGED to match file
         combined_output_content = api_response_text_safe # Output window displays the same API Response - CHANGED
 
+        # --- FIX: UPDATE SESSION['file_content'] with the new biography draft ---
+        session['file_content'] = file_content_for_download
+        session.modified = True # Ensure session is marked as modified
+
         return jsonify({ # Return checkpoint data (for file) and api response (for display)
             "checkpoint_data": file_content_for_download, #<-- CHANGED - Now sending API Response for download
             "api_response": combined_output_content # Return API Response for display - CHANGED
@@ -277,4 +308,3 @@ def get_biography_outline():
         {"chapter": 3, "title": "Call to Action – The First Big Life Decision", "status": "TBD"},
         {"chapter": 4, "title": "Rising Conflict – Struggles & Growth", "status": "TBD"},
         {"chapter": 5, "title": "The Climax – Defining Achievements", "status": "TBD"}
-    ]

@@ -1,4 +1,5 @@
-Take the following input and write a brilliant biography of the person.
-Do not fill in a chapters that has insufficient information to draft.  Simply include the chapter and mark it incomplete outlines as "TBD"
+
+Take the following input and write a brilliant and **{{biography_tone}}** biography of the person.
+Do not fill in chapters that have insufficient information to draft. Simply include the chapter in the outline and mark it as "TBD".
 You may rework other chapters already written if the newest conversation improves them.
-After the biography, include a master list of all facts accumulated so far about the person. 
+After the biography, include a master list of all facts accumulated so far about the person.

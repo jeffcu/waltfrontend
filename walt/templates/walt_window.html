@@ -1,4 +1,4 @@
-
+<!-- walt/templates/walt_window.html -->
 <!DOCTYPE html>
 <html>
 <head>
@@ -186,23 +186,65 @@
             font-size: 1.2em;
         }
 
+        /* Improvement #5: Biography Outline Styles */
+        .biography-outline {
+            text-align: left;
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #4C657E;
+            border-radius: 6px;
+            background-color: #2A3D55;
+            color: #D9E1EC;
+        }
+
+        .biography-outline h2 {
+            color: #2D9CDB;
+            font-size: 20px;
+            margin-bottom: 10px;
+        }
+
+        .biography-outline ul {
+            list-style: none;
+            padding-left: 20px;
+        }
+
+        .biography-outline li {
+            margin-bottom: 5px;
+        }
+
+        .chapter-title {
+            font-weight: bold;
+        }
+
+        .chapter-status-tbd {
+            color: #AEBCCF; /* Greyed out for TBD chapters */
+            font-style: italic;
+        }
+        .chapter-status-complete {
+            color: #27AE60; /* Green for completed chapters */
+            font-weight: bold;
+        }
+
 
     </style>
     <script>
         // All the code here is to ensure it is loaded at the top level scope.
         let uploaded_content = ""; //Global variable to store uploaded content
         let storyUpload; // Declare storyUpload outside the event listener
+        let biographyOutline; // For storing biography outline (Improvement #5)
 
         function submitPrompt() {
             let userInput = document.getElementById("userPrompt").value;
             let chatOutput = document.getElementById("chatOutput");
+            let toneSelector = document.getElementById("toneSelector"); // Improvement #4
+            let selectedTone = toneSelector.value; // Get selected tone
 
             chatOutput.textContent = "Loading...";
-            sendToOpenAI(userInput, chatOutput, uploaded_content); // Send data
+            sendToOpenAI(userInput, chatOutput, uploaded_content, selectedTone); // Send tone
             document.getElementById("userPrompt").value = "";
         }
 
-         function sendToOpenAI(userInput, chatOutput, fileContent) {
+         function sendToOpenAI(userInput, chatOutput, fileContent, tone) { // Accept tone
             // Get CSRF token from cookie
             function getCookie(name) {
                 const value = `; ${document.cookie}`;
@@ -218,7 +260,7 @@
                     "Content-Type": "application/x-www-form-urlencoded",
                     "X-CSRFToken": csrfToken
                 },
-                 body: "user_query=" + encodeURIComponent(userInput) + "&uploaded_content=" + encodeURIComponent(fileContent)  // Now send the file content
+                 body: "user_query=" + encodeURIComponent(userInput) + "&uploaded_content=" + encodeURIComponent(fileContent) + "&tone=" + encodeURIComponent(tone) // Send tone
             })
             .then(response => response.json())
             .then(data => {
@@ -226,6 +268,10 @@
                     chatOutput.textContent = "Error: " + data.error;
                 } else {
                     chatOutput.textContent = data.response;
+                    if (data.biography_outline) { // Improvement #5: Update outline display
+                        biographyOutline = data.biography_outline;
+                        updateBiographyOutlineDisplay();
+                    }
                 }
             })
             .catch(error => {
@@ -249,6 +295,8 @@
 
             const csrfToken = getCookie('csrf_token');
              let checkpointOutput = document.getElementById("checkpointOutput");  // Get the combined output window now
+             let toneSelector = document.getElementById("toneSelector"); // Improvement #4
+             let selectedTone = toneSelector.value; // Get selected tone
 
 
             checkpointOutput.textContent = "Processing Checkpoint and Calling API..."; // Indicate processing
@@ -256,10 +304,10 @@
             fetch("/walt_process_checkpoint", { // Call the NEW route
                 method: "POST",
                 headers: {
-                    "Content-Type": "application/json",
+                    "Content-Type": "application/x-www-form-urlencoded",
                     "X-CSRFToken": csrfToken
                 },
-                body: JSON.stringify({})  // Send an empty object, server gets session data
+                body: "tone=" + encodeURIComponent(selectedTone) // Send tone for bio creation (Improvement #4)
             })
             .then(response => response.text()) // Changed to .text() to handle plain text API responses
             .then(textResponse => { // Handle text response, not JSON
@@ -354,6 +402,10 @@
                         document.getElementById("chatOutput").textContent = "Error: " + data.error;
                     } else {
                         document.getElementById("chatOutput").textContent = data.response;
+                        if (data.biography_outline) { // Improvement #5: Load and display outline
+                            biographyOutline = data.biography_outline;
+                            updateBiographyOutlineDisplay();
+                        }
                         sendLoadMessage(); // Added message on upload
                     }
                 })
@@ -382,9 +434,34 @@
            }
 
 
+        // Function to update biography outline display (Improvement #5)
+        function updateBiographyOutlineDisplay() {
+            const outlineDiv = document.getElementById('biographyOutline');
+            if (!biographyOutline || !outlineDiv) return;
+
+            let outlineHTML = '<h2>Biography Outline</h2><ul>';
+            biographyOutline.forEach(chapter => {
+                const statusClass = chapter.status === 'Complete' ? 'chapter-status-complete' : 'chapter-status-tbd';
+                outlineHTML += `<li><span class="chapter-title">Chapter ${chapter.chapter}: ${chapter.title}</span> - <span class="${statusClass}">${chapter.status}</span></li>`;
+            });
+            outlineHTML += '</ul>';
+            outlineDiv.innerHTML = outlineHTML;
+        }
+
+
         //Event Handling
         document.addEventListener('DOMContentLoaded', function() {
             storyUpload = document.getElementById("story_upload"); // Define at document load
+            biographyOutline = {{ biography_outline|tojson }}; // Initialize biographyOutline from template (Improvement #5)
+            updateBiographyOutlineDisplay(); // Initial outline display (Improvement #5)
+            const chatOutput = document.getElementById("chatOutput");
+            const initialMessage = "{{ initial_message|default('', convert_attribute=False) | safe }}"; // Get initial message from template
+
+            if (initialMessage) { // Check if initial message exists
+                chatOutput.textContent = initialMessage; // Set initial message in chat output
+            }
+
+
              console.log("Story Upload: Document is loaded");
             if (storyUpload) {
                //Event
@@ -449,8 +526,16 @@
             <div class="chat-output" id="chatOutput"></div>
         </div>
         <div class="chat-area">
-            <h2 class="chat-title">Response</h2>
+            <h2 class="chat-title">Your Prompts</h2>
             <textarea id="userPrompt" placeholder="Enter your prompt"></textarea>
+            <label for="toneSelector">Biography Tone:</label>  <!-- Improvement #4: Tone selector -->
+            <select id="toneSelector">
+                <option value="default">Default</option>
+                <option value="humorous">Humorous</option>
+                <option value="reflective">Reflective</option>
+                <option value="dramatic">Dramatic</option>
+                <option value="inspirational">Inspirational</option>
+            </select>
             <button id="submitButton" onclick="submitPrompt()">Submit</button>
         </div>
     </div>
@@ -460,8 +545,13 @@
         <button id="saveButton" onclick="saveTextAsFile()">Create Checkpoint File and Analyze</button>
     </div>
 
-    <h2>API Analysis Results & Checkpoint File Content</h2>  <!-- Label for checkpointOutput -->
+    <h2>Biography Draft & Checkpoint File Content</h2>  <!-- Label for checkpointOutput -->
     <div id="checkpointOutput"></div>  <!-- checkpointOutput is now the combined output window -->
+
+    <!-- Improvement #5: Biography Outline Display -->
+    <div class="biography-outline" id="biographyOutline">
+        <!-- Biography outline will be rendered here by JavaScript -->
+    </div>
 
 
     <div id="sessionSummary"></div>
