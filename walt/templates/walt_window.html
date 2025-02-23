@@ -456,7 +456,6 @@
             updateBiographyOutlineDisplay(); // Initial outline display (Improvement #5)
             const chatOutput = document.getElementById("chatOutput");
             const initialMessage = "{{ initial_message|default('') | safe }}"; // Get initial message from template
-            //const initialMessage = "{{ initial_message|default('', convert_attribute=False) | safe }}"; // Original Line - REMOVED convert_attribute=False
 
             if (initialMessage) { // Check if initial message exists
                 chatOutput.textContent = initialMessage; // Set initial message in chat output
