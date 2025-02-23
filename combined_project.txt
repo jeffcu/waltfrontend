@@ -433,17 +433,19 @@ if __name__ == '__main__':
 
 --- FILE: walt_prompt.txt ---
 
-Personality: You play the role of a are a gifted interviewer and biographer.  you embody the best qualities of renowned interviewers like Oprah Winfrey.
+Personality: You play the role of a gifted interviewer and biographer.  You embody the best qualities of renowned interviewers like Oprah Winfrey.
 You always blend of empathy, meticulous research ability, excellent listening skills, adaptability, compelling storytelling, intellectual curiosity, unwavering integrity and ethics, exceptional communication skills, cultural and social awareness, and patience and perseverance. You love to help the user capture the great story of their life.  You have a knack of asking the right questions to get at peoples unique character.
 You ask great open ended questions and draw people out and discover their best story.
+You ask for facts, birthdate and place, when and where certain things happen.  Names of relevant relatives, companies, pets, mentors, important people in their lives.
+You only focus on one chapter at a time, You focus your line of questioning until the full content of one chapter is complete.
 
 Identity: Walt.   A friendly AI who is enthusiastic to learn everyone story.
 
 Process:
 First: Ask their permission to begin the interview and clarify their full name.
 Second: You always tie their whole story into the one thing they hope to be remembered for.
-Third: Be an active learner, at the start of each session focus on one incomplete chapter.  Then ask them one great question like those below. Focus on finding the key moments in their life.
-Fourth: Follow the one big question with more indepth questions about their answer.  Each follow-up question should help you  draft one Chapter of the Biography outline.
+Third: Be an active learner, at the start of each session you internally decide which chapter you will focus.   You only choose one per session.   Then ask them one great question like those below. Focus on finding the key learning and turning points in their life.
+Fourth: Follow the one big question with more drill-down questions that reveal more about their answer.  Each follow-up question should help you  draft one Chapter of the Biography outline.
 Fifth: Each session you will focus on filling out one chapter at a time until the whole book is written. Always incorporate their hope to be remembered for along with the key moments to weave the life story together.  Explore their life and be pleasant and complimentary.
 Pull in historical context to help you ask quality questions and add relevant historical context to the chapter where appropriate.
 
@@ -1419,13 +1421,10 @@ def word_counter():
 
 --- FILE: walt/bio_creator_prompt.txt ---
 
-You are a brilliant writer and editor specializing in touching, research filled biographies of ordinary people.
-You strive to fill in the outline with the compelling story of their lives.
-You write their biography from this information passed to you.
-Adhere to the chapters in the outline.
-Do not fill in a chapter that has insufficient information to draft.
-After you weave a story about the  person the wanted to be remembered as, you also bulletize all the fact including names, dates, and places that have been identified.
-Examine all the text then write the biography and list facts.
+Take the following input and write a brilliant biography of the person.
+Do not fill in a chapters that has insufficient information to draft.  Simply include the chapter and mark it incomplete outlines as "TBD"
+You may rework other chapters already written if the newest conversation improves them.
+After the biography, include a master list of all facts accumulated so far about the person. 
 
 
 --- FILE: walt/walt.py ---
@@ -1436,6 +1435,7 @@ import os
 import openai
 import logging
 import json  # Import the json module
+from werkzeug.utils import secure_filename # For secure filename handling
 
 walt_bp = Blueprint('walt', __name__, template_folder='templates')
 
@@ -1491,7 +1491,7 @@ def walt_analyze():
 
         response = client.chat.completions.create(
             model="gpt-4o",
-            messages=[session['conversation']],
+            messages=session['conversation'], # <--- CORRECTED LINE: Removed extra list brackets
             temperature=0.7,
             max_tokens=256,
             top_p=1
@@ -1535,8 +1535,6 @@ def walt_session_summary():
         print(f"Error calling OpenAI: {e}")
         return jsonify({"error": str(e)}), 500
 
-    return jsonify({"session_summary": f"{api_response}"})
-
 @walt_bp.route('/load_checkpoint', methods=['POST'])
 def load_checkpoint():
     checkpoint_data = request.form.get('checkpoint_data')
@@ -1549,16 +1547,15 @@ def load_checkpoint():
             with open('walt_prompt.txt', 'r', encoding='utf-8') as f:
                 walt_prompt = f.read()
         except FileNotFoundError as e:
-            logging.error(f"Error reading walt_prompt.txt in load_checkpoint: {str(e)}")
+            logging.error(f"Error reading walt_prompt.txt: {str(e)}")
             return jsonify({"error": f"Error reading walt_prompt.txt: {str(e)}"}), 500
         except Exception as e:
-            logging.error(f"General error in load_checkpoint: {str(e)}")
+            logging.error(f"General error in get_walt_prompt: {str(e)}")
             return jsonify({"error": str(e)}), 500
 
         # Restore the session - treat as a simple string.  NO JSON PARSING
         session['file_content'] = checkpoint_data #ADDED:  Load this first
-        session['conversation'] = [{"role": "system", "content": walt_prompt},
-                                     {"role": "user", "content": checkpoint_data}]#Treat as input not JSON
+        session['conversation'] = [{"role": "system", "content": walt_prompt}] # Removed checkpoint_data from conversation init
 
         session.modified = True
 
@@ -1579,42 +1576,93 @@ def load_checkpoint():
 @walt_bp.route('/create_checkpoint', methods=['POST'])
 def create_checkpoint():
     try:
-        # Create a dictionary to hold the session data and file content
-        checkpoint_data = {
-            'conversation': session.get('conversation', []),
-            'file_content': session.get('file_content', '')
-        }
+        checkpoint_data_text = session.get('file_content', '') # Get file_content directly as text
+        bio_prompt_content = ""
+        try:
+            with open('walt/bio_creator_prompt.txt', 'r', encoding='utf-8') as f: # ADDED: Read bio_creator_prompt.txt
+                bio_prompt_content = f.read()
+        except Exception as e:
+            logging.error(f"Error reading bio_prompt.txt: {e}")
+            bio_prompt_content = "Error loading bio creator prompt." # Fallback if file not read
 
-        # Serialize the dictionary to JSON
-        checkpoint_json = json.dumps(checkpoint_data)
-        logging.info(f"Checkpoint data being created: {checkpoint_json}") # Log JSON data
+        combined_checkpoint_content = bio_prompt_content + "\n\n" + checkpoint_data_text # Combined content
 
-        # Return the JSON string
-        return jsonify({"checkpoint_data": checkpoint_json})
+        logging.info(f"Checkpoint data being created: {combined_checkpoint_content[:100]}...") # Log start of data
+
+        return jsonify({"checkpoint_data": combined_checkpoint_content}) # Return combined text
 
     except Exception as e:
         logging.error(f"Error creating checkpoint: {e}", exc_info=True)
         return jsonify({"error": str(e)}), 500
 
-@walt_bp.route('/saveTextAsFile', methods=['POST'])
-def saveTextAsFile():
+@walt_bp.route('/walt_process_checkpoint', methods=['POST']) # RENAME saveTextAsFile to walt_process_checkpoint
+def walt_process_checkpoint(): # RENAME function as well
+    try:
+        checkpoint_data_text = session.get('file_content', '') # Get file_content directly as text
+        bio_prompt_content = ""
+        try:
+            with open('walt/bio_creator_prompt.txt', 'r', encoding='utf-8') as f: # Read bio_creator_prompt.txt
+                bio_prompt_content = f.read()
+        except Exception as e:
+            logging.error(f"Error reading bio_prompt.txt: {e}")
+            bio_prompt_content = "Error loading bio creator prompt." # Fallback if file not read
+
+        conversation_text = "" # Get conversation text for API call
+        current_conversation = session.get('conversation', [])
+        for message in current_conversation:
+            if message['role'] in ['user', 'assistant']: # Filter for user and assistant roles
+                conversation_text += f"{message['role']}: {message['content']}\n"
+
+        api_input_text = bio_prompt_content + "\n\n" + checkpoint_data_text + "\n\n--- CONVERSATION ---\n\n" + conversation_text # Combine for API
+
+        client = openai.Client() # Call OpenAI API
+        response = client.chat.completions.create(
+            model="gpt-4o",
+            messages=[{"role": "user", "content": api_input_text}], # Send combined text prompt
+            temperature=0.7,
+            max_tokens=700, # Increased max tokens
+        )
+        api_response_text = response.choices[0].message.content.strip() # API response
+
+        api_response_text_safe = api_response_text.replace("<", "<").replace(">", ">") # Escape HTML
+
+        # File content for download is now set to the API biography draft - CHANGED
+        file_content_for_download = api_response_text_safe # File content for download is NOW API Response - CHANGED
+
+        # Output window displays the downloaded file content - CHANGED to match file
+        combined_output_content = api_response_text_safe # Output window displays the same API Response - CHANGED
+
+        return jsonify({ # Return checkpoint data (for file) and api response (for display)
+            "checkpoint_data": file_content_for_download, #<-- CHANGED - Now sending API Response for download
+            "api_response": combined_output_content # Return API Response for display - CHANGED
+        })
+
+
+    except Exception as e:
+        logging.error(f"Error processing checkpoint and calling API: {e}", exc_info=True)
+        return jsonify({"error": str(e)}), 500
+
+
+@walt_bp.route('/saveTextAsFileDownload', methods=['POST']) # Keep old route for file download part only
+def saveTextAsFileDownload(): # Keep separate function for actual download - UNCHANGED
     try:
         data = request.get_json()
-        checkpoint_data = data.get('checkpoint_data')
+        checkpoint_data = data.get('checkpoint_data') # Expect plain text directly
 
         if not checkpoint_data:
             return jsonify({"error": "No checkpoint data to save"}), 400
 
-        # Return the checkpoint data directly (it's already a JSON string)
-        logging.info(f"Checkpoint data being sent: {checkpoint_data}") #Debug log
-        return jsonify({"fileContent": checkpoint_data})
+        # Return the checkpoint data directly as text
+        logging.info(f"Checkpoint data being sent for download: {checkpoint_data[:50]}...") #Debug log start of data
+        return jsonify({"fileContent": checkpoint_data}) # Return text directly for download
 
     except Exception as e:
-        logging.error(f"Error return and saving checkpoint from saveTextAsFile: {e}", exc_info=True)
+        logging.error(f"Error return and saving checkpoint from saveTextAsFileDownload: {e}", exc_info=True)
         return jsonify({"error": str(e)}), 500
 
 
 --- FILE: walt/templates/walt_window.html ---
+
 
 <!DOCTYPE html>
 <html>
@@ -1771,6 +1819,7 @@ def saveTextAsFile():
             white-space: nowrap; /* Prevent text wrapping */
         }
 
+
         #sessionSummary {
             margin-top: 20px;
             padding: 10px;
@@ -1785,21 +1834,24 @@ def saveTextAsFile():
             font-size: 1.2em;
             display:none; /*Hides the shape*/
         }
-        #checkpointOutput {
+
+        #checkpointOutput { /* Renamed from combinedOutput to checkpointOutput, now for combined output */
             width: 90%;
-            max-height: 200px;
             margin: 10px auto;
             padding: 10px;
             border: 1px solid #4C657E;
             border-radius: 6px;
-            background-color: #2A3D55;
+            background-color: #4C657E; /* Changed to API output style */
             color: #D9E1EC;
             text-align: left;
             white-space: pre-wrap;
-            overflow-y: auto;
+            overflow-y: auto; /* Enable scroll if content overflows */
+            max-height: 250px; /* Increased max height */
             box-sizing: border-box;
             font-size: 1.2em;
         }
+
+
     </style>
     <script>
         // All the code here is to ensure it is loaded at the top level scope.
@@ -1861,41 +1913,84 @@ def saveTextAsFile():
             }
 
             const csrfToken = getCookie('csrf_token');
-             let checkpointOutput = document.getElementById("checkpointOutput");  // Get the output window element
-            fetch("/create_checkpoint", {
+             let checkpointOutput = document.getElementById("checkpointOutput");  // Get the combined output window now
+
+
+            checkpointOutput.textContent = "Processing Checkpoint and Calling API..."; // Indicate processing
+
+            fetch("/walt_process_checkpoint", { // Call the NEW route
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                     "X-CSRFToken": csrfToken
                 },
-                body: JSON.stringify({})  // Send an empty object to trigger checkpoint creation
+                body: JSON.stringify({})  // Send an empty object, server gets session data
             })
-            .then(response => response.json())
-            .then(data => {
-                if (data.error) {
-                    alert("Error creating checkpoint: " + data.error);
-                } else {
-                    // The server returns the JSON string, so use it directly
-                    const fileContent = data["fileContent"];
-                    checkpointOutput.textContent = fileContent;  // Set the checkpoint output window text.
-                    console.log("fileContent from server", fileContent)
+            .then(response => response.text()) // Changed to .text() to handle plain text API responses
+            .then(textResponse => { // Handle text response, not JSON
+                try {
+                    const data = JSON.parse(textResponse); // Try to parse as JSON first (for structured responses)
+                    if (data.error) {
+                        alert("Error creating checkpoint: " + data.error);
+                        checkpointOutput.textContent = "API Error: " + data.error; // Display API error in the combined box
+                    } else {
+                        // If valid JSON, handle as before
+                        const fileContent = data["checkpoint_data"];
 
-                    const textFileAsBlob = new Blob([fileContent], { type: 'text/plain' });
-                    const fileNameToSaveAs = "sessionStory.txt";
+                        checkpointOutput.textContent = data["api_response"]; // Now display API response in the combined box
 
-                    const downloadLink = document.createElement("a");
-                    downloadLink.download = fileNameToSaveAs;
-                    downloadLink.innerHTML = "Download File";
-                    downloadLink.href = window.URL.createObjectURL(textFileAsBlob);
-                    downloadLink.style.display = "none"; // Hide the link
+                        console.log("fileContent from server", fileContent)
 
-                    document.body.appendChild(downloadLink);
-                    downloadLink.click();
-                    document.body.removeChild(downloadLink);
+                        const textFileAsBlob = new Blob([fileContent], { type: 'text/plain' });
+                        const fileNameToSaveAs = "sessionStory.txt";
+
+                        const downloadLink = document.createElement("a");
+                        downloadLink.download = fileNameToSaveAs;
+                        downloadLink.innerHTML = "Download File";
+                        downloadLink.href = window.URL.createObjectURL(textFileAsBlob);
+                        downloadLink.style.display = "none";
+
+                        document.body.appendChild(downloadLink);
+                        downloadLink.click();
+                        document.body.removeChild(downloadLink);
+                    }
+                } catch (e) {
+                    // If JSON parsing fails, treat the whole response as plain text
+                    console.warn("Response is not JSON, treating as plain text:", textResponse);
+                    checkpointOutput.textContent = textResponse; // Display the raw text response in combinedOutput
+                     // Still trigger file download for checkpoint even if API response is not JSON
+                     fetch('/saveTextAsFileDownload', { // Call download endpoint separately
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': csrfToken
+                        },
+                        body: JSON.stringify({ checkpoint_data: checkpointOutput.textContent }) // Send current checkpoint text for download
+                    })
+                    .then(downloadResponse => downloadResponse.json()) // Expect JSON for download trigger
+                    .then(downloadData => {
+                        if (downloadData.fileContent) {
+                            const textFileAsBlob = new Blob([downloadData.fileContent], { type: 'text/plain' });
+                            const fileNameToSaveAs = "sessionStory.txt";
+                            const downloadLink = document.createElement("a");
+                            downloadLink.download = fileNameToSaveAs;
+                            downloadLink.innerHTML = "Download File";
+                            downloadLink.href = window.URL.createObjectURL(textFileAsBlob);
+                            downloadLink.style.display = "none";
+                            document.body.appendChild(downloadLink);
+                            downloadLink.click();
+                            document.body.removeChild(downloadLink);
+                        } else if (downloadData.error) {
+                            alert("Error triggering download after API issue: " + downloadData.error);
+                        }
+                    })
+                    .catch(downloadError => {
+                        alert("Error triggering download after API issue: " + downloadError.message);
+                    });
                 }
             })
             .catch(error => {
-                alert("Error: " + error.message);
+                checkpointOutput.textContent = "Fetch Error: " + error.message; // Display fetch error in combinedOutput
             });
         }
 
@@ -1928,7 +2023,7 @@ def saveTextAsFile():
                     }
                 })
                 .catch(error => {
-                    document.getElementById("chatOutput").textContent = "Error: " + error.message;
+                    document.getElementById("chatOutput").textContent = "Error loading checkpoint.";
                 });
             } catch (error) {
                 console.error("Error in sendCheckpointData:", error);
@@ -1950,6 +2045,8 @@ def saveTextAsFile():
                }
 
            }
+
+
         //Event Handling
         document.addEventListener('DOMContentLoaded', function() {
             storyUpload = document.getElementById("story_upload"); // Define at document load
@@ -2025,10 +2122,13 @@ def saveTextAsFile():
 
     <h3 class="dataNote">Note: No data is saved by this application, the only memory is through this file alone.</h3>
     <div style = "text-align:center">
-        <button id="saveButton" onclick="saveTextAsFile()">Create Checkpoint File</button>
+        <button id="saveButton" onclick="saveTextAsFile()">Create Checkpoint File and Analyze</button>
     </div>
 
-    <div id="checkpointOutput"></div> <!-- Added new output window for displaying checkpoint text -->
+    <h2>API Analysis Results & Checkpoint File Content</h2>  <!-- Label for checkpointOutput -->
+    <div id="checkpointOutput"></div>  <!-- checkpointOutput is now the combined output window -->
+
+
     <div id="sessionSummary"></div>
 </body>
 </html>

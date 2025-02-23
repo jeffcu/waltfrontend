@@ -1,4 +1,5 @@
 # walt/walt.py
+# walt/walt.py
 from flask import Blueprint, render_template, request, jsonify, session
 import os
 import openai
@@ -10,7 +11,7 @@ walt_bp = Blueprint('walt', __name__, template_folder='templates')
 
 @walt_bp.route('/walt')
 def walt_window():
-    return render_template('walt_window.html')
+    return render_template('walt_window.html', biography_outline=get_biography_outline()) # Pass outline to template
 
 @walt_bp.route('/get_walt_prompt')
 def get_walt_prompt():
@@ -29,13 +30,22 @@ def get_walt_prompt():
 def walt_analyze():
     user_input = request.form.get('user_query')
     uploaded_content = request.form.get('uploaded_content', '')
+    desired_tone = request.form.get('tone', 'default') # Get tone from request
 
     if not user_input:
         return jsonify({"error": "No user query provided"}), 400
 
     try:
         with open('walt_prompt.txt', 'r', encoding='utf-8') as f:
-            walt_prompt = f.read()
+            walt_prompt_base = f.read()
+
+        # Incorporate tone into prompt (Improvement #4)
+        if desired_tone != 'default':
+            walt_prompt = walt_prompt_base + f"\nThe user prefers a biography with a {desired_tone} tone."
+        else:
+            walt_prompt = walt_prompt_base
+
+
     except FileNotFoundError:
         return jsonify({"error": "walt_prompt.txt not found!"}), 500
     except Exception as e:
@@ -45,6 +55,8 @@ def walt_analyze():
         initial_greeting = "Hi I'm Walt. What's your name?"
         session['conversation'] = [{"role": "system", "content": walt_prompt},
                                      {"role": "assistant", "content": initial_greeting}]
+        session['biography_outline'] = get_biography_outline() # Initialize outline in session (Improvement #5)
+
 
     if uploaded_content:
         session['conversation'].append({"role": "system", "content": f"Here is context from your biography: {uploaded_content}"})
@@ -52,25 +64,43 @@ def walt_analyze():
     else:
         print("NO UPLOADED CONTENT!")
 
-    session['conversation'].append({"role": "user", "content": user_input + ". Pick another chapter and let's discuss it."})
+    # Improvement #2: Dynamic Chapter Suggestion - Removed fixed chapter selection in prompt
+    session['conversation'].append({"role": "user", "content": user_input + ".  Continue to help me build my biography."})
+
 
     try:
         client = openai.Client()
         logging.info(f"OpenAI Request Messages: {session['conversation']}")
 
+        # --- FIRST OPENAI CALL: Get Walt's normal response ---
         response = client.chat.completions.create(
             model="gpt-4o",
-            messages=session['conversation'], # <--- CORRECTED LINE: Removed extra list brackets
+            messages=session['conversation'],
             temperature=0.7,
             max_tokens=256,
             top_p=1
         )
         api_response = response.choices[0].message.content.strip()
 
-        session['conversation'].append({"role": "assistant", "content": api_response})
+        # --- SECOND OPENAI CALL: Get Walt's Fact-Check Question (Improvement #3) ---
+        verification_prompt_text = f"From our last exchange: '{user_input}' and Walt's response: '{api_response}', please list 2-3 key facts Walt has gathered about the person in this chapter so far. Ask the user to verify if these facts are correct in a friendly and natural tone, as Walt would." # More natural tone in fact-check prompt
+        verification_prompt = [{"role": "system", "content": "You are Walt, fact-checking biographer.  Your goal is to create a short, friendly question to the user to verify 2-3 key facts from the conversation."},
+                              {"role": "user", "content": verification_prompt_text}] # Define prompt as list of dicts
+
+        verification_response = client.chat.completions.create(
+            model="gpt-4o",
+            messages=verification_prompt, # Use the defined verification_prompt
+            temperature=0.5, # Lower temp for fact-checking
+            max_tokens=150
+        )
+        verification_message = verification_response.choices[0].message.content.strip()
+        api_response_with_verification = api_response + "\n\n" + verification_message
+
+
+        session['conversation'].append({"role": "assistant", "content": api_response_with_verification}) # Use combined response
         session.modified = True
 
-        return jsonify({"response": api_response})
+        return jsonify({"response": api_response_with_verification, "biography_outline": session['biography_outline']}) # Include outline in response
 
     except Exception as e:
         logging.error(f"OpenAI API Error: {e}", exc_info=True)
@@ -125,6 +155,8 @@ def load_checkpoint():
         # Restore the session - treat as a simple string.  NO JSON PARSING
         session['file_content'] = checkpoint_data #ADDED:  Load this first
         session['conversation'] = [{"role": "system", "content": walt_prompt}] # Removed checkpoint_data from conversation init
+        session['biography_outline'] = get_biography_outline() # Restore outline (Improvement #5)
+
 
         session.modified = True
 
@@ -134,9 +166,9 @@ def load_checkpoint():
         welcome_phrase = f"Welcome back, {user_name}! Hi, I am Walt. Let's continue your story."
 
         #Update the conversation history with the new state
-        session['conversation'].append({"role": "assistant", "content":welcome_phrase}) #Update initial phrase
+        session['conversation'].append({"role": "assistant", "content":welcome_phrase})
 
-        return jsonify({"response": welcome_phrase})
+        return jsonify({"response": welcome_phrase, "biography_outline": session['biography_outline']}) # Send outline
 
     except Exception as e:
         print(f"Error processing checkpoint: {e}")
@@ -182,7 +214,14 @@ def walt_process_checkpoint(): # RENAME function as well
             if message['role'] in ['user', 'assistant']: # Filter for user and assistant roles
                 conversation_text += f"{message['role']}: {message['content']}\n"
 
-        api_input_text = bio_prompt_content + "\n\n" + checkpoint_data_text + "\n\n--- CONVERSATION ---\n\n" + conversation_text # Combine for API
+        # Improvement #4: Tone aware biography creation
+        desired_tone = request.form.get('tone', 'default')
+        tone_instruction = ""
+        if desired_tone != 'default':
+            tone_instruction = f" Write the biography in a {desired_tone} tone."
+
+
+        api_input_text = bio_prompt_content + tone_instruction + "\n\n" + checkpoint_data_text + "\n\n--- CONVERSATION ---\n\n" + conversation_text # Combine for API
 
         client = openai.Client() # Call OpenAI API
         response = client.chat.completions.create(
@@ -228,3 +267,14 @@ def saveTextAsFileDownload(): # Keep separate function for actual download - UNC
     except Exception as e:
         logging.error(f"Error return and saving checkpoint from saveTextAsFileDownload: {e}", exc_info=True)
         return jsonify({"error": str(e)}), 500
+
+
+# Helper function to get biography outline (Improvement #5 - Data Driven Outline)
+def get_biography_outline():
+    return [
+        {"chapter": 1, "title": "Hook – A Defining Moment", "status": "TBD"},
+        {"chapter": 2, "title": "Origins – Early Life & Influences", "status": "TBD"},
+        {"chapter": 3, "title": "Call to Action – The First Big Life Decision", "status": "TBD"},
+        {"chapter": 4, "title": "Rising Conflict – Struggles & Growth", "status": "TBD"},
+        {"chapter": 5, "title": "The Climax – Defining Achievements", "status": "TBD"}
+    ]
