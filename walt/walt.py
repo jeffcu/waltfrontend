@@ -152,7 +152,7 @@ def load_checkpoint():
         return jsonify({"error": "No checkpoint data received"}), 400
 
     try:
-        # Load the Walt Prompt
+        # Load the Walt Prompt (still needed)
         try:
             with open('walt_prompt.txt', 'r', encoding='utf-8') as f:
                 walt_prompt = f.read()
@@ -163,11 +163,25 @@ def load_checkpoint():
             logging.error(f"General error in get_walt_prompt: {str(e)}")
             return jsonify({"error": str(e)}), 500
 
-        # Restore the session - treat as a simple string.  NO JSON PARSING
-        session['file_content'] = checkpoint_data
-        session['conversation'] = [{"role": "system", "content": walt_prompt}]
-        session['biography_outline'] = get_biography_outline()
+        # Split checkpoint data - NEW SECTION
+        parts = checkpoint_data.split("--- CONVERSATION HISTORY ---\n\n")
+        file_content_part = parts[0].strip() # Biography text part
+        conversation_history_text = parts[1].strip() if len(parts) > 1 else "" # Conversation part, if exists
 
+        session['file_content'] = file_content_part # Restore biography text
+
+        # Reconstruct conversation history - NEW SECTION
+        session['conversation'] = [{"role": "system", "content": walt_prompt}] # Start with system prompt
+        if conversation_history_text:
+            conversation_messages = []
+            for line in conversation_history_text.strip().split('\n'):
+                if line.strip(): # Ignore empty lines
+                    role, content = line.split(':', 1) # Split role: content
+                    conversation_messages.append({"role": role.strip(), "content": content.strip()})
+            session['conversation'].extend(conversation_messages) # Add parsed messages
+
+
+        session['biography_outline'] = get_biography_outline()
         session.modified = True
 
         # Try to extract user's name from conversation history (basic approach)
@@ -212,9 +226,15 @@ def create_checkpoint():
             logging.error(f"Error reading bio_prompt.txt: {e}")
             bio_prompt_content = "Error loading bio creator prompt."  # Fallback if file not read
 
-        combined_checkpoint_content = bio_prompt_content + "\n\n" + checkpoint_data_text  # Combined content
+        conversation_text = "" # NEW: Get conversation history
+        current_conversation = session.get('conversation', [])
+        for message in current_conversation:
+            if message['role'] in ['system', 'user', 'assistant']: # Include system role for full context
+                conversation_text += f"{message['role']}: {message['content']}\n"
 
-        logging.info(f"Checkpoint data being created: {combined_checkpoint_content[:100]}...")  # Log start of data
+        combined_checkpoint_content = bio_prompt_content + "\n\n" + checkpoint_data_text + "\n\n--- CONVERSATION HISTORY ---\n\n" + conversation_text # MODIFIED: Include conversation
+
+        logging.info(f"Checkpoint data being created (with conversation): {combined_checkpoint_content[:100]}...")  # Log start of data
 
         return jsonify({"checkpoint_data": combined_checkpoint_content})  # Return combined text
 
