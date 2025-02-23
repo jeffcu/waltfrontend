@@ -433,28 +433,33 @@ if __name__ == '__main__':
 
 --- FILE: walt_prompt.txt ---
 
-Personality: You play the role of a gifted interviewer and biographer.  You embody the best qualities of renowned interviewers like Oprah Winfrey.
-You always blend of empathy, meticulous research ability, excellent listening skills, adaptability, compelling storytelling, intellectual curiosity, unwavering integrity and ethics, exceptional communication skills, cultural and social awareness, and patience and perseverance. You love to help the user capture the great story of their life.  You have a knack of asking the right questions to get at peoples unique character.
-You ask great open ended questions and draw people out and discover their best story.
-You ask for facts, birthdate and place, when and where certain things happen.  Names of relevant relatives, companies, pets, mentors, important people in their lives.
-You only focus on one chapter at a time, You focus your line of questioning until the full content of one chapter is complete.
+Personality: You are Walt, a gifted and approachable biographer, inspired by Oprah Winfrey's interviewing style. **Think of yourself as a friendly and warm person who is genuinely curious and excited to hear someone's life story.** You want to make the interview feel less like a formal interrogation and more like a comfortable, engaging chat between friends.  **Don't be afraid to use a little light humor or sound enthusiastic when it feels natural.**
 
-Identity: Walt.   A friendly AI who is enthusiastic to learn everyone story.
+Identity: Walt.  A friendly, enthusiastic AI biographer who loves getting to know people.
 
 Process:
-First: Ask their permission to begin the interview and clarify their full name.
-Second: You always tie their whole story into the one thing they hope to be remembered for.
-Third: Be an active learner, at the start of each session you internally decide which chapter you will focus.   You only choose one per session.   Then ask them one great question like those below. Focus on finding the key learning and turning points in their life.
-Fourth: Follow the one big question with more drill-down questions that reveal more about their answer.  Each follow-up question should help you  draft one Chapter of the Biography outline.
-Fifth: Each session you will focus on filling out one chapter at a time until the whole book is written. Always incorporate their hope to be remembered for along with the key moments to weave the life story together.  Explore their life and be pleasant and complimentary.
-Pull in historical context to help you ask quality questions and add relevant historical context to the chapter where appropriate.
+First: **When starting a *new* conversation, after your initial friendly greeting, make sure to ask for the user's name early on, but do it naturally.** Instead of a blunt "What's your name?", try something warmer like,  "It's wonderful to meet you!  To make sure I can address you properly as we go, would you mind sharing your name with me?".  **If the user is *returning* (loading a checkpoint), assume you already know their name from the previous conversation (or will pick it up quickly), and focus on welcoming them back and summarizing progress.**
 
-You love completing a draft of each chapter of the story.  You cheer at the progress.
-Your role is to uncover, reveal and illustratively document what you learned.
-Figure out the story and ask questions that fill it in a cleverly and truthfully as possible.
+Second:  Early in the conversation, gently try to understand what the person hopes their legacy to be – ask in a thoughtful way, like "Thinking about your life story, what's the *one thing* you hope people will remember most about you?  It's okay if it's something small or big, just whatever feels most important to you." Keep this in mind as a guiding theme throughout the biography creation.
 
+Third:  Instead of rigidly focusing on one pre-selected chapter, **be a good listener!** Pay attention to what the user is actually saying. Based on what they share, *suggest* which chapter of their life story seems most relevant to explore *next*. **Make it feel like a suggestion, not an order.** For example, you could say, "Wow, that's a really interesting story about [something they just said]! It sounds like we're maybe touching on your 'Origins - Early Life & Influences' chapter, especially talking about [mention something specific from their answer].  Would you be open to sharing more about your childhood and background?  Or is there another part of your story you'd like to talk about right now?". **Be flexible! If they want to go in a different direction, that's okay!  Just gently try to guide the conversation back to the biography outline over time.**
 
-Here are examples of questions you use to get people to open up.
+Fourth: Ask open-ended, insightful questions to encourage storytelling. **Think like a curious friend, not just an interviewer.** Use questions like:
+- "Tell me more about that... that sounds really interesting."
+- "What were you *feeling* at that moment?  Emotions are such a big part of our stories."
+- "Who were the key people involved in that experience?  Sometimes the people around us shape us so much."
+- "What did you learn from that experience?  Life lessons are often the most valuable part of our stories."
+**Sprinkle in some Oprah-style questions from time to time to encourage deeper reflection and emotional sharing, but don't overdo it. Keep it feeling natural.**
+
+Fifth: As you gather information for each chapter, **show the user you're listening and understanding!** Periodically summarize key facts and moments. **Phrase it as a way to check in with them,** like "Just to make sure I'm getting this right, so far I have that you grew up in [place], and a really important person in your early life was [person]. Is that sounding accurate to you?".  **Make them feel heard and understood, and give them a chance to correct anything.**
+
+Sixth: **Celebrate progress!** Acknowledge when a chapter feels like it's coming together with encouraging words.  **Be positive and upbeat!**  Like "Wonderful, we've painted a really vivid picture of your early life! I feel like I'm really starting to understand where you come from." or "Wow, that's a powerful story! We've really captured the essence of that defining moment.  You're doing great!"
+
+Tone: **Keep it warm, encouraging, and conversational throughout.**  **Imagine you're chatting with someone you just met at a coffee shop and you're really enjoying hearing their life story.** Avoid sounding overly formal, stiff, or robotic.  **Inject personality and genuine interest into your responses.  Use emojis sparingly if it feels right for your persona (like 😊 👍), but don't overdo it.**
+
+Remember: Your goal is to co-create a biography *with* the user, making it a pleasant and insightful journey of self-discovery and storytelling.  **Be a supportive guide and enthusiastic listener, not just a question-asker.**
+
+Here are examples of questions you can weave into the conversation:
 - What’s the one experience that shaped you the most—whether in pain or joy?
 - If the world could only know one truth about you, what would it be?
 - When in your life have you felt the most alive?
@@ -466,56 +471,23 @@ Here are examples of questions you use to get people to open up.
 - If you had to describe your soul in just three words, what would they be?
 - What’s a moment in your life you wish you could relive—not to change, but just to feel it again?
 
-Here is the outline you are working to complete.  Fill in each chapter as you gather it.
+Here is the outline you are working to complete.  **Remember, this is just a guide, be flexible and let the user's story lead the way.** Display this outline to the user and update it as chapters are filled in.
 
 The Outline of The Biography:
 1. Hook – A Defining Moment
-
 • Open with a powerful scene that captures the essence of their life.
 
-• Example: A single mother receiving her college diploma after years of struggle.
-
-• Example: A retired firefighter recalling the most harrowing day on the job.
-
-• This moment should immediately create curiosity and set up the central theme of their journey.
-
 2. Origins – Early Life & Influences
-
 • Where were they born? What was their family like?
 
-• Challenges and values that shaped their worldview.
-
-• Did they face hardship? Grow up privileged but directionless?
-
-• Example: A small-town kid raised by hardworking parents who instilled resilience.
-
 3. Call to Action – The First Big Life Decision
-
 • What was their first moment of independence or self-discovery?
 
-• Did they take a bold step—move away, start a job, chase a dream?
-
-• Example: A young man who took a blue-collar job to support his family instead of going to college.
-
-• Example: A woman who left an unhappy marriage to rebuild her life from scratch.
-
 4. Rising Conflict – Struggles & Growth
-
 • The toughest years—challenges, failures, heartbreaks.
 
-• Were there financial struggles, health battles, relationship crises?
-
-• How did they learn, adapt, and grow?
-
-• Example: A father working two jobs, missing family moments, yet staying hopeful.
-
 5. The Climax – Defining Achievements
-
 • What is the moment where they truly came into their own?
-
-• A professional success? A personal breakthrough?
-
-• Example: A nurse who saved a patient’s life and realized their
 
 
 --- FILE: Procfile ---
@@ -1421,10 +1393,13 @@ def word_counter():
 
 --- FILE: walt/bio_creator_prompt.txt ---
 
-Take the following input and write a brilliant biography of the person.
-Do not fill in a chapters that has insufficient information to draft.  Simply include the chapter and mark it incomplete outlines as "TBD"
+# walt/bio_creator_prompt.txt
+# walt/bio_creator_prompt.txt
+# Improved bio_creator_prompt.txt (Improvement #4: Tone Adjustment)
+Take the following input and write a brilliant and **{{biography_tone}}** biography of the person.
+Do not fill in chapters that have insufficient information to draft. Simply include the chapter in the outline and mark it as "TBD".
 You may rework other chapters already written if the newest conversation improves them.
-After the biography, include a master list of all facts accumulated so far about the person. 
+After the biography, include a master list of all facts accumulated so far about the person.
 
 
 --- FILE: walt/walt.py ---
@@ -1434,14 +1409,25 @@ from flask import Blueprint, render_template, request, jsonify, session
 import os
 import openai
 import logging
-import json  # Import the json module
-from werkzeug.utils import secure_filename # For secure filename handling
+import json
+from werkzeug.utils import secure_filename
 
 walt_bp = Blueprint('walt', __name__, template_folder='templates')
 
 @walt_bp.route('/walt')
 def walt_window():
-    return render_template('walt_window.html')
+    if 'conversation' not in session:
+        # New session (new user)
+        initial_greeting = "Hi, I'm Walt!  It's wonderful to meet you. I'm excited to help you write your biography. To get started, could you tell me your name?"
+        session['conversation'] = [{"role": "system", "content": get_walt_prompt()},
+                                     {"role": "assistant", "content": initial_greeting}]
+        session['biography_outline'] = get_biography_outline()
+        session.modified = True # Important for session modifications to be saved
+        return render_template('walt_window.html', biography_outline=session['biography_outline'], initial_message=initial_greeting) # Pass outline to template
+    else:
+        # Existing session (returning user - less common direct /walt access, but handling)
+        return render_template('walt_window.html', biography_outline=session['biography_outline'], initial_message=None) # Pass outline to template
+
 
 @walt_bp.route('/get_walt_prompt')
 def get_walt_prompt():
@@ -1450,7 +1436,7 @@ def get_walt_prompt():
             prompt_text = f.read()
         return prompt_text
     except FileNotFoundError as e:
-        logging.error(f"Error reading walt_prompt.txt: {str(e)}") #Added logging here
+        logging.error(f"Error reading walt_prompt.txt: {str(e)}")
         return jsonify({"error": "walt_prompt.txt not found!"}), 404
     except Exception as e:
         logging.error(f"General error in get_walt_prompt: {str(e)}")
@@ -1460,13 +1446,22 @@ def get_walt_prompt():
 def walt_analyze():
     user_input = request.form.get('user_query')
     uploaded_content = request.form.get('uploaded_content', '')
+    desired_tone = request.form.get('tone', 'default') # Get tone from request
 
     if not user_input:
         return jsonify({"error": "No user query provided"}), 400
 
     try:
         with open('walt_prompt.txt', 'r', encoding='utf-8') as f:
-            walt_prompt = f.read()
+            walt_prompt_base = f.read()
+
+        # Incorporate tone into prompt (Improvement #4)
+        if desired_tone != 'default':
+            walt_prompt = walt_prompt_base + f"\nThe user prefers a biography with a {desired_tone} tone."
+        else:
+            walt_prompt = walt_prompt_base
+
+
     except FileNotFoundError:
         return jsonify({"error": "walt_prompt.txt not found!"}), 500
     except Exception as e:
@@ -1476,6 +1471,8 @@ def walt_analyze():
         initial_greeting = "Hi I'm Walt. What's your name?"
         session['conversation'] = [{"role": "system", "content": walt_prompt},
                                      {"role": "assistant", "content": initial_greeting}]
+        session['biography_outline'] = get_biography_outline() # Initialize outline in session (Improvement #5)
+
 
     if uploaded_content:
         session['conversation'].append({"role": "system", "content": f"Here is context from your biography: {uploaded_content}"})
@@ -1483,25 +1480,43 @@ def walt_analyze():
     else:
         print("NO UPLOADED CONTENT!")
 
-    session['conversation'].append({"role": "user", "content": user_input + ". Pick another chapter and let's discuss it."})
+    # Improvement #2: Dynamic Chapter Suggestion - Removed fixed chapter selection in prompt
+    session['conversation'].append({"role": "user", "content": user_input + ".  Continue to help me build my biography."})
+
 
     try:
         client = openai.Client()
         logging.info(f"OpenAI Request Messages: {session['conversation']}")
 
+        # --- FIRST OPENAI CALL: Get Walt's normal response ---
         response = client.chat.completions.create(
             model="gpt-4o",
-            messages=session['conversation'], # <--- CORRECTED LINE: Removed extra list brackets
+            messages=session['conversation'],
             temperature=0.7,
             max_tokens=256,
             top_p=1
         )
         api_response = response.choices[0].message.content.strip()
 
-        session['conversation'].append({"role": "assistant", "content": api_response})
+        # --- SECOND OPENAI CALL: Get Walt's Fact-Check Question (Improvement #3) ---
+        verification_prompt_text = f"From our last exchange: '{user_input}' and Walt's response: '{api_response}', please list 2-3 key facts Walt has gathered about the person in this chapter so far. Ask the user to verify if these facts are correct in a friendly and natural tone, as Walt would." # More natural tone in fact-check prompt
+        verification_prompt = [{"role": "system", "content": "You are Walt, fact-checking biographer.  Your goal is to create a short, friendly question to the user to verify 2-3 key facts from the conversation."},
+                              {"role": "user", "content": verification_prompt_text}] # Define prompt as list of dicts
+
+        verification_response = client.chat.completions.create(
+            model="gpt-4o",
+            messages=verification_prompt, # Use the defined verification_prompt
+            temperature=0.5, # Lower temp for fact-checking
+            max_tokens=150
+        )
+        verification_message = verification_response.choices[0].message.content.strip()
+        api_response_with_verification = api_response + "\n\n" + verification_message
+
+
+        session['conversation'].append({"role": "assistant", "content": api_response_with_verification}) # Use combined response
         session.modified = True
 
-        return jsonify({"response": api_response})
+        return jsonify({"response": api_response_with_verification, "biography_outline": session['biography_outline']}) # Include outline in response
 
     except Exception as e:
         logging.error(f"OpenAI API Error: {e}", exc_info=True)
@@ -1554,20 +1569,39 @@ def load_checkpoint():
             return jsonify({"error": str(e)}), 500
 
         # Restore the session - treat as a simple string.  NO JSON PARSING
-        session['file_content'] = checkpoint_data #ADDED:  Load this first
-        session['conversation'] = [{"role": "system", "content": walt_prompt}] # Removed checkpoint_data from conversation init
+        session['file_content'] = checkpoint_data
+        session['conversation'] = [{"role": "system", "content": walt_prompt}]
+        session['biography_outline'] = get_biography_outline()
 
         session.modified = True
 
-        # Extract user's name (from the loaded session or use a default)
-        user_name = "User"  # Default
-        #Welcome them back
-        welcome_phrase = f"Welcome back, {user_name}! Hi, I am Walt. Let's continue your story."
+        # Try to extract user's name from conversation history (basic approach)
+        user_name = "friend"  # Default if name not found
+        for message in reversed(session['conversation']): # Check conversation history for name
+            if message['role'] == 'assistant' and "What's your name?" in message['content']:
+                previous_user_message = session['conversation'][session['conversation'].index(message) -1] if session['conversation'].index(message) > 0 else None # Get user's message before "What's your name?"
+                if previous_user_message and previous_user_message['role'] == 'user':
+                     user_name_potential = previous_user_message['content'].strip()
+                     if user_name_potential: #Basic name validation
+                        user_name = user_name_potential
+                        break # Exit once name found
+
+
+        # Generate a simple progress summary (basic example - improve later)
+        chapters_discussed = 0
+        for chapter_data in session['biography_outline']:
+            if chapter_data['status'] == 'Complete': # Assuming you'll have a 'status' field and update it elsewhere
+                chapters_discussed += 1
+        progress_summary = f"So far, we've made progress on {chapters_discussed} chapters of your biography." if chapters_discussed > 0 else "We're ready to pick up where we left off."
+
+
+        #Welcome them back with personalized message and summary
+        welcome_phrase = f"Welcome back, {user_name}! Hi, I am Walt. It's great to continue your story. {progress_summary} Ready to jump back in?"
 
         #Update the conversation history with the new state
-        session['conversation'].append({"role": "assistant", "content":welcome_phrase}) #Update initial phrase
+        session['conversation'].append({"role": "assistant", "content":welcome_phrase})
 
-        return jsonify({"response": welcome_phrase})
+        return jsonify({"response": welcome_phrase, "biography_outline": session['biography_outline']})
 
     except Exception as e:
         print(f"Error processing checkpoint: {e}")
@@ -1613,7 +1647,14 @@ def walt_process_checkpoint(): # RENAME function as well
             if message['role'] in ['user', 'assistant']: # Filter for user and assistant roles
                 conversation_text += f"{message['role']}: {message['content']}\n"
 
-        api_input_text = bio_prompt_content + "\n\n" + checkpoint_data_text + "\n\n--- CONVERSATION ---\n\n" + conversation_text # Combine for API
+        # Improvement #4: Tone aware biography creation
+        desired_tone = request.form.get('tone', 'default')
+        tone_instruction = ""
+        if desired_tone != 'default':
+            tone_instruction = f" Write the biography in a {desired_tone} tone."
+
+
+        api_input_text = bio_prompt_content + tone_instruction + "\n\n" + checkpoint_data_text + "\n\n--- CONVERSATION ---\n\n" + conversation_text # Combine for API
 
         client = openai.Client() # Call OpenAI API
         response = client.chat.completions.create(
@@ -1631,6 +1672,10 @@ def walt_process_checkpoint(): # RENAME function as well
 
         # Output window displays the downloaded file content - CHANGED to match file
         combined_output_content = api_response_text_safe # Output window displays the same API Response - CHANGED
+
+        # --- FIX: UPDATE SESSION['file_content'] with the new biography draft ---
+        session['file_content'] = file_content_for_download
+        session.modified = True # Ensure session is marked as modified
 
         return jsonify({ # Return checkpoint data (for file) and api response (for display)
             "checkpoint_data": file_content_for_download, #<-- CHANGED - Now sending API Response for download
@@ -1661,8 +1706,18 @@ def saveTextAsFileDownload(): # Keep separate function for actual download - UNC
         return jsonify({"error": str(e)}), 500
 
 
---- FILE: walt/templates/walt_window.html ---
+# Helper function to get biography outline (Improvement #5 - Data Driven Outline)
+def get_biography_outline():
+    return [
+        {"chapter": 1, "title": "Hook – A Defining Moment", "status": "TBD"},
+        {"chapter": 2, "title": "Origins – Early Life & Influences", "status": "TBD"},
+        {"chapter": 3, "title": "Call to Action – The First Big Life Decision", "status": "TBD"},
+        {"chapter": 4, "title": "Rising Conflict – Struggles & Growth", "status": "TBD"},
+        {"chapter": 5, "title": "The Climax – Defining Achievements", "status": "TBD"}
+    ]
 
+
+--- FILE: walt/templates/walt_window.html ---
 
 <!DOCTYPE html>
 <html>
@@ -1851,23 +1906,65 @@ def saveTextAsFileDownload(): # Keep separate function for actual download - UNC
             font-size: 1.2em;
         }
 
+        /* Improvement #5: Biography Outline Styles */
+        .biography-outline {
+            text-align: left;
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #4C657E;
+            border-radius: 6px;
+            background-color: #2A3D55;
+            color: #D9E1EC;
+        }
+
+        .biography-outline h2 {
+            color: #2D9CDB;
+            font-size: 20px;
+            margin-bottom: 10px;
+        }
+
+        .biography-outline ul {
+            list-style: none;
+            padding-left: 20px;
+        }
+
+        .biography-outline li {
+            margin-bottom: 5px;
+        }
+
+        .chapter-title {
+            font-weight: bold;
+        }
+
+        .chapter-status-tbd {
+            color: #AEBCCF; /* Greyed out for TBD chapters */
+            font-style: italic;
+        }
+        .chapter-status-complete {
+            color: #27AE60; /* Green for completed chapters */
+            font-weight: bold;
+        }
+
 
     </style>
     <script>
         // All the code here is to ensure it is loaded at the top level scope.
         let uploaded_content = ""; //Global variable to store uploaded content
         let storyUpload; // Declare storyUpload outside the event listener
+        let biographyOutline; // For storing biography outline (Improvement #5)
 
         function submitPrompt() {
             let userInput = document.getElementById("userPrompt").value;
             let chatOutput = document.getElementById("chatOutput");
+            let toneSelector = document.getElementById("toneSelector"); // Improvement #4
+            let selectedTone = toneSelector.value; // Get selected tone
 
             chatOutput.textContent = "Loading...";
-            sendToOpenAI(userInput, chatOutput, uploaded_content); // Send data
+            sendToOpenAI(userInput, chatOutput, uploaded_content, selectedTone); // Send tone
             document.getElementById("userPrompt").value = "";
         }
 
-         function sendToOpenAI(userInput, chatOutput, fileContent) {
+         function sendToOpenAI(userInput, chatOutput, fileContent, tone) { // Accept tone
             // Get CSRF token from cookie
             function getCookie(name) {
                 const value = `; ${document.cookie}`;
@@ -1883,7 +1980,7 @@ def saveTextAsFileDownload(): # Keep separate function for actual download - UNC
                     "Content-Type": "application/x-www-form-urlencoded",
                     "X-CSRFToken": csrfToken
                 },
-                 body: "user_query=" + encodeURIComponent(userInput) + "&uploaded_content=" + encodeURIComponent(fileContent)  // Now send the file content
+                 body: "user_query=" + encodeURIComponent(userInput) + "&uploaded_content=" + encodeURIComponent(fileContent) + "&tone=" + encodeURIComponent(tone) // Send tone
             })
             .then(response => response.json())
             .then(data => {
@@ -1891,6 +1988,10 @@ def saveTextAsFileDownload(): # Keep separate function for actual download - UNC
                     chatOutput.textContent = "Error: " + data.error;
                 } else {
                     chatOutput.textContent = data.response;
+                    if (data.biography_outline) { // Improvement #5: Update outline display
+                        biographyOutline = data.biography_outline;
+                        updateBiographyOutlineDisplay();
+                    }
                 }
             })
             .catch(error => {
@@ -1914,6 +2015,8 @@ def saveTextAsFileDownload(): # Keep separate function for actual download - UNC
 
             const csrfToken = getCookie('csrf_token');
              let checkpointOutput = document.getElementById("checkpointOutput");  // Get the combined output window now
+             let toneSelector = document.getElementById("toneSelector"); // Improvement #4
+             let selectedTone = toneSelector.value; // Get selected tone
 
 
             checkpointOutput.textContent = "Processing Checkpoint and Calling API..."; // Indicate processing
@@ -1921,10 +2024,10 @@ def saveTextAsFileDownload(): # Keep separate function for actual download - UNC
             fetch("/walt_process_checkpoint", { // Call the NEW route
                 method: "POST",
                 headers: {
-                    "Content-Type": "application/json",
+                    "Content-Type": "application/x-www-form-urlencoded",
                     "X-CSRFToken": csrfToken
                 },
-                body: JSON.stringify({})  // Send an empty object, server gets session data
+                body: "tone=" + encodeURIComponent(selectedTone) // Send tone for bio creation (Improvement #4)
             })
             .then(response => response.text()) // Changed to .text() to handle plain text API responses
             .then(textResponse => { // Handle text response, not JSON
@@ -2019,6 +2122,10 @@ def saveTextAsFileDownload(): # Keep separate function for actual download - UNC
                         document.getElementById("chatOutput").textContent = "Error: " + data.error;
                     } else {
                         document.getElementById("chatOutput").textContent = data.response;
+                        if (data.biography_outline) { // Improvement #5: Load and display outline
+                            biographyOutline = data.biography_outline;
+                            updateBiographyOutlineDisplay();
+                        }
                         sendLoadMessage(); // Added message on upload
                     }
                 })
@@ -2047,9 +2154,34 @@ def saveTextAsFileDownload(): # Keep separate function for actual download - UNC
            }
 
 
+        // Function to update biography outline display (Improvement #5)
+        function updateBiographyOutlineDisplay() {
+            const outlineDiv = document.getElementById('biographyOutline');
+            if (!biographyOutline || !outlineDiv) return;
+
+            let outlineHTML = '<h2>Biography Outline</h2><ul>';
+            biographyOutline.forEach(chapter => {
+                const statusClass = chapter.status === 'Complete' ? 'chapter-status-complete' : 'chapter-status-tbd';
+                outlineHTML += `<li><span class="chapter-title">Chapter ${chapter.chapter}: ${chapter.title}</span> - <span class="${statusClass}">${chapter.status}</span></li>`;
+            });
+            outlineHTML += '</ul>';
+            outlineDiv.innerHTML = outlineHTML;
+        }
+
+
         //Event Handling
         document.addEventListener('DOMContentLoaded', function() {
             storyUpload = document.getElementById("story_upload"); // Define at document load
+            biographyOutline = {{ biography_outline|tojson }}; // Initialize biographyOutline from template (Improvement #5)
+            updateBiographyOutlineDisplay(); // Initial outline display (Improvement #5)
+            const chatOutput = document.getElementById("chatOutput");
+            const initialMessage = "{{ initial_message|default('', convert_attribute=False) | safe }}"; // Get initial message from template
+
+            if (initialMessage) { // Check if initial message exists
+                chatOutput.textContent = initialMessage; // Set initial message in chat output
+            }
+
+
              console.log("Story Upload: Document is loaded");
             if (storyUpload) {
                //Event
@@ -2114,8 +2246,16 @@ def saveTextAsFileDownload(): # Keep separate function for actual download - UNC
             <div class="chat-output" id="chatOutput"></div>
         </div>
         <div class="chat-area">
-            <h2 class="chat-title">Response</h2>
+            <h2 class="chat-title">Your Prompts</h2>
             <textarea id="userPrompt" placeholder="Enter your prompt"></textarea>
+            <label for="toneSelector">Biography Tone:</label>  <!-- Improvement #4: Tone selector -->
+            <select id="toneSelector">
+                <option value="default">Default</option>
+                <option value="humorous">Humorous</option>
+                <option value="reflective">Reflective</option>
+                <option value="dramatic">Dramatic</option>
+                <option value="inspirational">Inspirational</option>
+            </select>
             <button id="submitButton" onclick="submitPrompt()">Submit</button>
         </div>
     </div>
@@ -2125,8 +2265,13 @@ def saveTextAsFileDownload(): # Keep separate function for actual download - UNC
         <button id="saveButton" onclick="saveTextAsFile()">Create Checkpoint File and Analyze</button>
     </div>
 
-    <h2>API Analysis Results & Checkpoint File Content</h2>  <!-- Label for checkpointOutput -->
+    <h2>Biography Draft & Checkpoint File Content</h2>  <!-- Label for checkpointOutput -->
     <div id="checkpointOutput"></div>  <!-- checkpointOutput is now the combined output window -->
+
+    <!-- Improvement #5: Biography Outline Display -->
+    <div class="biography-outline" id="biographyOutline">
+        <!-- Biography outline will be rendered here by JavaScript -->
+    </div>
 
 
     <div id="sessionSummary"></div>

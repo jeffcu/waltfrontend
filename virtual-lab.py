@@ -1,3 +1,4 @@
+
 import os
 from flask import Flask, request, render_template, send_file, jsonify
 from dotenv import load_dotenv
@@ -270,22 +271,6 @@ def jeffsart_image(filename):
         return render_template('jeffsart_image.html', image_path=image_path)
     else:
         abort(404)
-
-# New route to display Walt
-@app.route('/walt', methods=['GET', 'POST'])
-def walt():
-    if request.method == 'POST':
-            if request.files:
-                 f = request.files['story_upload']
-                 file_content = f.read().decode("utf-8")
-                 session['file_content'] = file_content
-                 session.modified = True
-            else:
-                 #It's called with no information
-                  pass
-            return render_template('walt_window.html')
-    else:
-       return render_template('walt_window.html')
 
 # Register the walt blueprint
 app.register_blueprint(walt_bp)
