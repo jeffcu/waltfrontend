@@ -1,3 +1,4 @@
+
 # walt/walt.py
 from flask import Blueprint, render_template, request, jsonify, session
 import os
@@ -42,7 +43,7 @@ def walt_analyze():
     uploaded_content = request.form.get('uploaded_content', '')
     desired_tone = request.form.get('tone', 'default') # Get tone from request
 
-    if not user_input:
+    if not user_query:
         return jsonify({"error": "No user query provided"}), 400
 
     try:
@@ -92,16 +93,16 @@ def walt_analyze():
         )
         api_response = response.choices[0].message.content.strip()
 
-        # --- SECOND OPENAI CALL: Get Walt's Fact-Check Question (Improvement #3) ---
-        verification_prompt_text = f"From our last exchange: '{user_input}' and Walt's response: '{api_response}', please list 2-3 key facts Walt has gathered about the person in this chapter so far. Ask the user to verify if these facts are correct in a friendly and natural tone, as Walt would." # More natural tone in fact-check prompt
-        verification_prompt = [{"role": "system", "content": "You are Walt, fact-checking biographer.  Your goal is to create a short, friendly question to the user to verify 2-3 key facts from the conversation."},
+        # --- SECOND OPENAI CALL: Get Walt's Fact-Check Question (Improved version) ---
+        verification_prompt_text = f"From our last exchange: '{user_input}' and Walt's response: '{api_response}', suggest 1-2 very natural, brief follow-up questions Walt might ask to clarify details or get more specific information about what the person just said.  Think of questions a friendly biographer would ask in a casual conversation, like 'Where did that happen?' or 'What year was that?' Keep the tone friendly and natural, like Walt." # More natural tone in fact-check prompt
+        verification_prompt = [{"role": "system", "content": "You are Walt, a friendly biographer focused on getting accurate details. Your goal is to ask natural, short follow-up questions - think 'where', 'when', 'who' - to clarify the user's story."}, # Improved system prompt for natural questions
                               {"role": "user", "content": verification_prompt_text}] # Define prompt as list of dicts
 
         verification_response = client.chat.completions.create(
             model="gpt-4o",
             messages=verification_prompt, # Use the defined verification_prompt
             temperature=0.5, # Lower temp for fact-checking
-            max_tokens=150
+            max_tokens=100 # Reduced max tokens for brevity
         )
         verification_message = verification_response.choices[0].message.content.strip()
         api_response_with_verification = api_response + "\n\n" + verification_message
@@ -261,19 +262,19 @@ def walt_process_checkpoint(): # RENAME function as well
 
         api_response_text_safe = api_response_text.replace("<", "<").replace(">", ">") # Escape HTML
 
-        # File content for download is now set to the API biography draft - CHANGED
-        file_content_for_download = api_response_text_safe # File content for download is NOW API Response - CHANGED
+        # File content for download - **APPEND instead of OVERWRITE**
+        file_content_for_download = checkpoint_data_text + "\n\n" + api_response_text_safe # Append API response to existing content
 
-        # Output window displays the downloaded file content - CHANGED to match file
-        combined_output_content = api_response_text_safe # Output window displays the same API Response - CHANGED
+        # Output window displays the *combined* content (existing + new response)
+        combined_output_content = file_content_for_download # Display combined content
 
-        # --- FIX: UPDATE SESSION['file_content'] with the new biography draft ---
+        # --- FIX: UPDATE SESSION['file_content'] with the *combined* content ---
         session['file_content'] = file_content_for_download
         session.modified = True # Ensure session is marked as modified
 
         return jsonify({ # Return checkpoint data (for file) and api response (for display)
-            "checkpoint_data": file_content_for_download, #<-- CHANGED - Now sending API Response for download
-            "api_response": combined_output_content # Return API Response for display - CHANGED
+            "checkpoint_data": file_content_for_download, #<-- Now sending COMBINED content for download
+            "api_response": combined_output_content # Return COMBINED content for display
         })
 
 
