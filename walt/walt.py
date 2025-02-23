@@ -17,10 +17,10 @@ def walt_window():
                                      {"role": "assistant", "content": initial_greeting}]
         session['biography_outline'] = get_biography_outline()
         session.modified = True # Important for session modifications to be saved
-        return render_template('walt_window.html', biography_outline=get_biography_outline(), initial_message=initial_greeting) # Pass initial message
+        return render_template('walt_window.html', biography_outline=session['biography_outline'], initial_message=initial_greeting) # Pass outline to template
     else:
         # Existing session (returning user - less common direct /walt access, but handling)
-        return render_template('walt_window.html', biography_outline=get_biography_outline(), initial_message=None) # No initial message needed
+        return render_template('walt_window.html', biography_outline=session['biography_outline'], initial_message=None) # Pass outline to template
 
 
 @walt_bp.route('/get_walt_prompt')
