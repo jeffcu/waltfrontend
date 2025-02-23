@@ -1,4 +1,3 @@
-
 Take the following input and write a brilliant and **{{biography_tone}}** biography of the person.
 Do not fill in chapters that have insufficient information to draft. Simply include the chapter in the outline and mark it as "TBD".
 You may rework other chapters already written if the newest conversation improves them.
