@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html>
 <head>
@@ -113,7 +112,8 @@
             flex: 1;
             box-sizing: border-box;
             font-size: 16pt; /* Font size set to 16pt */
-           background-color: #3d597a; /* Light blue */
+            background-color: #3d597a; /* Light blue */
+            overflow-y: auto; /* Enable vertical scrolling */
             color: #D9E1EC;
         }
 
@@ -527,15 +527,15 @@
         </div>
         <div class="chat-area">
             <h2 class="chat-title">Your Prompts</h2>
-            <textarea id="userPrompt" placeholder="Enter your prompt"></textarea>
+            <textarea id="userPrompt" placeholder="Enter your prompt" rows="13"></textarea>
             <label for="toneSelector">Biography Tone:</label>  <!-- Improvement #4: Tone selector -->
-            <select id="toneSelector">
-                <option value="default">Default</option>
-                <option value="humorous">Humorous</option>
-                <option value="reflective">Reflective</option>
-                <option value="dramatic">Dramatic</option>
-                <option value="inspirational">Inspirational</option>
-            </select>
+-           <select id="toneSelector">
+-               <option value="default">Default</option>
+-               <option value="humorous">Humorous</option>
+-               <option value="reflective">Reflective</option>
+-               <option value="dramatic">Dramatic</option>
+-               <option value="inspirational">Inspirational</option>
+-           </select>
             <button id="submitButton" onclick="submitPrompt()">Submit</button>
         </div>
     </div>
