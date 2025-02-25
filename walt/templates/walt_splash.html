@@ -64,13 +64,27 @@
             margin: 0; /* Remove default margins */
         }
 
+        .splash-tagline {
+            font-style: italic;
+            color: #D9E1EC;
+            font-size: 1.4em; /* Adjust font size as needed */
+            margin-bottom: 15px; /* Space below tagline */
+        }
+
+        .splash-get-started {
+            color: #AEBCCF;
+            font-size: 1em; /* Smaller font size for "Get Started" */
+            margin-bottom: 10px; /* Space below "Get Started" */
+        }
+
+
         .splash-buttons {
             display: flex;
             flex-direction: column;
             gap: 15px;
             width: 80%; /* Buttons width relative to right container */
             max-width: 400px; /* Max width for buttons */
-            margin-top: 20px; /* Space above buttons */
+            margin-top: 10px; /* Space above buttons - reduced slightly */
         }
 
         .splash-button {
@@ -111,6 +125,9 @@
              }
             h1 {
                 font-size: 2em; /* Smaller title on mobile */
+            }
+            .splash-tagline {
+                font-size: 1.2em; /* Smaller tagline on mobile */
             }
              .splash-buttons {
                 width: 95%; /* Wider buttons on mobile */
@@ -189,6 +206,7 @@
             <h1>Walt, the AI Biographer</h1>
         </div>
         <div class="splash-right">
+            <p class="splash-tagline">I want to write your unique story!</p> <p class="splash-get-started">Get Started</p>
             <div class="splash-buttons">
                 <button class="splash-button" onclick="beginNewBiography()">Begin New Biography</button>
                 <button class="splash-button" onclick="loadCheckpointFile()">Load Your Checkpoint file</button>
