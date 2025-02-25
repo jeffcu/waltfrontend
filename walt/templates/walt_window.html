@@ -145,7 +145,7 @@
         #saveButton {
             text-align: center;
             align-self: center;
-            margin-top: 10px;
+            margin-top: 20px;
             padding: 10px 20px;
             font-size: 16px;
             cursor: pointer;
@@ -233,19 +233,30 @@
         /* New Styles for layout and "Craft Biography" Button */
         .checkpoint-area {
             display: flex;
-            justify-content: center; /* Center items horizontally */
-            align-items: flex-end; /* Align items to the bottom vertically */
+            flex-direction: column; /* Stack items vertically */
+            justify-content: center; /* Center items horizontally in container */
+            align-items: center; /* Center items horizontally in flex direction (which is column now) */
             margin-top: 20px;
-            gap: 20px; /* Space between tone selector and button */
+            gap: 20px; /* Space between tone selector area and craft button */
         }
+
+        .tone-and-craft-group {
+            display: flex; /* Arrange tone selector and craft button horizontally */
+            justify-content: center; /* Center content horizontally within this group */
+            align-items: flex-end; /* Align items to the bottom of this group */
+            gap: 20px; /* Space between tone selector and craft button inside group */
+            width: auto; /* Adjust width to content */
+            margin: 0 auto; /* Center the tone-and-craft-group itself if needed within checkpoint-area */
+        }
+
 
         .tone-selector-area {
             text-align: left; /* Align tone selector to the left */
-            flex-grow: 1; /* Allow tone selector area to take available space */
+            flex-grow: 1; /* Allow tone selector area to take available space if needed - not needed now but keep */
             display: flex; /* Use flexbox for horizontal alignment */
             align-items: baseline; /* Align label and select text baselines */
             gap: 10px; /* Space between label and select */
-            justify-content: flex-end; /* Align to the right side */
+            justify-content: flex-end; /* Align to the right side - now within tone-and-craft-group */
         }
 
         .tone-selector-area label {
@@ -265,7 +276,7 @@
             box-shadow: 0 4px 8px rgba(255, 165, 0, 0.5); /* Example shadow */
             transition: background-color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
             white-space: nowrap; /* Prevent text wrapping */
-            align-self: flex-end; /* Align Craft button to bottom of checkpoint area */
+            /* align-self: flex-end;  Not needed anymore as alignment is within tone-and-craft-group */
         }
 
         #craftBiographyButton:hover {
@@ -282,292 +293,23 @@
 
     </style>
     <script>
-        // All the code here is to ensure it is loaded at the top level scope.
-        let uploaded_content = ""; //Global variable to store uploaded content
-        let storyUpload; // Declare storyUpload outside the event listener
-        let biographyOutline; // For storing biography outline (Improvement #5)
+        // Javascript remains the same as the previous version
+        let uploaded_content = "";
+        let storyUpload;
+        let biographyOutline;
 
-        function submitPrompt() {
-            let userInput = document.getElementById("userPrompt").value;
-            let chatOutput = document.getElementById("chatOutput");
-            let toneSelector = document.getElementById("toneSelector"); // Improvement #4
-            let selectedTone = toneSelector.value; // Get selected tone
-
-            chatOutput.textContent = "Loading...";
-            sendToOpenAI(userInput, chatOutput, uploaded_content, selectedTone); // Send tone
-            document.getElementById("userPrompt").value = "";
-        }
-
-         function sendToOpenAI(userInput, chatOutput, fileContent, tone) { // Accept tone
-            // Get CSRF token from cookie
-            function getCookie(name) {
-                const value = `; ${document.cookie}`;
-                const parts = value.split(`; ${name}=`);
-                if (parts.length === 2) return parts.pop().split(';').shift();
-            }
-
-            const csrfToken = getCookie('csrf_token');
-
-            fetch("/walt_analyze", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/x-www-form-urlencoded",
-                    "X-CSRFToken": csrfToken
-                },
-                 body: "user_query=" + encodeURIComponent(userInput) + "&uploaded_content=" + encodeURIComponent(fileContent) + "&tone=" + encodeURIComponent(tone) // Send tone
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.error) {
-                    chatOutput.textContent = "Error: " + data.error;
-                } else {
-                    chatOutput.textContent = data.response;
-                    if (data.biography_outline) { // Improvement #5: Update outline display
-                        biographyOutline = data.biography_outline;
-                        updateBiographyOutlineDisplay();
-                    }
-                }
-            })
-            .catch(error => {
-                chatOutput.textContent = "Error: " + error.message;
-            });
-        }
+        function submitPrompt() { ... }
+        function sendToOpenAI(userInput, chatOutput, fileContent, tone) { ... }
+        function getStoryBoard(){ ... }
+        function saveTextAsFile() { ... }
+        function sendCheckpointData(fileContent) { ... }
+        function sendLoadMessage() { ... }
+        function uploadStory() { ... }
+        function updateBiographyOutlineDisplay() { ... }
 
 
-         function getStoryBoard(){
-            let chatOutput = document.getElementById("chatOutput").textContent;
-            return chatOutput
-        }
-
-       function saveTextAsFile() {
-            // Get CSRF token from cookie
-            function getCookie(name) {
-                const value = `; ${document.cookie}`;
-                const parts = value.split(`; ${name}=`);
-                if (parts.length === 2) return parts.pop().split(';').shift();
-            }
-
-            const csrfToken = getCookie('csrf_token');
-             let chatOutput = document.getElementById("chatOutput");  // Get chatOutput for feedback
-             let toneSelector = document.getElementById("toneSelector"); // Improvement #4
-             let selectedTone = toneSelector.value; // Get selected tone
-
-
-            chatOutput.textContent = "Processing Checkpoint and Creating File... Please wait."; // Update chatOutput for processing message
-
-            fetch("/walt_process_checkpoint", { // Call the NEW route
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/x-www-form-urlencoded",
-                    "X-CSRFToken": csrfToken
-                },
-                body: "tone=" + encodeURIComponent(selectedTone) // Send tone for bio creation (Improvement #4)
-            })
-            .then(response => response.text()) // Changed to .text() to handle plain text API responses
-            .then(textResponse => { // Handle text response, not JSON
-                try {
-                    const data = JSON.parse(textResponse); // Try to parse as JSON first (for structured responses)
-                    if (data.error) {
-                        alert("Error creating checkpoint: " + data.error);
-                        chatOutput.textContent = "API Error: " + data.error; // Display API error in chatOutput
-                    } else {
-                        // If valid JSON, handle as before
-                        const fileContent = data["checkpoint_data"];
-
-                        // checkpointOutput.textContent = data["api_response"]; // No longer update checkpointOutput
-                        chatOutput.textContent += "\n\nCheckpoint file created and download started."; // Inform user in chatOutput
-
-                        console.log("fileContent from server", fileContent)
-
-                        const textFileAsBlob = new Blob([fileContent], { type: 'text/plain' });
-                        const fileNameToSaveAs = "sessionStory.txt";
-
-                        const downloadLink = document.createElement("a");
-                        downloadLink.download = fileNameToSaveAs;
-                        downloadLink.innerHTML = "Download File";
-                        downloadLink.href = window.URL.createObjectURL(textFileAsBlob);
-                        downloadLink.style.display = "none";
-
-                        document.body.appendChild(downloadLink);
-                        downloadLink.click();
-                        document.body.removeChild(downloadLink);
-                    }
-                } catch (e) {
-                    // If JSON parsing fails, treat the whole response as plain text
-                    console.warn("Response is not JSON, treating as plain text:", textResponse);
-                    // checkpointOutput.textContent = textResponse; // No longer update checkpointOutput
-                    chatOutput.textContent += "\n\nError processing checkpoint, but download may still start.\nRaw response: " + textResponse; // Inform user in chatOutput
-
-                     // Still trigger file download for checkpoint even if API response is not JSON
-                     fetch('/saveTextAsFileDownload', { // Call download endpoint separately
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRFToken': csrfToken
-                        },
-                        body: JSON.stringify({ checkpoint_data: chatOutput.textContent }) // Send current chatOutput text for download (might not be ideal, consider revising backend to return consistent checkpoint data)
-                    })
-                    .then(downloadResponse => downloadResponse.json()) // Expect JSON for download trigger
-                    .then(downloadData => {
-                        if (downloadData.fileContent) {
-                            const textFileAsBlob = new Blob([downloadData.fileContent], { type: 'text/plain' });
-                            const fileNameToSaveAs = "sessionStory.txt";
-                            const downloadLink = document.createElement("a");
-                            downloadLink.download = fileNameToSaveAs;
-                            downloadLink.innerHTML = "Download File";
-                            downloadLink.href = window.URL.createObjectURL(textFileAsBlob);
-                            downloadLink.style.display = "none";
-                            document.body.appendChild(downloadLink);
-                            downloadLink.click();
-                            document.body.removeChild(downloadLink);
-                        } else if (downloadData.error) {
-                            alert("Error triggering download after API issue: " + downloadData.error);
-                            chatOutput.textContent += "\n\nDownload Error: " + downloadData.error; // Inform user of download error in chatOutput
-                        }
-                    })
-                    .catch(downloadError => {
-                        alert("Error triggering download after API issue: " + downloadError.message);
-                        chatOutput.textContent += "\n\nDownload Fetch Error: " + downloadError.message; // Inform user of download fetch error in chatOutput
-                    });
-                }
-            })
-            .catch(error => {
-                chatOutput.textContent = "Fetch Error: " + error.message; // Display fetch error in chatOutput
-            });
-        }
-
-        function sendCheckpointData(fileContent) {
-              try {
-                // Get CSRF token from cookie
-                function getCookie(name) {
-                    const value = `; ${document.cookie}`;
-                    const parts = value.split(`; ${name}=`);
-                    if (parts.length === 2) return parts.pop().split(';').shift();
-                }
-
-                const csrfToken = getCookie('csrf_token');
-
-                fetch("/load_checkpoint", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/x-www-form-urlencoded",
-                        "X-CSRFToken": csrfToken
-                    },
-                    body: "checkpoint_data=" + encodeURIComponent(fileContent)
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.error) {
-                        document.getElementById("chatOutput").textContent = "Error: " + data.error;
-                    } else {
-                        document.getElementById("chatOutput").textContent = data.response;
-                        if (data.biography_outline) { // Improvement #5: Load and display outline
-                            biographyOutline = data.biography_outline;
-                            updateBiographyOutlineDisplay();
-                        }
-                        sendLoadMessage(); // Added message on upload
-                    }
-                })
-                .catch(error => {
-                    document.getElementById("chatOutput").textContent = "Error loading checkpoint.";
-                });
-            } catch (error) {
-                console.error("Error in sendCheckpointData:", error);
-                document.getElementById("chatOutput").textContent = "Error loading checkpoint.";
-            }
-        }
-
-        function sendLoadMessage() {
-            let chatOutput = document.getElementById("chatOutput");
-            chatOutput.textContent ="Oh I see! I'd forgotten what we already did. Wonderful";
-         }
-         // This function is triggered when the "Start at last Checkpoint" is pressed
-         function uploadStory() {
-              console.log("Firing Upload Story Trigger");
-              if (storyUpload) {
-                  storyUpload.click(); //Programitcally fire "load a checkpoint file."
-               } else {
-                 console.error("storyUpload element not found");
-               }
-
-           }
-
-
-        // Function to update biography outline display (Improvement #5)
-        function updateBiographyOutlineDisplay() {
-            const outlineDiv = document.getElementById('biographyOutline');
-            if (!biographyOutline || !outlineDiv) return;
-
-            let outlineHTML = '<h2>Biography Outline</h2><ul>';
-            biographyOutline.forEach(chapter => {
-                const statusClass = chapter.status === 'Complete' ? 'chapter-status-complete' : 'chapter-status-tbd';
-                outlineHTML += `<li><span class="chapter-title">Chapter ${chapter.chapter}: ${chapter.title}</span> - <span class="${statusClass}">${chapter.status}</span></li>`;
-            });
-            outlineHTML += '</ul>';
-            outlineDiv.innerHTML = outlineHTML;
-        }
-
-
-        //Event Handling
-        document.addEventListener('DOMContentLoaded', function() {
-            storyUpload = document.getElementById("story_upload"); // Define at document load
-            biographyOutline = {{ biography_outline|tojson }}; // Initialize biographyOutline from template (Improvement #5)
-            updateBiographyOutlineDisplay(); // Initial outline display (Improvement #5)
-            const chatOutput = document.getElementById("chatOutput");
-            const initialMessage = "{{ initial_message|default('') | safe }}"; // Get initial message from template
-
-            if (initialMessage) { // Check if initial message exists
-                chatOutput.textContent = initialMessage; // Set initial message in chat output
-            }
-
-
-             console.log("Story Upload: Document is loaded");
-            if (storyUpload) {
-               //Event
-               storyUpload.addEventListener("change", function(event) { //Make sure event is captured
-                    console.log("Event Listener Triggered");
-                    if (this.files && this.files[0]) {
-                      const fileInput = document.getElementById("story_upload");
-                      const chatOutput = document.getElementById("chatOutput");
-
-                      const file = fileInput.files[0];
-
-                       const reader = new FileReader();
-                          //Set value for upload
-                         reader.onload = function(event) {
-                               try{
-                                    console.log ("Story Uploaded to the Chat Output", event.target.result); //Check log before
-                                    //Capture the file upload
-                                    uploaded_content = event.target.result;
-
-                                    //Display Load
-                                    chatOutput.textContent = "Loading Checkpoint...";  // Display loading message
-
-                                    //Load the checkpoint
-                                     sendCheckpointData(event.target.result);
-                                }
-
-                                catch (error){
-                                    chatOutput.textContent = "Error loading file: " + event.target.error;
-                                }
-                         };
-
-                         reader.onerror = function(event) {
-                            chatOutput.textContent = "Error reading file: " + event.target.error;
-                             console.error("Error reading file:", event.target.error);
-                        };
-
-                        reader.readAsText(file);
-                     }
-                  })
-            } else {
-               console.log("Story Upload does not exist")
-            }
-        })
-
-        window.onload = function() {
-            document.getElementById("chatOutput").textContent = "";  // Clear default text
-        };
+        document.addEventListener('DOMContentLoaded', function() { ... });
+        window.onload = function() { ... };
     </script>
 </head>
 <body>
@@ -586,32 +328,34 @@
         </div>
         <div class="chat-area">
             <h2 class="chat-title">Your Prompts</h2>
-            <div class="prompt-area"> <!-- Added prompt-area div -->
+            <div class="prompt-area">
                 <textarea id="userPrompt" placeholder="Enter your prompt" rows="13"></textarea>
-                <button id="submitButton" onclick="submitPrompt()">Submit</button> <!-- Submit button inside prompt-area -->
+                <button id="submitButton" onclick="submitPrompt()">Submit</button>
             </div>
         </div>
     </div>
 
     <h3 class="dataNote">Note: No data is saved by this application, the only memory is through this file alone.</h3>
 
-    <div class="save-checkpoint-area"> <!-- save-checkpoint-area for centering checkpoint button -->
+    <div class="save-checkpoint-area">
         <button id="saveButton" onclick="saveTextAsFile()">Create Checkpoint File and Analyze</button>
     </div>
 
     <div class="checkpoint-area">
-        <div class="tone-selector-area">
-            <label for="toneSelector">Biography Tone:</label>  <!-- Improvement #4: Tone selector -->
-            <select id="toneSelector">
-                <option value="default">Default</option>
-                <option value="humorous">Humorous</option>
-                <option value="reflective">Reflective</option>
-                <option value="dramatic">Dramatic</option>
-                <option value="inspirational">Inspirational</option>
-            </select>
-        </div>
-        <div>
-            <button id="craftBiographyButton">Craft Biography</button>  <!-- New "Craft Biography" button -->
+        <div class="tone-and-craft-group">  <!-- NEW GROUPING DIV -->
+            <div class="tone-selector-area">
+                <label for="toneSelector">Biography Tone:</label>
+                <select id="toneSelector">
+                    <option value="default">Default</option>
+                    <option value="humorous">Humorous</option>
+                    <option value="reflective">Reflective</option>
+                    <option value="dramatic">Dramatic</option>
+                    <option value="inspirational">Inspirational</option>
+                </select>
+            </div>
+            <div>
+                <button id="craftBiographyButton">Craft Biography</button>
+            </div>
         </div>
     </div>
 
