@@ -1,5 +1,4 @@
-
-# walt/walt.py
+# file: walt/walt.py
 from flask import Blueprint, render_template, request, jsonify, session
 import os
 import openai
@@ -11,17 +10,19 @@ walt_bp = Blueprint('walt', __name__, template_folder='templates')
 
 @walt_bp.route('/walt')
 def walt_window():
-    if 'conversation' not in session:
-        # New session (new user)
-        initial_greeting = "Hi, I'm Walt!  It's wonderful to meet you. I'm excited to help you write your biography. To get started, could you tell me your name?"
-        session['conversation'] = [{"role": "system", "content": get_walt_prompt()},
-                                     {"role": "assistant", "content": initial_greeting}]
-        session['biography_outline'] = get_biography_outline()
-        session.modified = True  # Important for session modifications to be saved
-        return render_template('walt_window.html', biography_outline=session['biography_outline'], initial_message=initial_greeting)  # Pass outline to template
+    new_bio = request.args.get('new_bio') # Check for new_bio parameter
+
+    if 'conversation' not in session or new_bio == 'true': # Check for session OR new_bio parameter
+        if 'conversation' in session: # Clear old session if starting new bio
+            session.pop('conversation', None)
+            session.pop('biography_outline', None)
+            session.pop('file_content', None)
+
+        # Render splash screen if no session OR new bio requested
+        return render_template('walt_splash.html')
     else:
-        # Existing session (returning user - less common direct /walt access, but handling)
-        return render_template('walt_window.html', biography_outline=session['biography_outline'], initial_message=None)  # Pass outline to template
+        # Existing session (returning user) - proceed to main app
+        return render_template('walt_window.html', biography_outline=session['biography_outline'], initial_message=None)
 
 
 @walt_bp.route('/get_walt_prompt')

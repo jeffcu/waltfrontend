@@ -1,0 +1,129 @@
+<!-- file: walt/templates/walt_splash.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to Walt Biographer</title>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #1E2A38;
+            color: #E5E5E5;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        h1 {
+            color: #2D9CDB;
+            font-size: 3em; /* Large font size */
+            margin-bottom: 20px;
+        }
+
+        .splash-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            width: 300px; /* Adjust width as needed */
+            margin-top: 20px;
+        }
+
+        .splash-button {
+            padding: 15px 20px;
+            font-size: 1.2em;
+            cursor: pointer;
+            background-color: #27AE60;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            transition: background-color 0.3s ease;
+        }
+
+        .splash-button:hover {
+            background-color: #1F8A4C;
+        }
+
+        #story_upload {
+            display: none; /* Hide the file input initially */
+        }
+    </style>
+    <script>
+        function beginNewBiography() {
+            window.location.href = "/walt?new_bio=true"; // Redirect to /walt with a parameter
+        }
+
+        function loadCheckpointFile() {
+            document.getElementById('story_upload').click(); // Trigger file input
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const storyUpload = document.getElementById("story_upload");
+            if (storyUpload) {
+                storyUpload.addEventListener("change", function(event) {
+                    if (this.files && this.files[0]) {
+                        const file = this.files[0];
+                        const reader = new FileReader();
+
+                        reader.onload = function(event) {
+                            const fileContent = event.target.result;
+                            sendCheckpointData(fileContent); // Call existing function to load checkpoint
+                        };
+                        reader.onerror = function(event) {
+                            alert("Error reading file: " + event.target.error);
+                            console.error("Error reading file:", event.target.error);
+                        };
+                        reader.readAsText(file);
+                    }
+                });
+            }
+        });
+
+        function sendCheckpointData(fileContent) {
+            // Get CSRF token from cookie
+            function getCookie(name) {
+                const value = `; ${document.cookie}`;
+                const parts = value.split(`; ${name}=`);
+                if (parts.length === 2) return parts.pop().split(';').shift();
+            }
+
+            const csrfToken = getCookie('csrf_token');
+
+            fetch("/load_checkpoint", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    "X-CSRFToken": csrfToken
+                },
+                body: "checkpoint_data=" + encodeURIComponent(fileContent)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert("Error loading checkpoint: " + data.error);
+                } else {
+                    window.location.href = "/walt"; // Redirect to main app after loading checkpoint
+                }
+            })
+            .catch(error => {
+                alert("Error loading checkpoint.");
+            });
+        }
+
+
+    </script>
+</head>
+<body>
+    <h1>Welcome to Walt, the AI Biographer who loves to craft your story</h1>
+    <div class="splash-buttons">
+        <button class="splash-button" onclick="beginNewBiography()">Begin New Biography</button>
+        <button class="splash-button" onclick="loadCheckpointFile()">Load Your Checkpoint file</button>
+    </div>
+    <input type="file" id="story_upload" name="story_upload" accept=".txt, .walt">
+</body>
+</html>
