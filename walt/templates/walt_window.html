@@ -98,8 +98,12 @@
             flex-direction: column;
             box-sizing: border-box;
             padding: 10px;
-            min-height: 400px;  /* Added a min-height */
-            height:450px; /* Adjusted height to match output */
+        }
+
+        .prompt-area {
+            display: flex;
+            flex-direction: column;
+            height: 100%; /* Make sure prompt area takes full height */
         }
 
         textarea {
@@ -109,7 +113,7 @@
             border: 1px solid #4C657E;
             border-radius: 6px;
             resize: vertical;
-            flex: 1;
+            flex: 1; /* Textarea takes up remaining space */
             box-sizing: border-box;
             font-size: 16pt; /* Font size set to 16pt */
             background-color: #3d597a; /* Light blue */
@@ -127,7 +131,8 @@
             border-radius: 6px;
             width: 100%;
             box-sizing: border-box;
-            height: auto /* adjust height of area */; /* Let the content decide the height */
+            height: auto;
+            align-self: flex-end; /* Align Submit button to bottom */
 }
 
         h3.dataNote {
@@ -228,8 +233,8 @@
         /* New Styles for layout and "Craft Biography" Button */
         .checkpoint-area {
             display: flex;
-            justify-content: space-between; /* Distribute space between items */
-            align-items: center; /* Vertically align items in the center */
+            justify-content: center; /* Center items horizontally */
+            align-items: flex-end; /* Align items to the bottom vertically */
             margin-top: 20px;
             gap: 20px; /* Space between tone selector and button */
         }
@@ -237,6 +242,14 @@
         .tone-selector-area {
             text-align: left; /* Align tone selector to the left */
             flex-grow: 1; /* Allow tone selector area to take available space */
+            display: flex; /* Use flexbox for horizontal alignment */
+            align-items: baseline; /* Align label and select text baselines */
+            gap: 10px; /* Space between label and select */
+            justify-content: flex-end; /* Align to the right side */
+        }
+
+        .tone-selector-area label {
+            margin-bottom: 0; /* Remove default margin for label */
         }
 
 
@@ -252,12 +265,18 @@
             box-shadow: 0 4px 8px rgba(255, 165, 0, 0.5); /* Example shadow */
             transition: background-color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
             white-space: nowrap; /* Prevent text wrapping */
+            align-self: flex-end; /* Align Craft button to bottom of checkpoint area */
         }
 
         #craftBiographyButton:hover {
             background-color: #FF8C00; /* Darker orange on hover */
             transform: scale(1.05); /* Slight scale up on hover */
             box-shadow: 0 6px 12px rgba(255, 165, 0, 0.7); /* Enhanced shadow on hover */
+        }
+
+        .save-checkpoint-area {
+            text-align: center; /* Center the save checkpoint button */
+            margin-top: 20px; /* Add some space above the button */
         }
 
 
@@ -567,11 +586,18 @@
         </div>
         <div class="chat-area">
             <h2 class="chat-title">Your Prompts</h2>
-            <textarea id="userPrompt" placeholder="Enter your prompt" rows="13"></textarea>
+            <div class="prompt-area"> <!-- Added prompt-area div -->
+                <textarea id="userPrompt" placeholder="Enter your prompt" rows="13"></textarea>
+                <button id="submitButton" onclick="submitPrompt()">Submit</button> <!-- Submit button inside prompt-area -->
+            </div>
         </div>
     </div>
 
     <h3 class="dataNote">Note: No data is saved by this application, the only memory is through this file alone.</h3>
+
+    <div class="save-checkpoint-area"> <!-- save-checkpoint-area for centering checkpoint button -->
+        <button id="saveButton" onclick="saveTextAsFile()">Create Checkpoint File and Analyze</button>
+    </div>
 
     <div class="checkpoint-area">
         <div class="tone-selector-area">
@@ -584,13 +610,9 @@
                 <option value="inspirational">Inspirational</option>
             </select>
         </div>
-        <div style = "text-align:center">
-            <button id="saveButton" onclick="saveTextAsFile()">Create Checkpoint File and Analyze</button>
+        <div>
+            <button id="craftBiographyButton">Craft Biography</button>  <!-- New "Craft Biography" button -->
         </div>
-    </div>
-
-    <div style = "text-align:center; margin-top: 10px;">
-        <button id="craftBiographyButton">Craft Biography</button>  <!-- New "Craft Biography" button -->
     </div>
 
 
