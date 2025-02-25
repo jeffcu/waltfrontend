@@ -1,4 +1,3 @@
-
 # walt/walt.py
 from flask import Blueprint, render_template, request, jsonify, session
 import os
@@ -16,12 +15,12 @@ def walt_window():
         initial_greeting = "Hi, I'm Walt!  It's wonderful to meet you. I'm excited to help you write your biography. To get started, could you tell me your name?"
         session['conversation'] = [{"role": "system", "content": get_walt_prompt()},
                                      {"role": "assistant", "content": initial_greeting}]
-        session['biography_outline'] = get_biography_outline()
+        #session['biography_outline'] = get_biography_outline() #REMOVED
         session.modified = True  # Important for session modifications to be saved
-        return render_template('walt_window.html', biography_outline=session['biography_outline'], initial_message=initial_greeting)  # Pass outline to template
+        return render_template('walt_window.html', initial_message=initial_greeting)  # REMOVED biography_outline
     else:
         # Existing session (returning user - less common direct /walt access, but handling)
-        return render_template('walt_window.html', biography_outline=session['biography_outline'], initial_message=None)  # Pass outline to template
+        return render_template('walt_window.html', initial_message=None)  # REMOVED biography_outline
 
 
 @walt_bp.route('/get_walt_prompt')
@@ -66,7 +65,7 @@ def walt_analyze():
         initial_greeting = "Hi I'm Walt. What's your name?"
         session['conversation'] = [{"role": "system", "content": walt_prompt},
                                      {"role": "assistant", "content": initial_greeting}]
-        session['biography_outline'] = get_biography_outline()  # Initialize outline in session (Improvement #5)
+        #session['biography_outline'] = get_biography_outline() # REMOVED
 
 
     if uploaded_content:
@@ -111,7 +110,7 @@ def walt_analyze():
         session['conversation'].append({"role": "assistant", "content": api_response_with_verification})  # Use combined response
         session.modified = True
 
-        return jsonify({"response": api_response_with_verification, "biography_outline": session['biography_outline']})  # Include outline in response
+        return jsonify({"response": api_response_with_verification})  # REMOVED outline from response
 
     except Exception as e:
         logging.error(f"OpenAI API Error: {e}", exc_info=True)
@@ -181,7 +180,7 @@ def load_checkpoint():
             session['conversation'].extend(conversation_messages) # Add parsed messages
 
 
-        session['biography_outline'] = get_biography_outline()
+        #session['biography_outline'] = get_biography_outline() #REMOVED
         session.modified = True
 
         # Try to extract user's name from conversation history (basic approach)
@@ -196,11 +195,12 @@ def load_checkpoint():
                         break  # Exit once name found
 
         # Generate a simple progress summary (basic example - improve later)
-        chapters_discussed = 0
-        for chapter_data in session['biography_outline']:
-            if chapter_data['status'] == 'Complete':  # Assuming you'll have a 'status' field and update it elsewhere
-                chapters_discussed += 1
-        progress_summary = f"So far, we've made progress on {chapters_discussed} chapters of your biography." if chapters_discussed > 0 else "We're ready to pick up where we left off."
+        #chapters_discussed = 0 # REMOVED
+        #for chapter_data in session['biography_outline']: # REMOVED
+        #    if chapter_data['status'] == 'Complete':  # Assuming you'll have a 'status' field and update it elsewhere # REMOVED
+        #        chapters_discussed += 1 # REMOVED
+        #progress_summary = f"So far, we've made progress on {chapters_discussed} chapters of your biography." if chapters_discussed > 0 else "We're ready to pick up where we left off." # REMOVED
+        progress_summary = "We're ready to pick up where we left off." # REMOVED
 
         # Welcome them back with personalized message and summary
         welcome_phrase = f"Welcome back, {user_name}! Hi, I am Walt. It's great to continue your story. {progress_summary} Ready to jump back in?"
@@ -208,7 +208,7 @@ def load_checkpoint():
         # Update the conversation history with the new state
         session['conversation'].append({"role": "assistant", "content": welcome_phrase})
 
-        return jsonify({"response": welcome_phrase, "biography_outline": session['biography_outline']})
+        return jsonify({"response": welcome_phrase}) # REMOVED outline
 
     except Exception as e:
         print(f"Error processing checkpoint: {e}")
@@ -302,27 +302,4 @@ def walt_process_checkpoint():  # RENAME function as well
 @walt_bp.route('/saveTextAsFileDownload', methods=['POST'])  # Keep old route for file download part only
 def saveTextAsFileDownload():  # Keep separate function for actual download - UNCHANGED
     try:
-        data = request.get_json()
-        checkpoint_data = data.get('checkpoint_data')  # Expect plain text directly
-
-        if not checkpoint_data:
-            return jsonify({"error": "No checkpoint data to save"}), 400
-
-        # Return the checkpoint data directly as text
-        logging.info(f"Checkpoint data being sent for download: {checkpoint_data[:50]}...")  # Debug log start of data
-        return jsonify({"fileContent": checkpoint_data})  # Return text directly for download
-
-    except Exception as e:
-        logging.error(f"Error return and saving checkpoint from saveTextAsFileDownload: {e}", exc_info=True)
-        return jsonify({"error": str(e)}), 500
-
-
-# Helper function to get biography outline (Improvement #5 - Data Driven Outline)
-def get_biography_outline():
-    return [
-        {"chapter": 1, "title": "Hook – A Defining Moment", "status": "TBD"},
-        {"chapter": 2, "title": "Origins – Early Life & Influences", "status": "TBD"},
-        {"chapter": 3, "title": "Call to Action – The First Big Life Decision", "status": "TBD"},
-        {"chapter": 4, "title": "Rising Conflict – Struggles & Growth", "status": "TBD"},
-        {"chapter": 5, "title": "The Climax – Defining Achievements", "status": "TBD"}
-    ]
+        data
