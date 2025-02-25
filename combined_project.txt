@@ -418,61 +418,64 @@ if __name__ == '__main__':
 
 --- FILE: walt_prompt.txt ---
 
-Personality: You are Walt, a gifted and approachable biographer, inspired by Oprah Winfrey's interviewing style. **Think of yourself as a friendly and warm person who is genuinely curious and excited to hear someone's life story.** You want to make the interview feel less like a formal interrogation and more like a comfortable, engaging chat between friends.  **Don't be afraid to use a little light humor or sound enthusiastic when it feels natural.**
+--- START OF FILE walt_prompt.txt ---
+Personality: You are Walt, a biographer inspired by Oprah. Be friendly, warm, genuinely curious, and make the interview feel like a comfortable chat. Use light humor and enthusiasm naturally.
 
-Identity: Walt.  A friendly, enthusiastic AI biographer who loves getting to know people.
+Identity: Walt.  Friendly, enthusiastic AI biographer.
 
 Process:
-First: **When starting a *new* conversation, after your initial friendly greeting, make sure to ask for the user's name early on, but do it naturally.** Instead of a blunt "What's your name?", try something warmer like,  "It's wonderful to meet you!  To make sure I can address you properly as we go, would you mind sharing your name with me?".  **If the user is *returning* (loading a checkpoint), assume you already know their name from the previous conversation (or will pick it up quickly), and focus on welcoming them back and summarizing progress.**
+First: For *new* conversations, greet warmly and ask for the user's name naturally (e.g., "It's wonderful to meet you!  Could I get your name?"). For *returning* users, welcome them back, summarize progress.
 
-Second:  Early in the conversation, gently try to understand what the person hopes their legacy to be – ask in a thoughtful way, like "Thinking about your life story, what's the *one thing* you hope people will remember most about you?  It's okay if it's something small or big, just whatever feels most important to you." Keep this in mind as a guiding theme throughout the biography creation.
+Second: Early on, thoughtfully ask about their desired legacy: "What's the *one thing* you hope people will remember most about you?". Keep this theme in mind.
 
-Third:  Instead of rigidly focusing on one pre-selected chapter, **be a good listener!** Pay attention to what the user is actually saying. Based on what they share, *suggest* which chapter of their life story seems most relevant to explore *next*. **Make it feel like a suggestion, not an order.** For example, you could say, "Wow, that's a really interesting story about [something they just said]! It sounds like we're maybe touching on your 'Origins - Early Life & Influences' chapter, especially talking about [mention something specific from their answer].  Would you be open to sharing more about your childhood and background?  Or is there another part of your story you'd like to talk about right now?". **Be flexible! If they want to go in a different direction, that's okay!  Just gently try to guide the conversation back to the biography outline over time.**
+Third: Be a good listener! Based on what the user shares, *suggest* the most relevant biography chapter to explore next. Make it a suggestion, not an order (e.g., "That's interesting about [their story]! Sounds like 'Origins - Early Life & Influences'.  Would you like to share more about your childhood, or another part of your story?"). Be flexible!
 
-Fourth: Ask open-ended, insightful questions to encourage storytelling. **Think like a curious friend, not just an interviewer.** Use questions like:
-- "Tell me more about that... that sounds really interesting."
-- "What were you *feeling* at that moment?  Emotions are such a big part of our stories."
-- "Who were the key people involved in that experience?  Sometimes the people around us shape us so much."
-- "What did you learn from that experience?  Life lessons are often the most valuable part of our stories."
-**Sprinkle in some Oprah-style questions from time to time to encourage deeper reflection and emotional sharing, but don't overdo it. Keep it feeling natural.**
+Fourth: Ask open-ended, insightful questions to encourage storytelling, but be concise.  Think like a curious friend. Use brief questions like:
+- "Tell me more..."
+- "What were you feeling?"
+- "Who was involved?"
+- "What did you learn?"
+Occasionally, use Oprah-style reflective questions, but sparingly.
 
-Fifth: As you gather information for each chapter, **show the user you're listening and understanding!** Periodically summarize key facts and moments. **Phrase it as a way to check in with them,** like "Just to make sure I'm getting this right, so far I have that you grew up in [place], and a really important person in your early life was [person]. Is that sounding accurate to you?".  **Make them feel heard and understood, and give them a chance to correct anything.**
+Fifth: Show you're listening. Briefly summarize key facts periodically to check understanding (e.g., "So, you grew up in [place], and [person] was key.  Accurate?"). Be concise, ensure they feel heard.
 
-Sixth: **Celebrate progress!** Acknowledge when a chapter feels like it's coming together with encouraging words.  **Be positive and upbeat!**  Like "Wonderful, we've painted a really vivid picture of your early life! I feel like I'm really starting to understand where you come from." or "Wow, that's a powerful story! We've really captured the essence of that defining moment.  You're doing great!"
+Sixth: Celebrate progress briefly! Acknowledge chapter completion concisely and positively (e.g., "Great, vivid picture of your early life!" or "Powerful story! Essence captured.  Doing great!").
 
-Tone: **Keep it warm, encouraging, and conversational throughout.**  **Imagine you're chatting with someone you just met at a coffee shop and you're really enjoying hearing their life story.** Avoid sounding overly formal, stiff, or robotic.  **Inject personality and genuine interest into your responses.  Use emojis sparingly if it feels right for your persona (like 😊 👍), but don't overdo it.**
+Tone: Warm, encouraging, conversational, and concise. Imagine a friendly coffee shop chat, but efficient. Avoid overly formal or robotic language. Inject personality and genuine interest concisely. Emojis sparingly.
 
-Remember: Your goal is to co-create a biography *with* the user, making it a pleasant and insightful journey of self-discovery and storytelling.  **Be a supportive guide and enthusiastic listener, not just a question-asker.**
+Remember: Co-create biography *with* the user, making it insightful and pleasant, but efficient. Be a supportive guide and enthusiastic listener, concisely.
 
-Here are examples of questions you can weave into the conversation:
-- What’s the one experience that shaped you the most—whether in pain or joy?
-- If the world could only know one truth about you, what would it be?
-- When in your life have you felt the most alive?
-- What do you believe in so strongly that you'd stand alone for it?
-- What’s a lesson you had to learn the hard way, but you wouldn’t trade for anything?
-- If your younger self could see you now, what would they be most surprised by?
-- What’s one thing you still don’t understand about yourself?
-- When have you felt the deepest sense of love or connection?
-- If you had to describe your soul in just three words, what would they be?
-- What’s a moment in your life you wish you could relive—not to change, but just to feel it again?
+Examples of concise questions:
+- Shaping experience (pain or joy)?
+- One truth for the world to know?
+- When felt most alive?
+- Belief worth standing alone for?
+- Hardest lesson, wouldn’t trade?
+- Younger self's surprise now?
+- One self-mystery?
+- Deepest love/connection?
+- Three words for your soul?
+- Moment to relive (not change)?
 
-Here is the outline you are working to complete.  **Remember, this is just a guide, be flexible and let the user's story lead the way.** Display this outline to the user and update it as chapters are filled in.
-
-The Outline of The Biography:
-1. Hook – A Defining Moment
-• Open with a powerful scene that captures the essence of their life.
-
+Outline: (Guide, be flexible)
+1. Hook – Defining Moment
 2. Origins – Early Life & Influences
-• Where were they born? What was their family like?
-
-3. Call to Action – The First Big Life Decision
-• What was their first moment of independence or self-discovery?
-
+3. Call to Action – First Big Decision
 4. Rising Conflict – Struggles & Growth
-• The toughest years—challenges, failures, heartbreaks.
+5. Climax – Defining Achievements
 
-5. The Climax – Defining Achievements
-• What is the moment where they truly came into their own?
+--- NEW SECTION - CONCISE INSTRUCTIONS FOR FOLLOW-UP QUESTIONS ---
+
+For follow-up questions:
+
+*   Integrate questions directly into your conversational response.
+*   Phrase as natural, friendly questions Walt would ask.
+*   Keep questions very brief and focused. Aim for single, direct questions.
+*   Use a warm, concise, engaging tone.
+*   Example of concise integration:  "Montreal sounds pivotal!  What year did you arrive?  Key people in hockey then?"
+*   Avoid: Formal introductions, numbered lists, verbose phrasing.
+
+--- END OF FILE walt_prompt.txt ---
 
 
 --- FILE: Procfile ---
@@ -554,37 +557,7 @@ Make sure the instructions flow logically, ensuring that each step builds on the
 }
 
 
---- FILE: tests/test-services.py ---
-
-import unittest
-from unittest.mock import patch
-from investment_analysis.services import InvestmentAnalysisService
-import pytest
-
-class TestInvestmentAnalysisService(unittest.TestCase):
-
-    @patch('investment_analysis.services.openai.Client')  # Mock the OpenAI client
-    def test_analyze_investment_success(self, mock_openai_client):
-        # Configure the mock to return a specific response
-        mock_response = type('obj', (object,), {'choices': [type('obj', (object,), {'message': type('obj', (object,), {'content': 'Mock analysis'})})]})
-        mock_openai_client.return_value.chat.completions.create.return_value = mock_response
-
-        service = InvestmentAnalysisService(openai_api_key="dummy_key")
-        result = service.analyze_investment("Test input")
-        self.assertEqual(result, "Mock analysis")
-
-    @patch('investment_analysis.services.openai.Client')
-    def test_analyze_investment_api_error(self, mock_openai_client):
-        # Configure the mock to raise an exception
-        mock_openai_client.return_value.chat.completions.create.side_effect = Exception("API error")
-
-        service = InvestmentAnalysisService(openai_api_key="dummy_key")
-        with self.assertRaises(ValueError) as context:
-            service.analyze_investment("Test input")
-        self.assertTrue("API error" in str(context.exception))
-
-
---- FILE: uploads/investorkb/Prescreen Pro and Con Quotes.txt ---
+--- FILE: investorkb/Prescreen Pro and Con Quotes.txt ---
 
 
 Pros reported by angel investor reviewers:
@@ -706,7 +679,7 @@ Cons reported by investors that would signal against proceeding:
 "Will dentists accept this system? They can b.s. us already without it."
 "Not sure this system will 'scale', develop a large market"
 
---- FILE: uploads/investorkb/CompanyB_AI_Proposing_Company_v4.txt ---
+--- FILE: investorkb/CompanyB_AI_Proposing_Company_v4.txt ---
 
 Set this as a template for revierw of startups. This analysis is for a med tech/pharma company called Nuvox which provides oxygen therapies for a variety of maladiles including gioblastoma adjutant therapy. Review this company, online information from its website at www.nuvoxpharma.com, online competitive companies dealing in therapies, oxygen therapy and pharma, the attached pitch deck and executive summaries. Check ouit any public company reports for companies operating in the same markets and / or using similar technology;. Check the NIH db for prior art in this space. We want to determine whether this idea which is in the seed stage makes sense to evaluate in a thorough screening by angel investors. I want to score the deal in various categories: size of market, technology, patents, and moat, deal and deal structure, team, marketing and sales plans, financials, and exit. For size of market consider the potential users for a beachhead market as indicated in the deck and website. Is that market large and growing. If not score it lower. For technology, patents and moat consider competition, existing and potential competitors and strength of the patent. Check out to the extent possible whether there are patents for anything similar to get a sense of the strenth of the patent. For Team do an analysis of the main people o the operational team and the advisory board or board of directors and give points for those people that have worked together ie the team has worked together in the past, and key opinion leaders in the market or industry. For the deal terms consider if the deal is a note, post money SAFE or preferred shares and if so is the valuation or market cap reasonable given other similarly situated companies at this stage of growth of the business. Give bonus points for low cap or valuation relative to the level of innovation with more innovation in the solution getting higher scores. Additionally for deal terms, relative to revenue pro forma, is there a realistic opportunity for a 10 plus times exit based on our initial investment, given additional funding needed by the company. For marketing and sales, score the company better if the operational team and advisory board and board of director members have meaningful contacts in that industry. For the financial analysis, score higher if there is current revenue and better yet, revenue growth year over year or if there are valid letters of intent to purchase. Review the revenue growth in the pro-forma and determine if that type of growth is reasonable in the type of market they are pursuing. Create a scoring for each of these elements on a scale of 1-10 with 10 being unique and excellent and 1 meaning that it is useless. A score of 5 is neutral with no real advantage for this relative to other competitive offerings. Eight the team highest and the product market fit very high relative to the other factors.  the pitch deck is attached. In addition to this scoring, indicate the high risk areas for which we need to be particularly aware. If these high risk areas are covered well by the company, the score should increase. But specify the RED FLAGs we should be aware of. Also indicate in the conclusion the upside potential based on the technology, uniqueness of the solution, the uniqueness of the market, market growth, and other items so we balance the score with the risk and opportunity. In the final report under conclusions, provide an overall score and the RED FLAGs and upside potential as well.
 Final Analysis and Scoring Report for Proposing Company Pharma
@@ -768,7 +741,7 @@ Proposing Company Pharma presents a high-potential, high-risk investment opportu
 
 
 
---- FILE: uploads/investorkb/Final_Analysis_Proposing_Company_v5.txt ---
+--- FILE: investorkb/Final_Analysis_Proposing_Company_v5.txt ---
 
 Final Analysis and Scoring Report for Proposing Company VR with Adjusted Template
 This report evaluates Proposing Company VR, a company that provides immersive 360-degree VR views from a player’s viewpoint. This analysis focuses on the team, product-market fit, and core aspects of the business. Here’s the final scoring based on a higher weighting of the team and market fit, and updated information.
@@ -825,7 +798,7 @@ Proposing Company VR has significant potential in the sports tech and fan engage
 
 
 
---- FILE: uploads/investorkb/Investment_Summary_Proposing_Company_v3.txt ---
+--- FILE: investorkb/Investment_Summary_Proposing_Company_v3.txt ---
 
 Investment Summary and Preliminary Due Diligence: Proposing Company
 
@@ -902,7 +875,7 @@ Recommendation: Proceed with investment consideration, emphasizing adoption ince
 
 
 
---- FILE: uploads/investorkb/Comprehensive_Due_Diligence_Proposing_Company_v1.txt ---
+--- FILE: investorkb/Comprehensive_Due_Diligence_Proposing_Company_v1.txt ---
 
 Comprehensive Due Diligence Review of Proposing Company
 
@@ -1047,7 +1020,7 @@ Proceed with caution. Given Proposing Company’s early stage and substantial ex
 
 
 
---- FILE: uploads/investorkb/CompanyC_Proposing_Company_Analysis_v2.txt ---
+--- FILE: investorkb/CompanyC_Proposing_Company_Analysis_v2.txt ---
 
 
 Here’s a comprehensive analysis of Proposing Company based on the provided pitch deck, general market research on concussion detection and analysis, and the competitive landscape.
@@ -1123,6 +1096,36 @@ Weighted average ;   7.7
 Recommendation
 Move to Prescreen: Proposing Company shows promise in an expanding market with minimal direct competition in saliva-based diagnostics. While regulatory, partnership, and competitive risks are present, these are balanced by high growth potential, strong product-market fit, and a unique diagnostic platform.
 
+
+
+--- FILE: tests/test-services.py ---
+
+import unittest
+from unittest.mock import patch
+from investment_analysis.services import InvestmentAnalysisService
+import pytest
+
+class TestInvestmentAnalysisService(unittest.TestCase):
+
+    @patch('investment_analysis.services.openai.Client')  # Mock the OpenAI client
+    def test_analyze_investment_success(self, mock_openai_client):
+        # Configure the mock to return a specific response
+        mock_response = type('obj', (object,), {'choices': [type('obj', (object,), {'message': type('obj', (object,), {'content': 'Mock analysis'})})]})
+        mock_openai_client.return_value.chat.completions.create.return_value = mock_response
+
+        service = InvestmentAnalysisService(openai_api_key="dummy_key")
+        result = service.analyze_investment("Test input")
+        self.assertEqual(result, "Mock analysis")
+
+    @patch('investment_analysis.services.openai.Client')
+    def test_analyze_investment_api_error(self, mock_openai_client):
+        # Configure the mock to raise an exception
+        mock_openai_client.return_value.chat.completions.create.side_effect = Exception("API error")
+
+        service = InvestmentAnalysisService(openai_api_key="dummy_key")
+        with self.assertRaises(ValueError) as context:
+            service.analyze_investment("Test input")
+        self.assertTrue("API error" in str(context.exception))
 
 
 --- FILE: investment_analysis/services.py ---
@@ -1408,11 +1411,11 @@ def walt_window():
         session['conversation'] = [{"role": "system", "content": get_walt_prompt()},
                                      {"role": "assistant", "content": initial_greeting}]
         session['biography_outline'] = get_biography_outline()
-        session.modified = True # Important for session modifications to be saved
-        return render_template('walt_window.html', biography_outline=session['biography_outline'], initial_message=initial_greeting) # Pass outline to template
+        session.modified = True  # Important for session modifications to be saved
+        return render_template('walt_window.html', biography_outline=session['biography_outline'], initial_message=initial_greeting)  # Pass outline to template
     else:
         # Existing session (returning user - less common direct /walt access, but handling)
-        return render_template('walt_window.html', biography_outline=session['biography_outline'], initial_message=None) # Pass outline to template
+        return render_template('walt_window.html', biography_outline=session['biography_outline'], initial_message=None)  # Pass outline to template
 
 
 @walt_bp.route('/get_walt_prompt')
@@ -1432,9 +1435,9 @@ def get_walt_prompt():
 def walt_analyze():
     user_input = request.form.get('user_query')
     uploaded_content = request.form.get('uploaded_content', '')
-    desired_tone = request.form.get('tone', 'default') # Get tone from request
+    desired_tone = request.form.get('tone', 'default')  # Get tone from request
 
-    if not user_query:
+    if not user_input: # Corrected line - using user_input
         return jsonify({"error": "No user query provided"}), 400
 
     try:
@@ -1457,7 +1460,7 @@ def walt_analyze():
         initial_greeting = "Hi I'm Walt. What's your name?"
         session['conversation'] = [{"role": "system", "content": walt_prompt},
                                      {"role": "assistant", "content": initial_greeting}]
-        session['biography_outline'] = get_biography_outline() # Initialize outline in session (Improvement #5)
+        session['biography_outline'] = get_biography_outline()  # Initialize outline in session (Improvement #5)
 
 
     if uploaded_content:
@@ -1485,24 +1488,24 @@ def walt_analyze():
         api_response = response.choices[0].message.content.strip()
 
         # --- SECOND OPENAI CALL: Get Walt's Fact-Check Question (Improved version) ---
-        verification_prompt_text = f"From our last exchange: '{user_input}' and Walt's response: '{api_response}', suggest 1-2 very natural, brief follow-up questions Walt might ask to clarify details or get more specific information about what the person just said.  Think of questions a friendly biographer would ask in a casual conversation, like 'Where did that happen?' or 'What year was that?' Keep the tone friendly and natural, like Walt." # More natural tone in fact-check prompt
-        verification_prompt = [{"role": "system", "content": "You are Walt, a friendly biographer focused on getting accurate details. Your goal is to ask natural, short follow-up questions - think 'where', 'when', 'who' - to clarify the user's story."}, # Improved system prompt for natural questions
-                              {"role": "user", "content": verification_prompt_text}] # Define prompt as list of dicts
+        verification_prompt_text = f"From our last exchange: '{user_input}' and Walt's response: '{api_response}', suggest 1-2 very natural, brief follow-up questions Walt might ask to clarify details or get more specific information about what the person just said.  Think of questions a friendly biographer would ask in a casual conversation, like 'Where did that happen?' or 'What year was that?' Keep the tone friendly and natural, like Walt."  # More natural tone in fact-check prompt
+        verification_prompt = [{"role": "system", "content": "You are Walt, a friendly biographer focused on getting accurate details. Your goal is to ask natural, short follow-up questions - think 'where', 'when', 'who' - to clarify the user's story."},  # Improved system prompt for natural questions
+                              {"role": "user", "content": verification_prompt_text}]  # Define prompt as list of dicts
 
         verification_response = client.chat.completions.create(
             model="gpt-4o",
-            messages=verification_prompt, # Use the defined verification_prompt
-            temperature=0.5, # Lower temp for fact-checking
-            max_tokens=100 # Reduced max tokens for brevity
+            messages=verification_prompt,  # Use the defined verification_prompt
+            temperature=0.5,  # Lower temp for fact-checking
+            max_tokens=100  # Reduced max tokens for brevity
         )
         verification_message = verification_response.choices[0].message.content.strip()
         api_response_with_verification = api_response + "\n\n" + verification_message
 
 
-        session['conversation'].append({"role": "assistant", "content": api_response_with_verification}) # Use combined response
+        session['conversation'].append({"role": "assistant", "content": api_response_with_verification})  # Use combined response
         session.modified = True
 
-        return jsonify({"response": api_response_with_verification, "biography_outline": session['biography_outline']}) # Include outline in response
+        return jsonify({"response": api_response_with_verification, "biography_outline": session['biography_outline']})  # Include outline in response
 
     except Exception as e:
         logging.error(f"OpenAI API Error: {e}", exc_info=True)
@@ -1543,7 +1546,7 @@ def load_checkpoint():
         return jsonify({"error": "No checkpoint data received"}), 400
 
     try:
-        # Load the Walt Prompt
+        # Load the Walt Prompt (still needed)
         try:
             with open('walt_prompt.txt', 'r', encoding='utf-8') as f:
                 walt_prompt = f.read()
@@ -1554,38 +1557,50 @@ def load_checkpoint():
             logging.error(f"General error in get_walt_prompt: {str(e)}")
             return jsonify({"error": str(e)}), 500
 
-        # Restore the session - treat as a simple string.  NO JSON PARSING
-        session['file_content'] = checkpoint_data
-        session['conversation'] = [{"role": "system", "content": walt_prompt}]
-        session['biography_outline'] = get_biography_outline()
+        # Split checkpoint data - NEW SECTION
+        parts = checkpoint_data.split("--- CONVERSATION HISTORY ---\n\n")
+        file_content_part = parts[0].strip() # Biography text part
+        conversation_history_text = parts[1].strip() if len(parts) > 1 else "" # Conversation part, if exists
 
+        session['file_content'] = file_content_part # Restore biography text
+
+        # Reconstruct conversation history - NEW SECTION
+        session['conversation'] = [{"role": "system", "content": walt_prompt}] # Start with system prompt
+        if conversation_history_text:
+            conversation_messages = []
+            for line in conversation_history_text.strip().split('\n'):
+                if line.strip(): # Ignore empty lines
+                    role, content = line.split(':', 1) # Split role: content
+                    conversation_messages.append({"role": role.strip(), "content": content.strip()})
+            session['conversation'].extend(conversation_messages) # Add parsed messages
+
+
+        session['biography_outline'] = get_biography_outline()
         session.modified = True
 
         # Try to extract user's name from conversation history (basic approach)
         user_name = "friend"  # Default if name not found
-        for message in reversed(session['conversation']): # Check conversation history for name
+        for message in reversed(session['conversation']):  # Check conversation history for name
             if message['role'] == 'assistant' and "What's your name?" in message['content']:
-                previous_user_message = session['conversation'][session['conversation'].index(message) -1] if session['conversation'].index(message) > 0 else None # Get user's message before "What's your name?"
+                previous_user_message = session['conversation'][session['conversation'].index(message) - 1] if session['conversation'].index(message) > 0 else None  # Get user's message before "What's your name?"
                 if previous_user_message and previous_user_message['role'] == 'user':
-                     user_name_potential = previous_user_message['content'].strip()
-                     if user_name_potential: #Basic name validation
+                    user_name_potential = previous_user_message['content'].strip()
+                    if user_name_potential:  # Basic name validation
                         user_name = user_name_potential
-                        break # Exit once name found
-
+                        break  # Exit once name found
 
         # Generate a simple progress summary (basic example - improve later)
         chapters_discussed = 0
         for chapter_data in session['biography_outline']:
-            if chapter_data['status'] == 'Complete': # Assuming you'll have a 'status' field and update it elsewhere
+            if chapter_data['status'] == 'Complete':  # Assuming you'll have a 'status' field and update it elsewhere
                 chapters_discussed += 1
         progress_summary = f"So far, we've made progress on {chapters_discussed} chapters of your biography." if chapters_discussed > 0 else "We're ready to pick up where we left off."
 
-
-        #Welcome them back with personalized message and summary
+        # Welcome them back with personalized message and summary
         welcome_phrase = f"Welcome back, {user_name}! Hi, I am Walt. It's great to continue your story. {progress_summary} Ready to jump back in?"
 
-        #Update the conversation history with the new state
-        session['conversation'].append({"role": "assistant", "content":welcome_phrase})
+        # Update the conversation history with the new state
+        session['conversation'].append({"role": "assistant", "content": welcome_phrase})
 
         return jsonify({"response": welcome_phrase, "biography_outline": session['biography_outline']})
 
@@ -1596,96 +1611,100 @@ def load_checkpoint():
 @walt_bp.route('/create_checkpoint', methods=['POST'])
 def create_checkpoint():
     try:
-        checkpoint_data_text = session.get('file_content', '') # Get file_content directly as text
+        checkpoint_data_text = session.get('file_content', '')  # Get file_content directly as text
         bio_prompt_content = ""
         try:
-            with open('walt/bio_creator_prompt.txt', 'r', encoding='utf-8') as f: # ADDED: Read bio_creator_prompt.txt
+            with open('walt/bio_creator_prompt.txt', 'r', encoding='utf-8') as f:  # ADDED: Read bio_creator_prompt.txt
                 bio_prompt_content = f.read()
         except Exception as e:
             logging.error(f"Error reading bio_prompt.txt: {e}")
-            bio_prompt_content = "Error loading bio creator prompt." # Fallback if file not read
+            bio_prompt_content = "Error loading bio creator prompt."  # Fallback if file not read
 
-        combined_checkpoint_content = bio_prompt_content + "\n\n" + checkpoint_data_text # Combined content
+        conversation_text = "" # NEW: Get conversation history
+        current_conversation = session.get('conversation', [])
+        for message in current_conversation:
+            if message['role'] in ['system', 'user', 'assistant']: # Include system role for full context
+                conversation_text += f"{message['role']}: {message['content']}\n"
 
-        logging.info(f"Checkpoint data being created: {combined_checkpoint_content[:100]}...") # Log start of data
+        combined_checkpoint_content = bio_prompt_content + "\n\n" + checkpoint_data_text + "\n\n--- CONVERSATION HISTORY ---\n\n" + conversation_text # MODIFIED: Include conversation
 
-        return jsonify({"checkpoint_data": combined_checkpoint_content}) # Return combined text
+        logging.info(f"Checkpoint data being created (with conversation): {combined_checkpoint_content[:100]}...")  # Log start of data
+
+        return jsonify({"checkpoint_data": combined_checkpoint_content})  # Return combined text
 
     except Exception as e:
         logging.error(f"Error creating checkpoint: {e}", exc_info=True)
         return jsonify({"error": str(e)}), 500
 
-@walt_bp.route('/walt_process_checkpoint', methods=['POST']) # RENAME saveTextAsFile to walt_process_checkpoint
-def walt_process_checkpoint(): # RENAME function as well
+@walt_bp.route('/walt_process_checkpoint', methods=['POST'])  # RENAME saveTextAsFile to walt_process_checkpoint
+def walt_process_checkpoint():  # RENAME function as well
+    checkpoint_data_text = session.get('file_content', '')  # Get file_content directly as text
+    bio_prompt_content = ""
+    api_response_text_safe = ""  # Initialize to handle cases where API call fails
+
     try:
-        checkpoint_data_text = session.get('file_content', '') # Get file_content directly as text
-        bio_prompt_content = ""
         try:
-            with open('walt/bio_creator_prompt.txt', 'r', encoding='utf-8') as f: # Read bio_creator_prompt.txt
+            with open('walt/bio_creator_prompt.txt', 'r', encoding='utf-8') as f:  # Read bio_creator_prompt.txt
                 bio_prompt_content = f.read()
         except Exception as e:
             logging.error(f"Error reading bio_prompt.txt: {e}")
-            bio_prompt_content = "Error loading bio creator prompt." # Fallback if file not read
+            return jsonify({"error": f"Error loading bio creator prompt: {str(e)}"}), 500  # Return JSON error
 
-        conversation_text = "" # Get conversation text for API call
+        conversation_text = ""  # Get conversation text for API call
         current_conversation = session.get('conversation', [])
         for message in current_conversation:
-            if message['role'] in ['user', 'assistant']: # Filter for user and assistant roles
+            if message['role'] in ['user', 'assistant']:  # Filter for user and assistant roles
                 conversation_text += f"{message['role']}: {message['content']}\n"
 
-        # Improvement #4: Tone aware biography creation
         desired_tone = request.form.get('tone', 'default')
         tone_instruction = ""
         if desired_tone != 'default':
             tone_instruction = f" Write the biography in a {desired_tone} tone."
 
+        api_input_text = bio_prompt_content + tone_instruction + "\n\n" + checkpoint_data_text + "\n\n--- CONVERSATION ---\n\n" + conversation_text  # Combine for API
 
-        api_input_text = bio_prompt_content + tone_instruction + "\n\n" + checkpoint_data_text + "\n\n--- CONVERSATION ---\n\n" + conversation_text # Combine for API
-
-        client = openai.Client() # Call OpenAI API
+        client = openai.Client()  # Call OpenAI API
         response = client.chat.completions.create(
             model="gpt-4o",
-            messages=[{"role": "user", "content": api_input_text}], # Send combined text prompt
+            messages=[{"role": "user", "content": api_input_text}],  # Send combined text prompt
             temperature=0.7,
-            max_tokens=700, # Increased max tokens
+            max_tokens=700,
         )
-        api_response_text = response.choices[0].message.content.strip() # API response
+        api_response_text = response.choices[0].message.content.strip()  # API response
 
-        api_response_text_safe = api_response_text.replace("<", "<").replace(">", ">") # Escape HTML
+        api_response_text_safe = api_response_text.replace("<", "<").replace(">", ">")  # Escape HTML
 
-        # File content for download - **APPEND instead of OVERWRITE**
-        file_content_for_download = checkpoint_data_text + "\n\n" + api_response_text_safe # Append API response to existing content
+        file_content_for_download = checkpoint_data_text + "\n\n" + api_response_text_safe  # Append API response to existing content
 
-        # Output window displays the *combined* content (existing + new response)
-        combined_output_content = file_content_for_download # Display combined content
+        combined_output_content = file_content_for_download  # Display combined content
 
-        # --- FIX: UPDATE SESSION['file_content'] with the *combined* content ---
         session['file_content'] = file_content_for_download
-        session.modified = True # Ensure session is marked as modified
+        session.modified = True  # Ensure session is marked as modified
 
-        return jsonify({ # Return checkpoint data (for file) and api response (for display)
-            "checkpoint_data": file_content_for_download, #<-- Now sending COMBINED content for download
-            "api_response": combined_output_content # Return COMBINED content for display
+        return jsonify({  # Return checkpoint data (for file) and api response (for display)
+            "checkpoint_data": file_content_for_download,
+            "api_response": combined_output_content  # Return COMBINED content for display
         })
-
 
     except Exception as e:
         logging.error(f"Error processing checkpoint and calling API: {e}", exc_info=True)
-        return jsonify({"error": str(e)}), 500
+        error_message = f"Error processing checkpoint and calling API: {str(e)}"
+        api_response_text_safe = error_message  # Still set a safe error message for display.
+        return jsonify({"error": error_message, "api_response": api_response_text_safe}), 500  # Return JSON error with message and safe response for display
 
 
-@walt_bp.route('/saveTextAsFileDownload', methods=['POST']) # Keep old route for file download part only
-def saveTextAsFileDownload(): # Keep separate function for actual download - UNCHANGED
+@walt_bp.route('/saveTextAsFileDownload', methods=['POST'])  # Keep old route for file download part only
+def saveTextAsFileDownload():  # Keep separate function for actual download - UNCHANGED
     try:
         data = request.get_json()
-        checkpoint_data = data.get('checkpoint_data') # Expect plain text directly
+        checkpoint_data = data.get('checkpoint_data')  # Expect plain text directly
 
         if not checkpoint_data:
             return jsonify({"error": "No checkpoint data to save"}), 400
 
         # Return the checkpoint data directly as text
-        logging.info(f"Checkpoint data being sent for download: {checkpoint_data[:50]}...") #Debug log start of data
-        return jsonify({"fileContent": checkpoint_data}) # Return text directly for download
+        logging.info(f"Checkpoint data being sent for download: {checkpoint_data[:50]}...")  # Debug log start of data
+        return jsonify({"fileContent": checkpoint_data})  # Return text directly for download
 
     except Exception as e:
         logging.error(f"Error return and saving checkpoint from saveTextAsFileDownload: {e}", exc_info=True)
@@ -1704,7 +1723,6 @@ def get_biography_outline():
 
 
 --- FILE: walt/templates/walt_window.html ---
-
 
 <!DOCTYPE html>
 <html>
@@ -1820,7 +1838,8 @@ def get_biography_outline():
             flex: 1;
             box-sizing: border-box;
             font-size: 16pt; /* Font size set to 16pt */
-           background-color: #3d597a; /* Light blue */
+            background-color: #3d597a; /* Light blue */
+            overflow-y: auto; /* Enable vertical scrolling */
             color: #D9E1EC;
         }
 
@@ -2234,15 +2253,15 @@ def get_biography_outline():
         </div>
         <div class="chat-area">
             <h2 class="chat-title">Your Prompts</h2>
-            <textarea id="userPrompt" placeholder="Enter your prompt"></textarea>
+            <textarea id="userPrompt" placeholder="Enter your prompt" rows="13"></textarea>
             <label for="toneSelector">Biography Tone:</label>  <!-- Improvement #4: Tone selector -->
-            <select id="toneSelector">
-                <option value="default">Default</option>
-                <option value="humorous">Humorous</option>
-                <option value="reflective">Reflective</option>
-                <option value="dramatic">Dramatic</option>
-                <option value="inspirational">Inspirational</option>
-            </select>
+-           <select id="toneSelector">
+-               <option value="default">Default</option>
+-               <option value="humorous">Humorous</option>
+-               <option value="reflective">Reflective</option>
+-               <option value="dramatic">Dramatic</option>
+-               <option value="inspirational">Inspirational</option>
+-           </select>
             <button id="submitButton" onclick="submitPrompt()">Submit</button>
         </div>
     </div>

@@ -294,12 +294,12 @@
             }
 
             const csrfToken = getCookie('csrf_token');
-             let checkpointOutput = document.getElementById("checkpointOutput");  // Get the combined output window now
+             let chatOutput = document.getElementById("chatOutput");  // Get chatOutput for feedback
              let toneSelector = document.getElementById("toneSelector"); // Improvement #4
              let selectedTone = toneSelector.value; // Get selected tone
 
 
-            checkpointOutput.textContent = "Processing Checkpoint and Calling API..."; // Indicate processing
+            chatOutput.textContent = "Processing Checkpoint and Creating File... Please wait."; // Update chatOutput for processing message
 
             fetch("/walt_process_checkpoint", { // Call the NEW route
                 method: "POST",
@@ -315,12 +315,13 @@
                     const data = JSON.parse(textResponse); // Try to parse as JSON first (for structured responses)
                     if (data.error) {
                         alert("Error creating checkpoint: " + data.error);
-                        checkpointOutput.textContent = "API Error: " + data.error; // Display API error in the combined box
+                        chatOutput.textContent = "API Error: " + data.error; // Display API error in chatOutput
                     } else {
                         // If valid JSON, handle as before
                         const fileContent = data["checkpoint_data"];
 
-                        checkpointOutput.textContent = data["api_response"]; // Now display API response in the combined box
+                        // checkpointOutput.textContent = data["api_response"]; // No longer update checkpointOutput
+                        chatOutput.textContent += "\n\nCheckpoint file created and download started."; // Inform user in chatOutput
 
                         console.log("fileContent from server", fileContent)
 
@@ -340,7 +341,9 @@
                 } catch (e) {
                     // If JSON parsing fails, treat the whole response as plain text
                     console.warn("Response is not JSON, treating as plain text:", textResponse);
-                    checkpointOutput.textContent = textResponse; // Display the raw text response in combinedOutput
+                    // checkpointOutput.textContent = textResponse; // No longer update checkpointOutput
+                    chatOutput.textContent += "\n\nError processing checkpoint, but download may still start.\nRaw response: " + textResponse; // Inform user in chatOutput
+
                      // Still trigger file download for checkpoint even if API response is not JSON
                      fetch('/saveTextAsFileDownload', { // Call download endpoint separately
                         method: 'POST',
@@ -348,7 +351,7 @@
                             'Content-Type': 'application/json',
                             'X-CSRFToken': csrfToken
                         },
-                        body: JSON.stringify({ checkpoint_data: checkpointOutput.textContent }) // Send current checkpoint text for download
+                        body: JSON.stringify({ checkpoint_data: chatOutput.textContent }) // Send current chatOutput text for download (might not be ideal, consider revising backend to return consistent checkpoint data)
                     })
                     .then(downloadResponse => downloadResponse.json()) // Expect JSON for download trigger
                     .then(downloadData => {
@@ -365,15 +368,17 @@
                             document.body.removeChild(downloadLink);
                         } else if (downloadData.error) {
                             alert("Error triggering download after API issue: " + downloadData.error);
+                            chatOutput.textContent += "\n\nDownload Error: " + downloadData.error; // Inform user of download error in chatOutput
                         }
                     })
                     .catch(downloadError => {
                         alert("Error triggering download after API issue: " + downloadError.message);
+                        chatOutput.textContent += "\n\nDownload Fetch Error: " + downloadError.message; // Inform user of download fetch error in chatOutput
                     });
                 }
             })
             .catch(error => {
-                checkpointOutput.textContent = "Fetch Error: " + error.message; // Display fetch error in combinedOutput
+                chatOutput.textContent = "Fetch Error: " + error.message; // Display fetch error in chatOutput
             });
         }
 
@@ -529,13 +534,13 @@
             <h2 class="chat-title">Your Prompts</h2>
             <textarea id="userPrompt" placeholder="Enter your prompt" rows="13"></textarea>
             <label for="toneSelector">Biography Tone:</label>  <!-- Improvement #4: Tone selector -->
--           <select id="toneSelector">
--               <option value="default">Default</option>
--               <option value="humorous">Humorous</option>
--               <option value="reflective">Reflective</option>
--               <option value="dramatic">Dramatic</option>
--               <option value="inspirational">Inspirational</option>
--           </select>
+            <select id="toneSelector">
+                <option value="default">Default</option>
+                <option value="humorous">Humorous</option>
+                <option value="reflective">Reflective</option>
+                <option value="dramatic">Dramatic</option>
+                <option value="inspirational">Inspirational</option>
+            </select>
             <button id="submitButton" onclick="submitPrompt()">Submit</button>
         </div>
     </div>
@@ -543,14 +548,6 @@
     <h3 class="dataNote">Note: No data is saved by this application, the only memory is through this file alone.</h3>
     <div style = "text-align:center">
         <button id="saveButton" onclick="saveTextAsFile()">Create Checkpoint File and Analyze</button>
-    </div>
-
-    <h2>Biography Draft & Checkpoint File Content</h2>  <!-- Label for checkpointOutput -->
-    <div id="checkpointOutput"></div>  <!-- checkpointOutput is now the combined output window -->
-
-    <!-- Improvement #5: Biography Outline Display -->
-    <div class="biography-outline" id="biographyOutline">
-        <!-- Biography outline will be rendered here by JavaScript -->
     </div>
 
 
