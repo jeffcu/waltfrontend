@@ -225,6 +225,41 @@
             font-weight: bold;
         }
 
+        /* New Styles for layout and "Craft Biography" Button */
+        .checkpoint-area {
+            display: flex;
+            justify-content: space-between; /* Distribute space between items */
+            align-items: center; /* Vertically align items in the center */
+            margin-top: 20px;
+            gap: 20px; /* Space between tone selector and button */
+        }
+
+        .tone-selector-area {
+            text-align: left; /* Align tone selector to the left */
+            flex-grow: 1; /* Allow tone selector area to take available space */
+        }
+
+
+        #craftBiographyButton {
+            padding: 15px 30px; /* Larger padding */
+            font-size: 20px; /* Larger font size */
+            cursor: pointer;
+            background-color: #FFA500; /* Example: Orange color */
+            color: black;
+            border: none;
+            border-radius: 8px; /* Slightly more rounded */
+            font-weight: bold; /* Bold text */
+            box-shadow: 0 4px 8px rgba(255, 165, 0, 0.5); /* Example shadow */
+            transition: background-color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
+            white-space: nowrap; /* Prevent text wrapping */
+        }
+
+        #craftBiographyButton:hover {
+            background-color: #FF8C00; /* Darker orange on hover */
+            transform: scale(1.05); /* Slight scale up on hover */
+            box-shadow: 0 6px 12px rgba(255, 165, 0, 0.7); /* Enhanced shadow on hover */
+        }
+
 
     </style>
     <script>
@@ -533,6 +568,13 @@
         <div class="chat-area">
             <h2 class="chat-title">Your Prompts</h2>
             <textarea id="userPrompt" placeholder="Enter your prompt" rows="13"></textarea>
+        </div>
+    </div>
+
+    <h3 class="dataNote">Note: No data is saved by this application, the only memory is through this file alone.</h3>
+
+    <div class="checkpoint-area">
+        <div class="tone-selector-area">
             <label for="toneSelector">Biography Tone:</label>  <!-- Improvement #4: Tone selector -->
             <select id="toneSelector">
                 <option value="default">Default</option>
@@ -541,13 +583,14 @@
                 <option value="dramatic">Dramatic</option>
                 <option value="inspirational">Inspirational</option>
             </select>
-            <button id="submitButton" onclick="submitPrompt()">Submit</button>
+        </div>
+        <div style = "text-align:center">
+            <button id="saveButton" onclick="saveTextAsFile()">Create Checkpoint File and Analyze</button>
         </div>
     </div>
 
-    <h3 class="dataNote">Note: No data is saved by this application, the only memory is through this file alone.</h3>
-    <div style = "text-align:center">
-        <button id="saveButton" onclick="saveTextAsFile()">Create Checkpoint File and Analyze</button>
+    <div style = "text-align:center; margin-top: 10px;">
+        <button id="craftBiographyButton">Craft Biography</button>  <!-- New "Craft Biography" button -->
     </div>
 
 
