@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Walt the Biographer</title>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #1E2A38;
+            color: #E5E5E5;
+            padding: 20px;
+            text-align: center;
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            box-sizing: border-box;
+        }
+
+        h1 {
+            color: #2D9CDB;
+            margin-bottom: 5px;
+        }
+
+        p.tagline {
+            font-style: italic;
+            color: #AEBCCF;
+            margin-bottom: 20px;
+        }
+
+        #uploadButtonContainer {
+            text-align: center; /* Center the button */
+            margin-bottom: 20px;
+        }
+
+        #uploadButton {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #27AE60;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            /* Make height one line and width auto adjust */
+            height: auto;
+            width: auto;
+            white-space: nowrap; /* Prevent text wrapping */
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .chat-container {
+            display: flex;
+            max-width: 1200px;
+            margin: 0 auto;
+            flex: 1;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .chat-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            box-sizing: border-box;
+            padding: 10px;
+        }
+
+        .chat-title {
+            text-align: left;
+            margin-bottom: 10px;
+            color: #2D9CDB;
+        }
+
+        .chat-output {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #4C657E;
+            border-radius: 6px;
+            background-color: #2A3D55;
+            color: #D9E1EC;
+            min-height: 400px; /* Min height of 400px */
+            height: 450px; /* Adjusted height to fit 18 lines, approximately */
+            text-align: left;
+            white-space: pre-wrap;
+            overflow-y: auto;
+            box-sizing: border-box;
+            font-size: 16pt; /* Font size set to 16pt */
+            align-items: flex-start;
+        }
+
+        .chat-input {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            box-sizing: border-box;
+            padding: 10px;
+        }
+
+        .prompt-area {
+            display: flex;
+            flex-direction: column;
+            height: 100%; /* Make sure prompt area takes full height */
+        }
+
+        textarea {
+            width: 100%;
+            margin-bottom: 10px;
+            padding: 8px;
+            border: 1px solid #4C657E;
+            border-radius: 6px;
+            resize: vertical;
+            flex: 1; /* Textarea takes up remaining space */
+            box-sizing: border-box;
+            font-size: 16pt; /* Font size set to 16pt */
+            background-color: #3d597a; /* Light blue */
+            overflow-y: auto; /* Enable vertical scrolling */
+            color: #D9E1EC;
+        }
+
+        #submitButton {
+           padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: gold;
+            color: dimgrey;
+            border: none;
+            border-radius: 6px;
+            width: 100%;
+            box-sizing: border-box;
+            height: auto;
+            align-self: flex-end; /* Align Submit button to bottom */
+}
+
+        h3.dataNote {
+            text-align: center;
+            font-size: 1.2em;
+            margin-bottom: 10px;
+            color: #AEBCCF;
+        }
+
+        #saveButton {
+            text-align: center;
+            align-self: center;
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #27AE60;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            /* Make height one line and width auto adjust */
+            height: auto;
+            width: auto;
+            white-space: nowrap; /* Prevent text wrapping */
+        }
+
+
+        #sessionSummary {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #4C657E;
+            border-radius: 6px;
+            background-color: #2A3D55;
+            white-space: pre-wrap;
+            overflow-y: auto;
+            min-height: 0; /*Removes min height so no shape present*/
+            text-align: left;
+            box-sizing: border-box;
+            font-size: 1.2em;
+            display:none; /*Hides the shape*/
+        }
+
+        #checkpointOutput { /* Renamed from combinedOutput to checkpointOutput, now for combined output */
+            width: 90%;
+            margin: 10px auto;
+            padding: 10px;
+            border: 1px solid #4C657E;
+            border-radius: 6px;
+            background-color: #4C657E; /* Changed to API output style */
+            color: #D9E1EC;
+            text-align: left;
+            white-space: pre-wrap;
+            overflow-y: auto; /* Enable scroll if content overflows */
+            max-height: 250px; /* Increased max height */
+            box-sizing: border-box;
+            font-size: 1.2em;
+        }
+
+        /* Improvement #5: Biography Outline Styles */
+        .biography-outline {
+            text-align: left;
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #4C657E;
+            border-radius: 6px;
+            background-color: #2A3D55;
+            color: #D9E1EC;
+        }
+
+        .biography-outline h2 {
+            color: #2D9CDB;
+            font-size: 20px;
+            margin-bottom: 10px;
+        }
+
+        .biography-outline ul {
+            list-style: none;
+            padding-left: 20px;
+        }
+
+        .biography-outline li {
+            margin-bottom: 5px;
+        }
+
+        .chapter-title {
+            font-weight: bold;
+        }
+
+        .chapter-status-tbd {
+            color: #AEBCCF; /* Greyed out for TBD chapters */
+            font-style: italic;
+        }
+        .chapter-status-complete {
+            color: #27AE60; /* Green for completed chapters */
+            font-weight: bold;
+        }
+
+        /* New Styles for layout and "Craft Biography" Button */
+        .checkpoint-area {
+            display: flex;
+            flex-direction: column; /* Stack items vertically */
+            justify-content: center; /* Center items horizontally in container */
+            align-items: center; /* Center items horizontally in flex direction (which is column now) */
+            margin-top: 20px;
+            gap: 20px; /* Space between tone selector area and craft button */
+        }
+
+        .tone-and-craft-group {
+            display: flex; /* Arrange tone selector and craft button horizontally */
+            justify-content: center; /* Center content horizontally within this group */
+            align-items: flex-end; /* Align items to the bottom of this group */
+            gap: 20px; /* Space between tone selector and craft button inside group */
+            width: auto; /* Adjust width to content */
+            margin: 0 auto; /* Center the tone-and-craft-group itself if needed within checkpoint-area */
+        }
+
+
+        .tone-selector-area {
+            text-align: left; /* Align tone selector to the left */
+            flex-grow: 1; /* Allow tone selector area to take available space if needed - not needed now but keep */
+            display: flex; /* Use flexbox for horizontal alignment */
+            align-items: baseline; /* Align label and select text baselines */
+            gap: 10px; /* Space between label and select */
+            justify-content: flex-end; /* Align to the right side - now within tone-and-craft-group */
+        }
+
+        .tone-selector-area label {
+            margin-bottom: 0; /* Remove default margin for label */
+        }
+
+
+        #craftBiographyButton {
+            padding: 15px 30px; /* Larger padding */
+            font-size: 20px; /* Larger font size */
+            cursor: pointer;
+            background-color: #FFA500; /* Example: Orange color */
+            color: black;
+            border: none;
+            border-radius: 8px; /* Slightly more rounded */
+            font-weight: bold; /* Bold text */
+            box-shadow: 0 4px 8px rgba(255, 165, 0, 0.5); /* Example shadow */
+            transition: background-color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
+            white-space: nowrap; /* Prevent text wrapping */
+            /* align-self: flex-end;  Not needed anymore as alignment is within tone-and-craft-group */
+        }
+
+        #craftBiographyButton:hover {
+            background-color: #FF8C00; /* Darker orange on hover */
+            transform: scale(1.05); /* Slight scale up on hover */
+            box-shadow: 0 6px 12px rgba(255, 165, 0, 0.7); /* Enhanced shadow on hover */
+        }
+
+        .save-checkpoint-area {
+            text-align: center; /* Center the save checkpoint button */
+            margin-top: 20px; /* Add some space above the button */
+        }
+
+
+    </style>
+    <script>
+        // All the code here is to ensure it is loaded at the top level scope.
+        let uploaded_content = ""; //Global variable to store uploaded content
+        let storyUpload; // Declare storyUpload outside the event listener
+        let biographyOutline; // For storing biography outline (Improvement #5)
+
+        function submitPrompt() {
+            let userInput = document.getElementById("userPrompt").value;
+            let chatOutput = document.getElementById("chatOutput");
+            let toneSelector = document.getElementById("toneSelector"); // Improvement #4
+            let selectedTone = toneSelector.value; // Get selected tone
+
+            chatOutput.textContent = "Loading...";
+            sendToOpenAI(userInput, chatOutput, uploaded_content, selectedTone); // Send tone
+            document.getElementById("userPrompt").value = "";
+        }
+
+         function sendToOpenAI(userInput, chatOutput, fileContent, tone) { // Accept tone
+            // Get CSRF token from cookie
+            function getCookie(name) {
+                const value = `; ${document.cookie}`;
+                const parts = value.split(`; ${name}=`);
+                if (parts.length === 2) return parts.pop().split(';').shift();
+            }
+
+            const csrfToken = getCookie('csrf_token');
+
+            fetch("/walt_analyze", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    "X-CSRFToken": csrfToken
+                },
+                 body: "user_query=" + encodeURIComponent(userInput) + "&uploaded_content=" + encodeURIComponent(fileContent) + "&tone=" + encodeURIComponent(tone) // Send tone
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    chatOutput.textContent = "Error: " + data.error;
+                } else {
+                    chatOutput.textContent = data.response;
+                    if (data.biography_outline) { // Improvement #5: Update outline display
+                        biographyOutline = data.biography_outline;
+                        updateBiographyOutlineDisplay();
+                    }
+                }
+            })
+            .catch(error => {
+                chatOutput.textContent = "Error: " + error.message;
+            });
+        }
+
+
+         function getStoryBoard(){
+            let chatOutput = document.getElementById("chatOutput").textContent;
+            return chatOutput
+        }
+
+       function saveTextAsFile() {
+            // Get CSRF token from cookie
+            function getCookie(name) {
+                const value = `; ${document.cookie}`;
+                const parts = value.split(`; ${name}=`);
+                if (parts.length === 2) return parts.pop().split(';').shift();
+            }
+
+            const csrfToken = getCookie('csrf_token');
+             let chatOutput = document.getElementById("chatOutput");  // Get chatOutput for feedback
+             let toneSelector = document.getElementById("toneSelector"); // Improvement #4
+             let selectedTone = toneSelector.value; // Get selected tone
+
+
+            chatOutput.textContent = "Processing Checkpoint and Creating File... Please wait."; // Update chatOutput for processing message
+
+            fetch("/walt_process_checkpoint", { // Call the NEW route
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    "X-CSRFToken": csrfToken
+                },
+                body: "tone=" + encodeURIComponent(selectedTone) // Send tone for bio creation (Improvement #4)
+            })
+            .then(response => response.text()) // Changed to .text() to handle plain text API responses
+            .then(textResponse => { // Handle text response, not JSON
+                try {
+                    const data = JSON.parse(textResponse); // Try to parse as JSON first (for structured responses)
+                    if (data.error) {
+                        alert("Error creating checkpoint: " + data.error);
+                        chatOutput.textContent = "API Error: " + data.error; // Display API error in chatOutput
+                    } else {
+                        // If valid JSON, handle as before
+                        const fileContent = data["checkpoint_data"];
+
+                        // checkpointOutput.textContent = data["api_response"]; // No longer update checkpointOutput
+                        chatOutput.textContent += "\n\nCheckpoint file created and download started."; // Inform user in chatOutput
+
+                        console.log("fileContent from server", fileContent)
+
+                        const textFileAsBlob = new Blob([fileContent], { type: 'text/plain' });
+                        const fileNameToSaveAs = "sessionStory.txt";
+
+                        const downloadLink = document.createElement("a");
+                        downloadLink.download = fileNameToSaveAs;
+                        downloadLink.innerHTML = "Download File";
+                        downloadLink.href = window.URL.createObjectURL(textFileAsBlob);
+                        downloadLink.style.display = "none";
+
+                        document.body.appendChild(downloadLink);
+                        downloadLink.click();
+                        document.body.removeChild(downloadLink);
+                    }
+                } catch (e) {
+                    // If JSON parsing fails, treat the whole response as plain text
+                    console.warn("Response is not JSON, treating as plain text:", textResponse);
+                    // checkpointOutput.textContent = textResponse; // No longer update checkpointOutput
+                    chatOutput.textContent += "\n\nError processing checkpoint, but download may still start.\nRaw response: " + textResponse; // Inform user in chatOutput
+
+                     // Still trigger file download for checkpoint even if API response is not JSON
+                     fetch('/saveTextAsFileDownload', { // Call download endpoint separately
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': csrfToken
+                        },
+                        body: JSON.stringify({ checkpoint_data: chatOutput.textContent }) // Send current chatOutput text for download (might not be ideal, consider revising backend to return consistent checkpoint data)
+                    })
+                    .then(downloadResponse => downloadResponse.json()) // Expect JSON for download trigger
+                    .then(downloadData => {
+                        if (downloadData.fileContent) {
+                            const textFileAsBlob = new Blob([downloadData.fileContent], { type: 'text/plain' });
+                            const fileNameToSaveAs = "sessionStory.txt";
+                            const downloadLink = document.createElement("a");
+                            downloadLink.download = fileNameToSaveAs;
+                            downloadLink.innerHTML = "Download File";
+                            downloadLink.href = window.URL.createObjectURL(textFileAsBlob);
+                            downloadLink.style.display = "none";
+                            document.body.appendChild(downloadLink);
+                            downloadLink.click();
+                            document.body.removeChild(downloadLink);
+                        } else if (downloadData.error) {
+                            alert("Error triggering download after API issue: " + downloadData.error);
+                            chatOutput.textContent += "\n\nDownload Error: " + downloadData.error; // Inform user of download error in chatOutput
+                        }
+                    })
+                    .catch(downloadError => {
+                        alert("Error triggering download after API issue: " + downloadError.message);
+                        chatOutput.textContent += "\n\nDownload Fetch Error: " + downloadError.message; // Inform user of download fetch error in chatOutput
+                    });
+                }
+            })
+            .catch(error => {
+                chatOutput.textContent = "Fetch Error: " + error.message; // Display fetch error in chatOutput
+            });
+        }
+
+        function sendCheckpointData(fileContent) {
+              try {
+                // Get CSRF token from cookie
+                function getCookie(name) {
+                    const value = `; ${document.cookie}`;
+                    const parts = value.split(`; ${name}=`);
+                    if (parts.length === 2) return parts.pop().split(';').shift();
+                }
+
+                const csrfToken = getCookie('csrf_token');
+
+                fetch("/load_checkpoint", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/x-www-form-urlencoded",
+                        "X-CSRFToken": csrfToken
+                    },
+                    body: "checkpoint_data=" + encodeURIComponent(fileContent)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        document.getElementById("chatOutput").textContent = "Error: " + data.error;
+                    } else {
+                        document.getElementById("chatOutput").textContent = data.response;
+                        if (data.biography_outline) { // Improvement #5: Load and display outline
+                            biographyOutline = data.biography_outline;
+                            updateBiographyOutlineDisplay();
+                        }
+                        sendLoadMessage(); // Added message on upload
+                    }
+                })
+                .catch(error => {
+                    document.getElementById("chatOutput").textContent = "Error loading checkpoint.";
+                });
+            } catch (error) {
+                console.error("Error in sendCheckpointData:", error);
+                document.getElementById("chatOutput").textContent = "Error loading checkpoint.";
+            }
+        }
+
+        function sendLoadMessage() {
+            let chatOutput = document.getElementById("chatOutput");
+            chatOutput.textContent ="Oh I see! I'd forgotten what we already did. Wonderful";
+         }
+         // This function is triggered when the "Start at last Checkpoint" is pressed
+         function uploadStory() {
+              console.log("Firing Upload Story Trigger");
+              if (storyUpload) {
+                  storyUpload.click(); //Programitcally fire "load a checkpoint file."
+               } else {
+                 console.error("storyUpload element not found");
+               }
+
+           }
+
+
+        // Function to update biography outline display (Improvement #5)
+        function updateBiographyOutlineDisplay() {
+            const outlineDiv = document.getElementById('biographyOutline');
+            if (!biographyOutline || !outlineDiv) return;
+
+            let outlineHTML = '<h2>Biography Outline</h2><ul>';
+            biographyOutline.forEach(chapter => {
+                const statusClass = chapter.status === 'Complete' ? 'chapter-status-complete' : 'chapter-status-tbd';
+                outlineHTML += `<li><span class="chapter-title">Chapter ${chapter.chapter}: ${chapter.title}</span> - <span class="${statusClass}">${chapter.status}</span></li>`;
+            });
+            outlineHTML += '</ul>';
+            outlineDiv.innerHTML = outlineHTML;
+        }
+
+
+        //Event Handling
+        document.addEventListener('DOMContentLoaded', function() {
+            storyUpload = document.getElementById("story_upload"); // Define at document load
+            biographyOutline = {{ biography_outline|tojson }}; // Initialize biographyOutline from template (Improvement #5)
+            updateBiographyOutlineDisplay(); // Initial outline display (Improvement #5)
+            const chatOutput = document.getElementById("chatOutput");
+            const initialMessage = "{{ initial_message|default('') | safe }}"; // Get initial message from template
+
+            if (initialMessage) { // Check if initial message exists
+                chatOutput.textContent = initialMessage; // Set initial message in chat output
+            }
+
+
+             console.log("Story Upload: Document is loaded");
+            if (storyUpload) {
+               //Event
+               storyUpload.addEventListener("change", function(event) { //Make sure event is captured
+                    console.log("Event Listener Triggered");
+                    if (this.files && this.files[0]) {
+                      const fileInput = document.getElementById("story_upload");
+                      const chatOutput = document.getElementById("chatOutput");
+
+                      const file = fileInput.files[0];
+
+                       const reader = new FileReader();
+                          //Set value for upload
+                         reader.onload = function(event) {
+                               try{
+                                    console.log ("Story Uploaded to the Chat Output", event.target.result); //Check log before
+                                    //Capture the file upload
+                                    uploaded_content = event.target.result;
+
+                                    //Display Load
+                                    chatOutput.textContent = "Loading Checkpoint...";  // Display loading message
+
+                                    //Load the checkpoint
+                                     sendCheckpointData(event.target.result);
+                                }
+
+                                catch (error){
+                                    chatOutput.textContent = "Error loading file: " + event.target.error;
+                                }
+                         };
+
+                         reader.onerror = function(event) {
+                            chatOutput.textContent = "Error reading file: " + event.target.error;
+                             console.error("Error reading file:", event.target.error);
+                        };
+
+                        reader.readAsText(file);
+                     }
+                  })
+            } else {
+               console.log("Story Upload does not exist")
+            }
+        })
+
+        window.onload = function() {
+            document.getElementById("chatOutput").textContent = "";  // Clear default text
+        };
+    </script>
+</head>
+<body>
+    <h1>Walt the Biographer</h1>
+    <p class="tagline">I want to write your story!</p>
+
+       <div id="uploadButtonContainer">
+        <button id="uploadButton" onclick="uploadStory()">Start at last Checkpoint</button>
+    </div>
+    <input type="file" id="story_upload" name="story_upload" accept=".txt, .walt">
+
+    <div class="chat-container">
+         <div class="chat-area">
+            <h2 class="chat-title">Walt</h2>
+            <div class="chat-output" id="chatOutput"></div>
+        </div>
+        <div class="chat-area">
+            <h2 class="chat-title">Your Prompts</h2>
+            <div class="prompt-area">
+                <textarea id="userPrompt" placeholder="Enter your prompt" rows="13"></textarea>
+                <button id="submitButton" onclick="submitPrompt()">Submit</button>
+            </div>
+        </div>
+    </div>
+
+    <h3 class="dataNote">Note: No data is saved by this application, the only memory is through this file alone.</h3>
+
+    <div class="save-checkpoint-area">
+        <button id="saveButton" onclick="saveTextAsFile()">Create Checkpoint File and Analyze</button>
+    </div>
+
+    <div class="checkpoint-area">
+        <div class="tone-and-craft-group">  <!-- NEW GROUPING DIV -->
+            <div class="tone-selector-area">
+                <label for="toneSelector">Biography Tone:</label>
+                <select id="toneSelector">
+                    <option value="default">Default</option>
+                    <option value="humorous">Humorous</option>
+                    <option value="reflective">Reflective</option>
+                    <option value="dramatic">Dramatic</option>
+                    <option value="inspirational">Inspirational</option>
+                </select>
+            </div>
+            <div>
+                <button id="craftBiographyButton">Craft Biography</button>
+            </div>
+        </div>
+    </div>
+
+
+    <div id="sessionSummary"></div>
+</body>
+</html>
