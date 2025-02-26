@@ -5,9 +5,9 @@ import logging
 import json
 from werkzeug.utils import secure_filename
 
-walt_bp = Blueprint('walt', __name__, template_folder='templates')
+walt2_bp = Blueprint('walt2', __name__, template_folder='templates')
 
-@walt_bp.route('/walt')
+@walt2_bp.route('/walt2')
 def walt_window():
     new_bio = request.args.get('new_bio') # Check for new_bio parameter
 
@@ -24,7 +24,7 @@ def walt_window():
         return render_template('walt2/templates/walt_window2.html', biography_outline=session['biography_outline'], initial_message=None)
 
 
-@walt_bp.route('/get_walt_prompt')
+@walt2_bp.route('/get_walt_prompt')
 def get_walt_prompt():
     try:
         with open('walt2/walt_prompts/walt_prompt.txt', 'r', encoding='utf-8') as f:
@@ -37,7 +37,7 @@ def get_walt_prompt():
         logging.error(f"General error in get_walt_prompt: {str(e)}")
         return jsonify({"error": f"Error reading walt_prompt.txt: {str(e)}"}), 500
 
-@walt_bp.route('/walt_analyze', methods=['POST'])
+@walt2_bp.route('/walt_analyze', methods=['POST'])
 def walt_analyze():
     user_input = request.form.get('user_query')
     uploaded_content = request.form.get('uploaded_content', '')
@@ -117,7 +117,7 @@ def walt_analyze():
         logging.error(f"OpenAI API Error: {e}", exc_info=True)
         return jsonify({"error": str(e)}), 500
 
-@walt_bp.route('/walt_session_summary', methods=['POST'])
+@walt2_bp.route('/walt_session_summary', methods=['POST'])
 def walt_session_summary():
     session_content = ""
     try:
@@ -145,7 +145,7 @@ def walt_session_summary():
         print(f"Error calling OpenAI: {e}")
         return jsonify({"error": str(e)}), 500
 
-@walt_bp.route('/load_checkpoint', methods=['POST'])
+@walt2_bp.route('/load_checkpoint', methods=['POST'])
 def load_checkpoint():
     checkpoint_data = request.form.get('checkpoint_data')
     if not checkpoint_data:
@@ -214,7 +214,7 @@ def load_checkpoint():
         print(f"Error processing checkpoint: {e}")
         return jsonify({"error": str(e)}), 500
 
-@walt_bp.route('/create_checkpoint', methods=['POST'])
+@walt2_bp.route('/create_checkpoint', methods=['POST'])
 def create_checkpoint():
     try:
         checkpoint_data_text = session.get('file_content', '')  # Get file_content directly as text
@@ -242,7 +242,7 @@ def create_checkpoint():
         logging.error(f"Error creating checkpoint: {e}", exc_info=True)
         return jsonify({"error": str(e)}), 500
 
-@walt_bp.route('/walt_process_checkpoint', methods=['POST'])  # RENAME saveTextAsFile to walt_process_checkpoint
+@walt2_bp.route('/walt_process_checkpoint', methods=['POST'])  # RENAME saveTextAsFile to walt_process_checkpoint
 def walt_process_checkpoint():  # RENAME function as well
     checkpoint_data_text = session.get('file_content', '')  # Get file_content directly as text
     bio_prompt_content = ""
@@ -276,7 +276,7 @@ def walt_process_checkpoint():  # RENAME function as well
             temperature=0.7,
             max_tokens=700,
         )
-        api_response = response.choices[0].message.content.strip()  # API response
+        api_response_text = response.choices[0].message.content.strip()  # API response
 
         api_response_text_safe = api_response_text.replace("<", "<").replace(">", ">")  # Escape HTML
 
@@ -299,7 +299,7 @@ def walt_process_checkpoint():  # RENAME function as well
         return jsonify({"error": error_message, "api_response": api_response_text_safe}), 500  # Return JSON error with message and safe response for display
 
 
-@walt_bp.route('/saveTextAsFileDownload', methods=['POST'])  # Keep old route for file download part only
+@walt2_bp.route('/saveTextAsFileDownload', methods=['POST'])  # Keep old route for file download part only
 def saveTextAsFileDownload():  # Keep separate function for actual download - UNCHANGED
     try:
         data = request.get_json()
