@@ -7,7 +7,7 @@ from werkzeug.utils import secure_filename
 
 walt2_bp = Blueprint('walt2', __name__, template_folder='templates')
 
-@walt2_bp.route('/')  # CHANGED ROUTE to root '/' within walt2_bp
+@walt2_bp.route('/')  # CHANGED - Route for Walt2 main window is now root '/' within blueprint
 def walt_window(): # Function name remains walt_window
     new_bio = request.args.get('new_bio')
 
