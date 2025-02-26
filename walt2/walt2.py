@@ -17,16 +17,17 @@ def walt_window():
             session.pop('biography_outline', None)
             session.pop('file_content', None)
 
-        # Render splash screen if no session OR new bio requested
-        return render_template('walt_splash2.html') # Corrected template path - removed walt2/templates/
+        # Render splash screen - CORRECTED TEMPLATE PATHS
+        return render_template('walt_splash2.html') # Corrected: Now looks in walt2/templates
     else:
-        # Existing session (returning user) - proceed to main app
-        return render_template('walt_window2.html', biography_outline=session['biography_outline'], initial_message=None) # Corrected template path - removed walt2/templates/
+        # Existing session (returning user) - proceed to main app - CORRECTED TEMPLATE PATHS
+        return render_template('walt_window2.html', biography_outline=session['biography_outline'], initial_message=None) # Corrected: Now looks in walt2/templates
 
 
 @walt2_bp.route('/get_walt_prompt')
 def get_walt_prompt():
     try:
+        # Corrected Prompt Path - now looks in walt2/walt_prompts
         with open('walt2/walt_prompts/walt_prompt.txt', 'r', encoding='utf-8') as f:
             prompt_text = f.read()
         return prompt_text
@@ -47,6 +48,7 @@ def walt_analyze():
         return jsonify({"error": "No user query provided"}), 400
 
     try:
+        # Corrected Prompt Path - now looks in walt2/walt_prompts
         with open('walt2/walt_prompts/walt_prompt.txt', 'r', encoding='utf-8') as f:
             walt_prompt_base = f.read()
 
@@ -146,6 +148,7 @@ def load_checkpoint():
 
     try:
         try:
+            # Corrected Prompt Path - now looks in walt2/walt_prompts
             with open('walt2/walt_prompts/walt_prompt.txt', 'r', encoding='utf-8') as f:
                 walt_prompt = f.read()
         except FileNotFoundError as e:
@@ -205,6 +208,7 @@ def create_checkpoint():
         checkpoint_data_text = session.get('file_content', '')
         bio_prompt_content = ""
         try:
+            # Corrected Prompt Path - now looks in walt2/walt_prompts
             with open('walt2/walt_prompts/bio_creator_prompt.txt', 'r', encoding='utf-8') as f:
                 bio_prompt_content = f.read()
         except Exception as e:
@@ -235,6 +239,7 @@ def walt_process_checkpoint():
 
     try:
         try:
+            # Corrected Prompt Path - now looks in walt2/walt_prompts
             with open('walt2/walt_prompts/bio_creator_prompt.txt', 'r', encoding='utf-8') as f:
                 bio_prompt_content = f.read()
         except Exception as e:

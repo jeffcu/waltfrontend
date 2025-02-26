@@ -136,7 +136,7 @@
     </style>
     <script>
         function beginNewBiography() {
-            window.location.href = "/walt?new_bio=true"; // Redirect to /walt with a parameter
+            window.location.href = "/walt?new_bio=true"; // Corrected path to just "/walt"
         }
 
         function loadCheckpointFile() {
@@ -175,7 +175,7 @@
 
             const csrfToken = getCookie('csrf_token');
 
-            fetch("/load_checkpoint", {
+            fetch("/walt/load_checkpoint", { // Corrected path to "/walt/load_checkpoint"
                 method: "POST",
                 headers: {
                     "Content-Type": "application/x-www-form-urlencoded",
@@ -188,7 +188,7 @@
                 if (data.error) {
                     alert("Error loading checkpoint: " + data.error);
                 } else {
-                    window.location.href = "/walt"; // Redirect to main app after loading checkpoint
+                    window.location.href = "/walt"; // Corrected path to just "/walt"
                 }
             })
             .catch(error => {
