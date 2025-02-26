@@ -8,7 +8,7 @@ from werkzeug.utils import secure_filename
 
 walt_bp = Blueprint('walt', __name__, template_folder='templates')
 
-@walt_bp.route('/')  # CORRECTED ROUTE - changed from '/walt' to '/'
+@walt_bp.route('/')  # CORRECT: Route is root '/' within the walt_bp blueprint
 def walt_window():
     new_bio = request.args.get('new_bio') # Check for new_bio parameter
 
@@ -19,10 +19,10 @@ def walt_window():
             session.pop('file_content', None)
 
         # Render splash screen if no session OR new bio requested
-        return render_template('walt/templates/walt_splash.html')
+        return render_template('walt_splash.html') # CORRECT: Template in walt/templates
     else:
         # Existing session (returning user) - proceed to main app
-        return render_template('walt/templates/walt_window.html', biography_outline=session['biography_outline'], initial_message=None)
+        return render_template('walt_window.html', biography_outline=session['biography_outline'], initial_message=None) # CORRECT: Template in walt/templates
 
 
 @walt_bp.route('/get_walt_prompt')
@@ -288,7 +288,7 @@ def walt_process_checkpoint():
         session['file_content'] = file_content_for_download
         session.modified = True  # Ensure session is marked as modified
 
-        return jsonify({  # Return checkpoint data (for file) and api_response (for display)
+        return jsonify({  # Return checkpoint data (for file) and api response (for display)
             "checkpoint_data": file_content_for_download,
             "api_response": combined_output_content  # Return COMBINED content for display
         })
