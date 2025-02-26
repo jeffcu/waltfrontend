@@ -7,6 +7,10 @@ from werkzeug.utils import secure_filename
 
 walt2_bp = Blueprint('walt2', __name__, template_folder='templates')
 
+@walt2_bp.route('/test_walt2') # TEST ROUTE
+def test_walt2_route():
+    return "Walt2 Test Route is Working!"
+
 @walt2_bp.route('/walt2')
 def walt_window():
     new_bio = request.args.get('new_bio')
