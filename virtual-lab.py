@@ -11,7 +11,7 @@ from PyPDF2 import PdfReader
 from werkzeug.utils import secure_filename
 from flask_wtf.csrf import CSRFProtect, generate_csrf
 from walt.walt import walt_bp
-from walt2.walt2 import walt2_bp # <-- Make sure this line is EXACTLY as shown
+from walt2.walt2 import walt2_bp # Import the new walt2 blueprint  <-- ADDED
 from flask_session import Session
 import colorsys
 import random
@@ -245,8 +245,8 @@ def jeffsart_image(filename):
     else:
         abort(404)
 
-app.register_blueprint(walt_bp, url_prefix='/walt')
-app.register_blueprint(walt2_bp, url_prefix='/walt2') # <-- And this line is EXACTLY as shown
+app.register_blueprint(walt_bp, url_prefix='/walt') # <-- Walt at /walt
+app.register_blueprint(walt2_bp, url_prefix='/walt2') # <-- Walt2 at /walt2
 app.register_blueprint(wc_bp, url_prefix='/word_counter')
 
 

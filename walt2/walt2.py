@@ -7,12 +7,8 @@ from werkzeug.utils import secure_filename
 
 walt2_bp = Blueprint('walt2', __name__, template_folder='templates')
 
-@walt2_bp.route('/test_walt2') # TEST ROUTE
-def test_walt2_route():
-    return "Walt2 Test Route is Working!"
-
-@walt2_bp.route('/walt2')
-def walt_window():
+@walt2_bp.route('/')  # CHANGED ROUTE to root '/' within walt2_bp
+def walt_window(): # Function name remains walt_window
     new_bio = request.args.get('new_bio')
 
     if 'conversation' not in session or new_bio == 'true':
@@ -21,9 +17,9 @@ def walt_window():
             session.pop('biography_outline', None)
             session.pop('file_content', None)
 
-        return render_template('walt_splash2.html')
+        return render_template('walt2/templates/walt_splash2.html')
     else:
-        return render_template('walt_window2.html', biography_outline=session['biography_outline'], initial_message=None)
+        return render_template('walt2/templates/walt_window2.html', biography_outline=session['biography_outline'], initial_message=None)
 
 
 @walt2_bp.route('/get_walt_prompt')
