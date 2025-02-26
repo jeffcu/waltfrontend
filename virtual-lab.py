@@ -1,55 +1,46 @@
 import os
 from flask import Flask, request, render_template, send_file, jsonify
 from dotenv import load_dotenv
-import numpy as np  # Import NumPy
+import numpy as np
 import json
 import logging
 import weasyprint
 from io import BytesIO
 from investment_analysis.services import InvestmentAnalysisService
-#from investment_analysis.utils import format_pdf_content # take out, not being used
 from PyPDF2 import PdfReader
-from werkzeug.utils import secure_filename  # for secure file uploads
-from flask_wtf.csrf import CSRFProtect, generate_csrf  # Import CSRFProtect and generate_csrf
-from walt.walt import walt_bp  # Import the walt blueprint
-from walt2.walt2 import walt2_bp # Import the new walt2 blueprint  <-- ADDED
-from flask_session import Session # Import Flask-Session
-import colorsys #Import colorsys
+from werkzeug.utils import secure_filename
+from flask_wtf.csrf import CSRFProtect, generate_csrf
+from walt.walt import walt_bp
+from walt2.walt2 import walt2_bp
+from flask_session import Session
+import colorsys
 import random
 
-# Import Word Counter blueprint  <-- ADDED
 from word_counter.word_counter import wc_bp
 
-# Load environment variables
 load_dotenv()
 
-# Setup logging
 logging.basicConfig(level=logging.DEBUG)
 
-# Initialize Flask application
 app = Flask(__name__)
-app.config['UPLOAD_FOLDER'] = 'uploads'  # Folder to store uploaded files
+app.config['UPLOAD_FOLDER'] = 'uploads'
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
-app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max upload size
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'a_very_secret_key')  # Set a secret key for CSRF
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'a_very_secret_key')
 
-# Configure Flask-Session (for storing conversation history)
-app.config['SESSION_TYPE'] = 'filesystem'  # Or 'redis', 'mongodb', etc.
-app.config['SESSION_PERMANENT'] = False  # Session expires when browser closes
-app.config['SESSION_KEY_PREFIX'] = 'walt_'  # Prevents conflicts with other session data
-Session(app) # Initialize Flask-Session
+app.config['SESSION_TYPE'] = 'filesystem'
+app.config['SESSION_PERMANENT'] = False
+app.config['SESSION_KEY_PREFIX'] = 'walt_'
+Session(app)
 
-# Initialize CSRF protection  <-- ADDED - IMPORTANT
-csrf = CSRFProtect(app)  # Initialize CSRF protection with the app  <-- CHANGED
+csrf = CSRFProtect(app)
 
-# Inject CSRF token into all templates  <-- ADDED - IMPORTANT
 @app.after_request
 def inject_csrf_token(response):
-    response.set_cookie('csrf_token', generate_csrf())  # Set a cookie to access the token
+    response.set_cookie('csrf_token', generate_csrf())
     return response
 
-# Initialize InvestmentAnalysisService (pass API key)
 openai_api_key = os.environ.get("OPENAI_API_KEY")
 if not openai_api_key:
     logging.error("OPENAI_API_KEY not set in environment variables.")
@@ -57,18 +48,15 @@ if not openai_api_key:
 
 analysis_service = InvestmentAnalysisService(openai_api_key=openai_api_key)
 
-# Application version
-APP_VERSION = "0.1.17"  #increment for change
+APP_VERSION = "0.1.17"
 
-# Define color palettes
 COLOR_PALETTES = [
-    ["#33FF33", "#FF3333", "#3333FF"],  # Green, Red, Blue
-    ["#FFFF33", "#33FFFF", "#FF33FF"],  # Yellow, Cyan, Magenta
-    ["#FF8000", "#8000FF", "#00FF80"],  # Orange, Violet, Spring Green
-    ["#808080", "#C0C0C0", "#FFFFFF"]   # Gray, Silver, White
+    ["#33FF33", "#FF3333", "#3333FF"],
+    ["#FFFF33", "#33FFFF", "#FF33FF"],
+    ["#FF8000", "#8000FF", "#00FF80"],
+    ["#808080", "#C0C0C0", "#FFFFFF"]
 ]
 
-# Initialize the palette index
 palette_index = 0
 
 
@@ -80,26 +68,23 @@ def dynamic():
 @app.route('/dynamic_data')
 def dynamic_data():
     global palette_index
-    # Option 1: Sine Wave Graph
     num_points = 640
     x = np.linspace(0, 10 * np.pi, num_points)
     y = np.sin(x)
     sine_data = {'x': x.tolist(), 'y': y.tolist()}
-    # Option 2: Mandelbrot Set
-    width, height, max_iter = 640, 640, 50  # Increased resolution
+    width, height, max_iter = 640, 640, 50
     mandelbrot_set = calculate_mandelbrot(width, height, max_iter, palette_index)
     mandelbrot_data = mandelbrot_set.tolist()
-    palette_index = (palette_index + 1) % len(COLOR_PALETTES)  # Increment and loop
+    palette_index = (palette_index + 1) % len(COLOR_PALETTES)
 
     return jsonify({'mandelbrot': mandelbrot_data, 'sine': sine_data})
 
 
-# Mandelbrot Set Calculator Function
 def calculate_mandelbrot(width, height, max_iter, palette_index):
     x_min, x_max = -2.0, 1.0
     y_min, y_max = -1.5, 1.5
 
-    image = np.zeros((height, width, 3), dtype=np.uint8)  # 3 channels for RGB color
+    image = np.zeros((height, width, 3), dtype=np.uint8)
     palette = COLOR_PALETTES[palette_index]
 
     x_range = np.linspace(x_min, x_max, width)
@@ -112,32 +97,26 @@ def calculate_mandelbrot(width, height, max_iter, palette_index):
             for k in range(max_iter):
                 z = z * z + c
                 if abs(z) > 2:
-                    # Colorization based on iteration count:
-                    color = palette[k % len(palette)]  # Select color from palette
-
-                    # Convert hex to RGB
+                    color = palette[k % len(palette)]
                     color = color.lstrip('#')
                     r, g, b = tuple(int(color[i:i + 2], 16) for i in (0, 2, 4))
                     image[i, j] = [r, g, b]
                     break
             else:
-                image[i, j] = [0, 0, 0]  # Black if it belongs to the set
+                image[i, j] = [0, 0, 0]
 
     return image
 
-# Home route redirecting to the gallery page
 @app.route('/')
 def home():
     return render_template('gallery.html')
 
 
-ALLOWED_EXTENSIONS = {'pdf'}  # only allow pdf files
-
+ALLOWED_EXTENSIONS = {'pdf'}
 
 def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
 
 def extract_text_from_pdf(file):
     try:
@@ -148,8 +127,6 @@ def extract_text_from_pdf(file):
         logging.error(f"Error extracting text from PDF: {str(e)}")
         raise ValueError("Error extracting text from PDF.  Ensure it's a valid PDF.") from e
 
-
-# Route to render the angel investment analysis page
 @app.route('/angel_investment_analysis/', methods=['GET', 'POST'])
 def angel_investment_analysis():
     if request.method == 'POST':
@@ -183,7 +160,6 @@ def angel_investment_analysis():
     return render_template('angel_investment_analysis.html', analysis_result=None)
 
 
-# Route for handling AJAX API call
 @app.route('/analyze', methods=['POST'])
 def analyze():
     try:
@@ -213,7 +189,6 @@ def analyze():
         return jsonify({"Analysis Summary": f"An unexpected error occurred: {str(e)}"})
 
 
-# Route to generate and download PDF report
 @app.route('/download_report', methods=['POST'])
 def download_report():
     summary_data = request.form.get('summaryData')
@@ -232,18 +207,18 @@ def download_report():
             <style>
                 body {{ font-family: 'Arial', sans-serif; padding: 20px; }}
                 h1 {{ color: #2D9CDB; font-size: 24px; text-align: center; }}
-                pre {{ white-space: pre-wrap; word-break: break-word; font-family: 'Arial', sans-serif; }} /* Use pre tag to preserve formatting */
+                pre {{ white-space: pre-wrap; word-break: break-word; font-family: 'Arial', sans-serif; }}
             </style>
         </head>
         <body>
             <h1>Angel Investment Analysis Summary</h1>
-            <pre>{summary_data}</pre>  <!-- Display the raw summary data -->
+            <pre>{summary_data}</pre>
         </body>
     </html>
     """
 
     try:
-        pdf = BytesIO(weasyprint.HTML(string=html_content).write_pdf())  # using BytesIO to handle binary data
+        pdf = BytesIO(weasyprint.HTML(string=html_content).write_pdf())
         return send_file(
             pdf,
             as_attachment=True,
@@ -255,33 +230,26 @@ def download_report():
         abort(500, description=f"PDF generation failed: {str(e)}")
 
 
-# New route to serve static API testing window
 @app.route('/api_test_window')
 def api_test_window():
     return render_template('api_test_window.html')
 
-# New route to display images from /static/images/jeffsart
 @app.route('/jeffsart/<filename>')
 def jeffsart_image(filename):
-    image_path = os.path.join('images', 'jeffsart', filename) # Corrected line
+    image_path = os.path.join('images', 'jeffsart', filename)
     full_path = os.path.join('static', image_path)
-    logging.info(f"Image path: {image_path}")  # Log the relative path
-    logging.info(f"Full path: {full_path}")  # Log the absolute path
+    logging.info(f"Image path: {image_path}")
+    logging.info(f"Full path: {full_path}")
     if os.path.isfile(full_path):
         return render_template('jeffsart_image.html', image_path=image_path)
     else:
         abort(404)
 
-# Register the walt blueprint
 app.register_blueprint(walt_bp, url_prefix='/walt')
-
-# Register the walt2 blueprint (new Walt2)  <-- ADDED
 app.register_blueprint(walt2_bp, url_prefix='/walt2')
+app.register_blueprint(wc_bp, url_prefix='/word_counter')
 
-# Register the Word Counter blueprint  <-- ADDED
-app.register_blueprint(wc_bp)
 
-# Fix for Heroku: Bind to PORT
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=True)
