@@ -8,7 +8,7 @@ from werkzeug.utils import secure_filename
 
 walt_bp = Blueprint('walt', __name__, template_folder='templates')
 
-@walt_bp.route('/walt')
+@walt_bp.route('/')  # CORRECTED ROUTE - changed from '/walt' to '/'
 def walt_window():
     new_bio = request.args.get('new_bio') # Check for new_bio parameter
 
@@ -19,10 +19,10 @@ def walt_window():
             session.pop('file_content', None)
 
         # Render splash screen if no session OR new bio requested
-        return render_template('walt_splash.html')
+        return render_template('walt/templates/walt_splash.html')
     else:
         # Existing session (returning user) - proceed to main app
-        return render_template('walt_window.html', biography_outline=session['biography_outline'], initial_message=None)
+        return render_template('walt/templates/walt_window.html', biography_outline=session['biography_outline'], initial_message=None)
 
 
 @walt_bp.route('/get_walt_prompt')
@@ -243,8 +243,8 @@ def create_checkpoint():
         logging.error(f"Error creating checkpoint: {e}", exc_info=True)
         return jsonify({"error": str(e)}), 500
 
-@walt_bp.route('/walt_process_checkpoint', methods=['POST'])  # RENAME saveTextAsFile to walt_process_checkpoint
-def walt_process_checkpoint():  # RENAME function as well
+@walt_bp.route('/walt_process_checkpoint', methods=['POST'])
+def walt_process_checkpoint():
     checkpoint_data_text = session.get('file_content', '')  # Get file_content directly as text
     bio_prompt_content = ""
     api_response_text_safe = ""  # Initialize to handle cases where API call fails
@@ -288,7 +288,7 @@ def walt_process_checkpoint():  # RENAME function as well
         session['file_content'] = file_content_for_download
         session.modified = True  # Ensure session is marked as modified
 
-        return jsonify({  # Return checkpoint data (for file) and api response (for display)
+        return jsonify({  # Return checkpoint data (for file) and api_response (for display)
             "checkpoint_data": file_content_for_download,
             "api_response": combined_output_content  # Return COMBINED content for display
         })
@@ -323,7 +323,7 @@ def get_biography_outline():
     return [
         {"chapter": 1, "title": "Hook – A Defining Moment", "status": "TBD"},
         {"chapter": 2, "title": "Origins – Early Life & Influences", "status": "TBD"},
-        {"chapter": 3, "title": "Call to Action – The First Big Life Decision", "status": "TBD"},
+        {"chapter": 3, "title": "Call to Action – First Big Decision", "status": "TBD"},
         {"chapter": 4, "title": "Rising Conflict – Struggles & Growth", "status": "TBD"},
         {"chapter": 5, "title": "The Climax – Defining Achievements", "status": "TBD"}
     ]
