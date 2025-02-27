@@ -14,7 +14,7 @@ def format_openai_text(text):
 
 @walt2_bp.route('/')
 def walt_window():
-    return render_template('walt_splash2.html')
+    return render_template('walt_window2.html', biography_outline=session.get('biography_outline'), initial_message=None) # CORRECTED: render walt_window2.html
 
 @walt2_bp.route('/new_bio_start', methods=['GET'])
 def new_bio_start():
