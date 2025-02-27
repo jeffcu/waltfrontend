@@ -108,12 +108,17 @@ def continue_bio_start():
             if conversation_history_text:
                 logging.debug(f"Conversation history text found:\n{conversation_history_text[:200]}...") # Log conversation history text
                 conversation_messages = []
+                valid_roles = ['system', 'user', 'assistant'] # Define valid roles
                 for line in conversation_history_text.strip().split('\n'):
                     if line.strip():
                         try: # Add try-except for line parsing
                             role, content = line.split(':', 1)
-                            conversation_messages.append({"role": role.strip(), "content": content.strip()})
-                            logging.debug(f"Parsed line - Role: {role.strip()}, Content: {content.strip()[:100]}...") # Log parsed line
+                            role = role.strip() # Strip whitespace from role
+                            if role in valid_roles: # Check if role is valid
+                                conversation_messages.append({"role": role, "content": content.strip()})
+                                logging.debug(f"Parsed line - Role: {role}, Content: {content.strip()[:100]}...") # Log parsed line
+                            else:
+                                logging.warning(f"Skipping line with invalid role: {role}. Line: {line}") # Log skipped lines
                         except ValueError as ve:
                             logging.warning(f"Error parsing conversation history line: {line}. Error: {ve}") # Log parsing errors
                 session['conversation'].extend(conversation_messages)
