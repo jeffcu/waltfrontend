@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -245,7 +246,39 @@
             justify-content: center; /* Center content horizontally within this group */
             align-items: flex-end; /* Align items to the bottom of this group */
             gap: 20px; /* Space between tone selector and craft button inside group */
-            width: auto; /* Adjust width to content */
+            width: 80%; /* Adjust width to content */
+            max-width: 600px;
+            min-width: 500px;
+            padding: 20px;
+            background: #2A3D55;
+            border-radius: 12px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+            text-align: left;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .craft-area-container {
+            display: flex;
+            flex-direction: column; /* Stack items vertically */
+            justify-content: center; /* Center items horizontally in container */
+            align-items: center; /* Center items horizontally in flex direction (which is column now) */
+            margin-top: 20px;
+            gap: 20px; /* Space between tone selector area and craft button */
+             width: 80%; /* Adjust width to content */
+            max-width: 900px;
+            min-width: 600px;
+             padding: 20px;
+            background: #2A3D55;
+            border-radius: 12px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+            text-align: left;
+            margin-left: auto;
+            margin-right: auto;
+
+        }
             margin: 0 auto; /* Center the tone-and-craft-group itself if needed within checkpoint-area */
         }
 
@@ -276,6 +309,7 @@
             box-shadow: 0 4px 8px rgba(255, 165, 0, 0.5); /* Example shadow */
             transition: background-color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
             white-space: nowrap; /* Prevent text wrapping */
+            width: 100%;
             /* align-self: flex-end;  Not needed anymore as alignment is within tone-and-craft-group */
         }
 
@@ -284,6 +318,7 @@
             transform: scale(1.05); /* Slight scale up on hover */
             box-shadow: 0 6px 12px rgba(255, 165, 0, 0.7); /* Enhanced shadow on hover */
         }
+
 
         .save-checkpoint-area {
             text-align: center; /* Center the save checkpoint button */
@@ -301,15 +336,13 @@
         function submitPrompt() {
             let userInput = document.getElementById("userPrompt").value;
             let chatOutput = document.getElementById("chatOutput");
-            let toneSelector = document.getElementById("toneSelector"); // Improvement #4
-            let selectedTone = toneSelector.value; // Get selected tone
 
             chatOutput.textContent = "Loading...";
-            sendToOpenAI(userInput, chatOutput, uploaded_content, selectedTone); // Send tone
+            sendToOpenAI(userInput, chatOutput, uploaded_content);
             document.getElementById("userPrompt").value = "";
         }
 
-         function sendToOpenAI(userInput, chatOutput, fileContent, tone) { // Accept tone
+         function sendToOpenAI(userInput, chatOutput, fileContent) {
             // Get CSRF token from cookie
             function getCookie(name) {
                 const value = `; ${document.cookie}`;
@@ -319,13 +352,13 @@
 
             const csrfToken = getCookie('csrf_token');
 
-            fetch("/walt_analyze", {
+            fetch("/walt2/walt_analyze", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/x-www-form-urlencoded",
                     "X-CSRFToken": csrfToken
                 },
-                 body: "user_query=" + encodeURIComponent(userInput) + "&uploaded_content=" + encodeURIComponent(fileContent) + "&tone=" + encodeURIComponent(tone) // Send tone
+                 body: "user_query=" + encodeURIComponent(userInput) + "&uploaded_content=" + encodeURIComponent(fileContent)
             })
             .then(response => response.json())
             .then(data => {
@@ -333,7 +366,7 @@
                     chatOutput.textContent = "Error: " + data.error;
                 } else {
                     chatOutput.textContent = data.response;
-                    if (data.biography_outline) { // Improvement #5: Update outline display
+                    if (data.biography_outline) {
                         biographyOutline = data.biography_outline;
                         updateBiographyOutlineDisplay();
                     }
@@ -348,7 +381,7 @@
          function getStoryBoard(){
             let chatOutput = document.getElementById("chatOutput").textContent;
             return chatOutput
-        }
+         }
 
        function saveTextAsFile() {
             // Get CSRF token from cookie
@@ -359,95 +392,94 @@
             }
 
             const csrfToken = getCookie('csrf_token');
-             let chatOutput = document.getElementById("chatOutput");  // Get chatOutput for feedback
-             let toneSelector = document.getElementById("toneSelector"); // Improvement #4
-             let selectedTone = toneSelector.value; // Get selected tone
+             let chatOutput = document.getElementById("chatOutput");
 
+            chatOutput.textContent = "Processing Checkpoint and Creating File... Please wait.";
 
-            chatOutput.textContent = "Processing Checkpoint and Creating File... Please wait."; // Update chatOutput for processing message
-
-            fetch("/walt_process_checkpoint", { // Call the NEW route
+            fetch("/walt2/create_checkpoint", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/x-www-form-urlencoded",
                     "X-CSRFToken": csrfToken
                 },
-                body: "tone=" + encodeURIComponent(selectedTone) // Send tone for bio creation (Improvement #4)
             })
-            .then(response => response.text()) // Changed to .text() to handle plain text API responses
-            .then(textResponse => { // Handle text response, not JSON
-                try {
-                    const data = JSON.parse(textResponse); // Try to parse as JSON first (for structured responses)
-                    if (data.error) {
-                        alert("Error creating checkpoint: " + data.error);
-                        chatOutput.textContent = "API Error: " + data.error; // Display API error in chatOutput
-                    } else {
-                        // If valid JSON, handle as before
-                        const fileContent = data["checkpoint_data"];
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert("Error creating checkpoint: " + data.error);
+                    chatOutput.textContent = "API Error: " + data.error;
+                } else {
+                    const fileContent = data["checkpoint_data"];
 
-                        // checkpointOutput.textContent = data["api_response"]; // No longer update checkpointOutput
-                        chatOutput.textContent += "\n\nCheckpoint file created and download started."; // Inform user in chatOutput
+                    chatOutput.textContent += "\n\nCheckpoint file created and download started.";
 
-                        console.log("fileContent from server", fileContent)
+                    console.log("fileContent from server", fileContent)
 
-                        const textFileAsBlob = new Blob([fileContent], { type: 'text/plain' });
-                        const fileNameToSaveAs = "sessionStory.txt";
+                    const textFileAsBlob = new Blob([fileContent], { type: 'text/plain' });
+                    const fileNameToSaveAs = "sessionStory.txt";
 
-                        const downloadLink = document.createElement("a");
-                        downloadLink.download = fileNameToSaveAs;
-                        downloadLink.innerHTML = "Download File";
-                        downloadLink.href = window.URL.createObjectURL(textFileAsBlob);
-                        downloadLink.style.display = "none";
+                    const downloadLink = document.createElement("a");
+                    downloadLink.download = fileNameToSaveAs;
+                    downloadLink.innerHTML = "Download File";
+                    downloadLink.href = window.URL.createObjectURL(textFileAsBlob);
+                    downloadLink.style.display = "none";
 
-                        document.body.appendChild(downloadLink);
-                        downloadLink.click();
-                        document.body.removeChild(downloadLink);
-                    }
-                } catch (e) {
-                    // If JSON parsing fails, treat the whole response as plain text
-                    console.warn("Response is not JSON, treating as plain text:", textResponse);
-                    // checkpointOutput.textContent = textResponse; // No longer update checkpointOutput
-                    chatOutput.textContent += "\n\nError processing checkpoint, but download may still start.\nRaw response: " + textResponse; // Inform user in chatOutput
-
-                     // Still trigger file download for checkpoint even if API response is not JSON
-                     fetch('/saveTextAsFileDownload', { // Call download endpoint separately
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRFToken': csrfToken
-                        },
-                        body: JSON.stringify({ checkpoint_data: chatOutput.textContent }) // Send current chatOutput text for download (might not be ideal, consider revising backend to return consistent checkpoint data)
-                    })
-                    .then(downloadResponse => downloadResponse.json()) // Expect JSON for download trigger
-                    .then(downloadData => {
-                        if (downloadData.fileContent) {
-                            const textFileAsBlob = new Blob([downloadData.fileContent], { type: 'text/plain' });
-                            const fileNameToSaveAs = "sessionStory.txt";
-                            const downloadLink = document.createElement("a");
-                            downloadLink.download = fileNameToSaveAs;
-                            downloadLink.innerHTML = "Download File";
-                            downloadLink.href = window.URL.createObjectURL(textFileAsBlob);
-                            downloadLink.style.display = "none";
-                            document.body.appendChild(downloadLink);
-                            downloadLink.click();
-                            document.body.removeChild(downloadLink);
-                        } else if (downloadData.error) {
-                            alert("Error triggering download after API issue: " + downloadData.error);
-                            chatOutput.textContent += "\n\nDownload Error: " + downloadData.error; // Inform user of download error in chatOutput
-                        }
-                    })
-                    .catch(downloadError => {
-                        alert("Error triggering download after API issue: " + downloadError.message);
-                        chatOutput.textContent += "\n\nDownload Fetch Error: " + downloadError.message; // Inform user of download fetch error in chatOutput
-                    });
-                }
+                    document.body.appendChild(downloadLink);
+                    downloadLink.click();
+                    document.body.removeChild(downloadLink);
+                 }
             })
             .catch(error => {
-                chatOutput.textContent = "Fetch Error: " + error.message; // Display fetch error in chatOutput
+                chatOutput.textContent = "Fetch Error: " + error.message;
             });
         }
 
-        function sendCheckpointData(fileContent) {
+        function craftBiography() {
+             // Get CSRF token from cookie
+            function getCookie(name) {
+                const value = `; ${document.cookie}`;
+                const parts = value.split(`; ${name}=`);
+                if (parts.length === 2) return parts.pop().split(';').shift();
+            }
+
+            const csrfToken = getCookie('csrf_token');
+            let chatOutput = document.getElementById("chatOutput");
+            chatOutput.textContent = "Crafting Biography... Please wait.  This may take a minute.";
+
+            fetch("/walt2/craft_biography", { // Call new route for crafting biography
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    "X-CSRFToken": csrfToken
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert("Error crafting biography: " + data.error);
+                    chatOutput.textContent = "Error crafting biography: " + data.error;
+                } else {
+                    chatOutput.innerHTML = data.api_response; // Display formatted biography
+
+                    // Trigger file download
+                    const fileContent = data.api_response.replace(/<br>/g, '\n'); //Revert <br> to line breaks for download
+                    const textFileAsBlob = new Blob([fileContent], { type: 'text/plain' });
+                    const fileNameToSaveAs = data.file_download_name || "Full_biography.txt"; // Use filename from response or default
+                    const downloadLink = document.createElement("a");
+                    downloadLink.download = fileNameToSaveAs;
+                    downloadLink.href = window.URL.createObjectURL(textFileAsBlob);
+                    downloadLink.style.display = "none";
+                    document.body.appendChild(downloadLink);
+                    downloadLink.click();
+                    document.body.removeChild(downloadLink);
+                    chatOutput.textContent += "\n\nBiography crafted and download started.";
+                }
+            })
+            .catch(error => chatOutput.textContent = "Error crafting biography: " + error.message);
+        }
+
+
+         function sendCheckpointData(fileContent) {
               try {
                 // Get CSRF token from cookie
                 function getCookie(name) {
@@ -458,7 +490,7 @@
 
                 const csrfToken = getCookie('csrf_token');
 
-                fetch("/load_checkpoint", {
+                fetch("/walt2/load_checkpoint", {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/x-www-form-urlencoded",
@@ -472,11 +504,11 @@
                         document.getElementById("chatOutput").textContent = "Error: " + data.error;
                     } else {
                         document.getElementById("chatOutput").textContent = data.response;
-                        if (data.biography_outline) { // Improvement #5: Load and display outline
+                        if (data.biography_outline) {
                             biographyOutline = data.biography_outline;
                             updateBiographyOutlineDisplay();
                         }
-                        sendLoadMessage(); // Added message on upload
+                        sendLoadMessage();
                     }
                 })
                 .catch(error => {
@@ -521,14 +553,14 @@
 
         //Event Handling
         document.addEventListener('DOMContentLoaded', function() {
-            storyUpload = document.getElementById("story_upload"); // Define at document load
-            biographyOutline = {{ biography_outline|tojson }}; // Initialize biographyOutline from template (Improvement #5)
-            updateBiographyOutlineDisplay(); // Initial outline display (Improvement #5)
+            storyUpload = document.getElementById("story_upload");
+            biographyOutline = {{ biography_outline|tojson }};
+            updateBiographyOutlineDisplay();
             const chatOutput = document.getElementById("chatOutput");
-            const initialMessage = "{{ initial_message|default('') | safe }}"; // Get initial message from template
+            const initialMessage = "{{ initial_message|default('') | safe }}";
 
-            if (initialMessage) { // Check if initial message exists
-                chatOutput.textContent = initialMessage; // Set initial message in chat output
+            if (initialMessage) {
+                chatOutput.textContent = initialMessage;
             }
 
 
@@ -552,7 +584,7 @@
                                     uploaded_content = event.target.result;
 
                                     //Display Load
-                                    chatOutput.textContent = "Loading Checkpoint...";  // Display loading message
+                                    chatOutput.textContent = "Loading Checkpoint...";
 
                                     //Load the checkpoint
                                      sendCheckpointData(event.target.result);
@@ -577,7 +609,7 @@
         })
 
         window.onload = function() {
-            document.getElementById("chatOutput").textContent = "";  // Clear default text
+            document.getElementById("chatOutput").textContent = "";
         };
     </script>
 </head>
@@ -607,23 +639,25 @@
     <h3 class="dataNote">Note: No data is saved by this application, the only memory is through this file alone.</h3>
 
     <div class="save-checkpoint-area">
-        <button id="saveButton" onclick="saveTextAsFile()">Create Checkpoint File and Analyze</button>
+        <button id="saveButton" onclick="saveTextAsFile()">Create Checkpoint File</button>
     </div>
 
-    <div class="checkpoint-area">
+    <div class="craft-area-container">
         <div class="tone-and-craft-group">  <!-- NEW GROUPING DIV -->
             <div class="tone-selector-area">
                 <label for="toneSelector">Biography Tone:</label>
                 <select id="toneSelector">
                     <option value="default">Default</option>
-                    <option value="humorous">Humorous</option>
+                    <option value="humorous">Humor</option>
                     <option value="reflective">Reflective</option>
                     <option value="dramatic">Dramatic</option>
                     <option value="inspirational">Inspirational</option>
                 </select>
             </div>
+        </div>
+         <div class="checkpoint-area">
             <div>
-                <button id="craftBiographyButton">Craft Biography</button>
+                <button id="craftBiographyButton" onclick="craftBiography()">Craft Biography</button>
             </div>
         </div>
     </div>

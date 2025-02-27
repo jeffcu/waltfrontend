@@ -1,67 +1,130 @@
-from flask import Blueprint, render_template, request, jsonify, session
+from flask import Blueprint, render_template, request, jsonify, session, send_file
 import os
 import openai
 import logging
 import json
 from werkzeug.utils import secure_filename
+from io import StringIO
 
 walt2_bp = Blueprint('walt2', __name__, template_folder='templates')
 
+def format_openai_text(text):
+    formatted_text = text.replace("\n", "<br>")
+    return formatted_text
+
 @walt2_bp.route('/')
 def walt_window():
-    new_bio = request.args.get('new_bio')
+    return render_template('walt_splash2.html')
 
-    if 'conversation' not in session or new_bio == 'true':
-        if 'conversation' in session:
-            session.pop('conversation', None)
-            session.pop('biography_outline', None)
-            session.pop('file_content', None)
+@walt2_bp.route('/new_bio_start', methods=['GET'])
+def new_bio_start():
+    session.pop('conversation', None)
+    session.pop('biography_outline', None)
+    session.pop('file_content', None)
 
-        # Render splash screen - CORRECTED TEMPLATE PATHS
-        return render_template('walt_splash2.html') # Corrected: Now looks in walt2/templates
-    else:
-        # Existing session (returning user) - proceed to main app - CORRECTED TEMPLATE PATHS
-        return render_template('walt_window2.html', biography_outline=session['biography_outline'], initial_message=None) # Corrected: Now looks in walt2/templates
-
-
-@walt2_bp.route('/get_walt_prompt')
-def get_walt_prompt():
     try:
-        # Corrected Prompt Path - now looks in walt2/walt_prompts
-        with open('walt2/walt_prompts/walt_prompt.txt', 'r', encoding='utf-8') as f:
-            prompt_text = f.read()
-        return prompt_text
-    except FileNotFoundError as e:
-        logging.error(f"Error reading walt_prompt.txt: {str(e)}")
-        return jsonify({"error": "walt_prompt.txt not found!"}), 404
+        with open('walt2/walt_prompts/welcome.txt', 'r', encoding='utf-8') as f:
+            welcome_prompt = f.read()
+    except FileNotFoundError:
+        return jsonify({"error": "welcome.txt prompt not found!"}), 500
+
+    try:
+        client = openai.Client()
+        response = client.chat.completions.create(
+            model="gpt-4o",
+            messages=[
+                {"role": "system", "content": "You are Walt, the biographer, starting a new biography."},
+                {"role": "user", "content": welcome_prompt}
+            ],
+            temperature=0.7,
+            max_tokens=200
+        )
+        initial_message = response.choices[0].message.content.strip()
+        session['conversation'] = [{"role": "system", "content": get_walt_prompt_content()}, {"role": "assistant", "content": initial_message}]
+        session['biography_outline'] = get_biography_outline()
+        session.modified = True
+        return render_template('walt_window2.html', biography_outline=session['biography_outline'], initial_message=initial_message)
+
     except Exception as e:
-        logging.error(f"General error in get_walt_prompt: {str(e)}")
-        return jsonify({"error": f"Error reading walt_prompt.txt: {str(e)}"}), 500
+        logging.error(f"OpenAI API error on new bio start: {e}")
+        return render_template('walt_window2.html', biography_outline=session['biography_outline'], initial_message=f"Error starting new bio: {str(e)}")
+
+
+@walt2_bp.route('/continue_bio_start', methods=['POST'])
+def continue_bio_start():
+    checkpoint_data = request.form.get('checkpoint_data')
+    if not checkpoint_data:
+        return jsonify({"error": "No checkpoint data received"}), 400
+
+    session.pop('conversation', None)
+    session.pop('biography_outline', None)
+    session.pop('file_content', None)
+
+    try:
+        with open('walt2/walt_prompts/continue.txt', 'r', encoding='utf-8') as f:
+            continue_prompt_base = f.read()
+    except FileNotFoundError:
+        return jsonify({"error": "continue.txt prompt not found!"}), 500
+
+    continue_prompt = continue_prompt_base + "\n\nCHECKPOINT FILE CONTENT:\n" + checkpoint_data
+
+    try:
+        client = openai.Client()
+        response = client.chat.completions.create(
+            model="gpt-4o",
+            messages=[
+                {"role": "system", "content": "You are Walt, the biographer, continuing a biography from a checkpoint."},
+                {"role": "user", "content": continue_prompt}
+            ],
+            temperature=0.7,
+            max_tokens=200
+        )
+        initial_message = response.choices[0].message.content.strip()
+
+        parts = checkpoint_data.split("--- CONVERSATION HISTORY ---\n\n")
+        file_content_part = parts[0].strip()
+        conversation_history_text = parts[1].strip() if len(parts) > 1 else ""
+
+        session['file_content'] = file_content_part
+
+        session['conversation'] = [{"role": "system", "content": get_walt_prompt_content()}]
+        if conversation_history_text:
+            conversation_messages = []
+            for line in conversation_history_text.strip().split('\n'):
+                if line.strip():
+                    role, content = line.split(':', 1)
+                    conversation_messages.append({"role": role.strip(), "content": content.strip()})
+            session['conversation'].extend(conversation_messages)
+
+        session['conversation'].append({"role": "assistant", "content": initial_message})
+        session['biography_outline'] = get_biography_outline()
+        session.modified = True
+
+        return render_template('walt_window2.html', biography_outline=session['biography_outline'], initial_message=initial_message)
+
+    except Exception as e:
+        logging.error(f"OpenAI API error on continue bio start: {e}")
+        return render_template('walt_window2.html', biography_outline=session['biography_outline'], initial_message=f"Error continuing bio: {str(e)}")
+
+
+def get_walt_prompt_content():
+    try:
+        with open('walt2/walt_prompts/walt_prompt.txt', 'r', encoding='utf-8') as f:
+            return f.read()
+    except FileNotFoundError:
+        return "Error: walt_prompt.txt not found!"
+
 
 @walt2_bp.route('/walt_analyze', methods=['POST'])
 def walt_analyze():
     user_input = request.form.get('user_query')
-    uploaded_content = request.form.get('uploaded_content', '')
-    desired_tone = request.form.get('tone', 'default')
 
     if not user_input:
         return jsonify({"error": "No user query provided"}), 400
 
-    try:
-        # Corrected Prompt Path - now looks in walt2/walt_prompts
-        with open('walt2/walt_prompts/walt_prompt.txt', 'r', encoding='utf-8') as f:
-            walt_prompt_base = f.read()
+    walt_prompt_base = get_walt_prompt_content()
+    walt_prompt = walt_prompt_base
 
-        if desired_tone != 'default':
-            walt_prompt = walt_prompt_base + f"\nThe user prefers a biography with a {desired_tone} tone."
-        else:
-            walt_prompt = walt_prompt_base
-
-
-    except FileNotFoundError:
-        return jsonify({"error": "walt_prompt.txt not found!"}), 500
-    except Exception as e:
-        return jsonify({"error": f"Error reading walt_prompt.txt: {str(e)}"}), 500
 
     if 'conversation' not in session:
         initial_greeting = "Hi I'm Walt. What's your name?"
@@ -69,11 +132,6 @@ def walt_analyze():
                                      {"role": "assistant", "content": initial_greeting}]
         session['biography_outline'] = get_biography_outline()
 
-    if uploaded_content:
-        session['conversation'].append({"role": "system", "content": f"Here is context from your biography: {uploaded_content}"})
-        print(f"UPLOADED CONTENT TO OPEN API:{uploaded_content}")
-    else:
-        print("NO UPLOADED CONTENT!")
 
     session['conversation'].append({"role": "user", "content": user_input + ".  Continue to help me build my biography."})
 
@@ -89,118 +147,15 @@ def walt_analyze():
             top_p=1
         )
         api_response = response.choices[0].message.content.strip()
-
-        verification_prompt_text = f"From our last exchange: '{user_input}' and Walt's response: '{api_response}', suggest 1-2 very natural, brief follow-up questions Walt might ask to clarify details or get more specific information about what the person just said.  Think of questions a friendly biographer would ask in a casual conversation, like 'Where did that happen?' or 'What year was that?' Keep the tone friendly and natural, like Walt."
-        verification_prompt = [{"role": "system", "content": "You are Walt, a friendly biographer focused on getting accurate details. Your goal is to ask natural, short follow-up questions - think 'where', 'when', 'who' - to clarify the user's story."},
-                              {"role": "user", "content": verification_prompt_text}]
-
-        verification_response = client.chat.completions.create(
-            model="gpt-4o",
-            messages=verification_prompt,
-            temperature=0.5,
-            max_tokens=100
-        )
-        verification_message = verification_response.choices[0].message.content.strip()
-        api_response_with_verification = api_response + "\n\n" + verification_message
-
-        session['conversation'].append({"role": "assistant", "content": api_response_with_verification})
+        session['conversation'].append({"role": "assistant", "content": api_response})
         session.modified = True
 
-        return jsonify({"response": api_response_with_verification, "biography_outline": session['biography_outline']})
+        return jsonify({"response": api_response, "biography_outline": session['biography_outline']})
 
     except Exception as e:
         logging.error(f"OpenAI API Error: {e}", exc_info=True)
         return jsonify({"error": str(e)}), 500
 
-@walt2_bp.route('/walt_session_summary', methods=['POST'])
-def walt_session_summary():
-    session_content = ""
-    try:
-        client = openai.Client()
-        session_info = session.get('conversation', [])
-        session_content = ""
-        if 'file_content' in session:
-            file_content = session['file_content']
-        else:
-            file_content = "No story started"
-
-        session_content = session_info if session_info else "No story started"
-
-        response = client.chat.completions.create(
-            model="gpt-4o",
-            messages=[{"role": "system", "content": "Your job is to deliver the status and summary of the session, the outline of sections written, the conversation history and the prompt.  Do not add anything else."},
-                      {"role": "user", "content": f"Return all known story with with outline, sections written, session prompts, system_info and the conversation for {session_content}."}],
-            temperature=0.7,
-            max_tokens=2000,
-            top_p=1
-        )
-        api_response = response.choices[0].message.content.strip()
-
-    except Exception as e:
-        print(f"Error calling OpenAI: {e}")
-        return jsonify({"error": str(e)}), 500
-
-@walt2_bp.route('/load_checkpoint', methods=['POST'])
-def load_checkpoint():
-    checkpoint_data = request.form.get('checkpoint_data')
-    if not checkpoint_data:
-        return jsonify({"error": "No checkpoint data received"}), 400
-
-    try:
-        try:
-            # Corrected Prompt Path - now looks in walt2/walt_prompts
-            with open('walt2/walt_prompts/walt_prompt.txt', 'r', encoding='utf-8') as f:
-                walt_prompt = f.read()
-        except FileNotFoundError as e:
-            logging.error(f"Error reading walt_prompt.txt: {str(e)}")
-            return jsonify({"error": f"Error reading walt_prompt.txt: {str(e)}"}), 500
-        except Exception as e:
-            logging.error(f"General error in get_walt_prompt: {str(e)}")
-            return jsonify({"error": str(e)}), 500
-
-        parts = checkpoint_data.split("--- CONVERSATION HISTORY ---\n\n")
-        file_content_part = parts[0].strip()
-        conversation_history_text = parts[1].strip() if len(parts) > 1 else ""
-
-        session['file_content'] = file_content_part
-
-        session['conversation'] = [{"role": "system", "content": walt_prompt}]
-        if conversation_history_text:
-            conversation_messages = []
-            for line in conversation_history_text.strip().split('\n'):
-                if line.strip():
-                    role, content = line.split(':', 1)
-                    conversation_messages.append({"role": role.strip(), "content": content.strip()})
-            session['conversation'].extend(conversation_messages)
-
-        session['biography_outline'] = get_biography_outline()
-        session.modified = True
-
-        user_name = "friend"
-        for message in reversed(session['conversation']):
-            if message['role'] == 'assistant' and "What's your name?" in message['content']:
-                previous_user_message = session['conversation'][session['conversation'].index(message) - 1] if session['conversation'].index(message) > 0 else None
-                if previous_user_message and previous_user_message['role'] == 'user':
-                    user_name_potential = previous_user_message['content'].strip()
-                    if user_name_potential:
-                        user_name = user_name_potential
-                        break
-
-        chapters_discussed = 0
-        for chapter_data in session['biography_outline']:
-            if chapter_data['status'] == 'Complete':
-                chapters_discussed += 1
-        progress_summary = f"So far, we've made progress on {chapters_discussed} chapters of your biography." if chapters_discussed > 0 else "We're ready to pick up where we left off."
-
-        welcome_phrase = f"Welcome back, {user_name}! Hi, I am Walt. It's great to continue your story. {progress_summary} Ready to jump back in?"
-
-        session['conversation'].append({"role": "assistant", "content": welcome_phrase})
-
-        return jsonify({"response": welcome_phrase, "biography_outline": session['biography_outline']})
-
-    except Exception as e:
-        print(f"Error processing checkpoint: {e}")
-        return jsonify({"error": str(e)}), 500
 
 @walt2_bp.route('/create_checkpoint', methods=['POST'])
 def create_checkpoint():
@@ -208,11 +163,10 @@ def create_checkpoint():
         checkpoint_data_text = session.get('file_content', '')
         bio_prompt_content = ""
         try:
-            # Corrected Prompt Path - now looks in walt2/walt_prompts
             with open('walt2/walt_prompts/bio_creator_prompt.txt', 'r', encoding='utf-8') as f:
                 bio_prompt_content = f.read()
         except Exception as e:
-            logging.error(f"Error reading bio_prompt.txt: {e}")
+            logging.error(f"Error reading bio_creator_prompt.txt: {e}")
             bio_prompt_content = "Error loading bio creator prompt."
 
         conversation_text = ""
@@ -231,74 +185,74 @@ def create_checkpoint():
         logging.error(f"Error creating checkpoint: {e}", exc_info=True)
         return jsonify({"error": str(e)}), 500
 
-@walt2_bp.route('/walt_process_checkpoint', methods=['POST'])
-def walt_process_checkpoint():
+@walt2_bp.route('/craft_biography', methods=['POST'])
+def craft_biography():
     checkpoint_data_text = session.get('file_content', '')
-    bio_prompt_content = ""
-    api_response_text_safe = ""
+    conversation_text = ""
+    current_conversation = session.get('conversation', [])
+    for message in current_conversation:
+        if message['role'] in ['user', 'assistant']:
+            conversation_text += f"{message['role']}: {message['content']}\n"
 
     try:
-        try:
-            # Corrected Prompt Path - now looks in walt2/walt_prompts
-            with open('walt2/walt_prompts/bio_creator_prompt.txt', 'r', encoding='utf-8') as f:
-                bio_prompt_content = f.read()
-        except Exception as e:
-            logging.error(f"Error reading bio_prompt.txt: {e}")
-            return jsonify({"error": f"Error loading bio creator prompt: {str(e)}"}), 500
+        with open('walt2/walt_prompts/write_bio.txt', 'r', encoding='utf-8') as f:
+            write_bio_prompt = f.read()
+    except FileNotFoundError:
+        return jsonify({"error": "write_bio.txt prompt not found!"}), 500
 
-        conversation_text = ""
-        current_conversation = session.get('conversation', [])
-        for message in current_conversation:
-            if message['role'] in ['user', 'assistant']:
-                conversation_text += f"{message['role']}: {message['content']}\n"
+    api_input_text = write_bio_prompt + "\n\n" + checkpoint_data_text + "\n\n--- CONVERSATION ---\n\n" + conversation_text
 
-        desired_tone = request.form.get('tone', 'default')
-        tone_instruction = ""
-        if desired_tone != 'default':
-            tone_instruction = f" Write the biography in a {desired_tone} tone."
-
-        api_input_text = bio_prompt_content + tone_instruction + "\n\n" + checkpoint_data_text + "\n\n--- CONVERSATION ---\n\n" + conversation_text
-
+    try:
         client = openai.Client()
         response = client.chat.completions.create(
             model="gpt-4o",
             messages=[{"role": "user", "content": api_input_text}],
             temperature=0.7,
-            max_tokens=700,
+            max_tokens=1000,
         )
-        api_response_text = response.choices[0].message.content.strip()
+        biography_content = response.choices[0].message.content.strip()
+        formatted_biography = format_openai_text(biography_content)
 
-        api_response_text_safe = api_response_text.replace("<", "<").replace(">", ">")
+        formatted_biography_file = biography_content.replace("<br>", "\n")
+        filename = "Full_biography.txt"
+        with open(filename, 'w', encoding='utf-8') as outfile:
+            outfile.write(formatted_biography_file)
 
-        file_content_for_download = checkpoint_data_text + "\n\n" + api_response_text_safe
-
-        combined_output_content = file_content_for_download
-
-        session['file_content'] = file_content_for_download
+        session['file_content'] = biography_content
         session.modified = True
 
-        return jsonify({
-            "checkpoint_data": file_content_for_download,
-            "api_response": combined_output_content
-        })
+        return jsonify({"api_response": formatted_biography, "file_download_name": filename})
 
     except Exception as e:
-        logging.error(f"Error processing checkpoint and calling API: {e}", exc_info=True)
-        error_message = f"Error processing checkpoint and calling API: {str(e)}"
-        api_response_text_safe = error_message
-        return jsonify({"error": error_message, "api_response": api_response_text_safe}), 500
+        logging.error(f"Error crafting biography: {e}", exc_info=True)
+        error_message = f"Error crafting biography: {str(e)}"
+        formatted_error = format_openai_text(error_message)
+        return jsonify({"error": error_message, "api_response": formatted_error}), 500
+
 
 @walt2_bp.route('/saveTextAsFileDownload', methods=['POST'])
 def saveTextAsFileDownload():
     try:
         data = request.get_json()
         checkpoint_data = data.get('checkpoint_data')
+        file_download_name = data.get('file_download_name', 'sessionStory.txt')
 
         if not checkpoint_data:
             return jsonify({"error": "No checkpoint data to save"}), 400
 
         logging.info(f"Checkpoint data being sent for download: {checkpoint_data[:50]}...")
-        return jsonify({"fileContent": checkpoint_data})
+
+        virtual_file = StringIO()
+        virtual_file.write(checkpoint_data)
+        virtual_file.seek(0)
+
+        return send_file(
+            virtual_file,
+            mimetype='text/plain',
+            download_name=file_download_name,
+            as_attachment=True
+        )
+
 
     except Exception as e:
         logging.error(f"Error return and saving checkpoint from saveTextAsFileDownload: {e}", exc_info=True)

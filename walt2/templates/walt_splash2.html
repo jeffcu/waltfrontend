@@ -1,3 +1,4 @@
+
 <!-- file: walt/templates/walt_splash.html -->
 <!DOCTYPE html>
 <html>
@@ -136,7 +137,7 @@
     </style>
     <script>
         function beginNewBiography() {
-            window.location.href = "/walt?new_bio=true"; // Redirect to /walt with a parameter
+            window.location.href = "/walt2/new_bio_start"; // Corrected path to new route
         }
 
         function loadCheckpointFile() {
@@ -175,8 +176,8 @@
 
             const csrfToken = getCookie('csrf_token');
 
-            fetch("/load_checkpoint", {
-                method: "POST",
+            fetch("/walt2/continue_bio_start", { // Corrected path and route
+                method: "POST", // Changed to POST for sending data, corrected path
                 headers: {
                     "Content-Type": "application/x-www-form-urlencoded",
                     "X-CSRFToken": csrfToken
@@ -188,7 +189,7 @@
                 if (data.error) {
                     alert("Error loading checkpoint: " + data.error);
                 } else {
-                    window.location.href = "/walt"; // Redirect to main app after loading checkpoint
+                    window.location.href = "/walt2"; // Redirect to main app after loading checkpoint - corrected path
                 }
             })
             .catch(error => {
@@ -208,7 +209,7 @@
         <div class="splash-right">
             <p class="splash-tagline">I want to write your unique story!</p> <p class="splash-get-started">Get Started</p>
             <div class="splash-buttons">
-                <button class="splash-button" onclick="beginNewBiography()">Begin New Biography</button>
+                <button class="splash-button" onclick="beginNewBiography()">Begin New Bio</button>
                 <button class="splash-button" onclick="loadCheckpointFile()">Load Your Checkpoint file</button>
             </div>
         </div>
