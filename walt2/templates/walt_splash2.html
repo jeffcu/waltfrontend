@@ -176,8 +176,8 @@
 
             const csrfToken = getCookie('csrf_token');
 
-            fetch("/walt2/continue_bio_start", { // Corrected path and route
-                method: "POST", // Changed to POST for sending data, corrected path
+            fetch("/walt2/continue_bio_start", { // CORRECTED ROUTE HERE
+                method: "POST",
                 headers: {
                     "Content-Type": "application/x-www-form-urlencoded",
                     "X-CSRFToken": csrfToken
