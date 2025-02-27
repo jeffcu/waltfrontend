@@ -149,8 +149,8 @@
                 if (data.error) {
                     alert("Error starting new biography: " + data.error);
                 } else {
-                    console.log("Redirecting to /gallery"); // ADDED LOGGING BEFORE REDIRECT
-                    window.location.href = "/gallery"; // Redirect to GALLERY for test  <--- CHANGED LINE
+                    console.log("Redirecting to /"); // ADDED LOGGING BEFORE REDIRECT
+                    window.location.href = "/"; // Redirect to ROOT URL '/'  <--- CHANGED LINE
                 }
             })
             .catch(error => {
@@ -209,8 +209,8 @@
                 if (data.error) {
                     alert("Error loading checkpoint: " + data.error);
                 } else {
-                     console.log("Redirecting to /gallery"); // ADDED LOGGING BEFORE REDIRECT
-                    window.location.href = "/gallery"; // Redirect to GALLERY for test  <--- CHANGED LINE
+                     console.log("Redirecting to /"); // ADDED LOGGING BEFORE REDIRECT
+                    window.location.href = "/"; // Redirect to ROOT URL '/'  <--- CHANGED LINE
                 }
             })
             .catch(error => {
