@@ -184,16 +184,25 @@
                 },
                 body: "checkpoint_data=" + encodeURIComponent(fileContent)
             })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) { // Check for HTTP errors (4xx, 5xx)
+                    console.error('HTTP error loading checkpoint:', response.status, response.statusText); // Log HTTP error
+                    alert("HTTP error loading checkpoint: " + response.status + " " + response.statusText);
+                    throw new Error(`HTTP error! status: ${response.status}, text: ${response.statusText}`); // Re-throw to be caught in .catch
+                }
+                return response.json();
+            })
             .then(data => {
                 if (data.error) {
+                    console.error('Server-side error loading checkpoint:', data.error); // Log server error
                     alert("Error loading checkpoint: " + data.error);
                 } else {
-                    window.location.href = "/walt2"; // Redirect to main app after loading checkpoint - corrected path
+                    window.location.href = "/walt2"; // Redirect on success
                 }
             })
             .catch(error => {
-                alert("Error loading checkpoint.");
+                console.error('Fetch error loading checkpoint:', error); // Log fetch error (network issues etc.)
+                alert("Error loading checkpoint. See console for details."); // Generic user alert
             });
         }
 
