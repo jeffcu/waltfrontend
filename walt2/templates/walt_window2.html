@@ -502,7 +502,7 @@
                     if (data.error) {
                         document.getElementById("chatOutput").textContent = "Error: " + data.error;
                     } else {
-                        document.getElementById("chatOutput").textContent = data.response;
+                        document.getElementById("chatOutput").textContent = data.initial_message; // CORRECTED: Use initial_message
                         if (data.biography_outline) {
                             biographyOutline = data.biography_outline;
                             updateBiographyOutlineDisplay();
@@ -534,6 +534,15 @@
 
            }
 
+        // Function to handle initial message from session storage on page load
+        function displayInitialMessageOnLoad() {
+            const initialMessage = sessionStorage.getItem('initial_message');
+            if (initialMessage) {
+                document.getElementById("chatOutput").textContent = initialMessage;
+                sessionStorage.removeItem('initial_message'); // Clear from session storage after display
+            }
+        }
+
 
         // Function to update biography outline display (Improvement #5)
         function updateBiographyOutlineDisplay() {
@@ -558,9 +567,7 @@
             const chatOutput = document.getElementById("chatOutput");
             const initialMessage = "{{ initial_message|default('') | safe }}";
 
-            if (initialMessage) {
-                chatOutput.textContent = initialMessage;
-            }
+            displayInitialMessageOnLoad(); // Call to display initial message from session storage if present
 
 
              console.log("Story Upload: Document is loaded");
@@ -611,7 +618,6 @@
              // document.getElementById("chatOutput").textContent = "";  // COMMENTED OUT: Prevent clearing initial message
          };
      </script>
- </body>
  <body>
      <h1>Walt the Biographer</h1>
      <p class="tagline">I want to write your story!</p>

@@ -1,4 +1,3 @@
-<!-- file: walt/templates/walt_splash.html -->
 <!DOCTYPE html>
 <html>
 <head>
@@ -150,6 +149,7 @@
                     alert("Error starting new biography: " + data.error);
                 } else {
                     console.log("Redirecting to /walt2/app"); // ADDED LOGGING BEFORE REDIRECT
+                    sessionStorage.setItem('initial_message', data.initial_message); // Store initial message
                     window.location.href = "/walt2/app"; // Redirect to /walt2/app, the main app route  <--- CHANGED LINE
                 }
             })
@@ -210,6 +210,7 @@
                     alert("Error loading checkpoint: " + data.error);
                 } else {
                      console.log("Redirecting to /walt2/app"); // ADDED LOGGING BEFORE REDIRECT
+                     sessionStorage.setItem('initial_message', data.initial_message); // Store initial message
                     window.location.href = "/walt2/app"; // Redirect to  /walt2/app, the main app route  <--- CHANGED LINE
                 }
             })

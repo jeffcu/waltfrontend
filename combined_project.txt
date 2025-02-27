@@ -2600,7 +2600,7 @@ def format_openai_text(text):
     return formatted_text
 
 @walt2_bp.route('/')
-def walt_window():
+def walt_window_splash(): # Renamed to walt_window_splash to be more descriptive
     return render_template('walt_splash2.html')
 
 @walt2_bp.route('/new_bio_start', methods=['GET'])
@@ -2630,22 +2630,36 @@ def new_bio_start():
         session['conversation'] = [{"role": "system", "content": get_walt_prompt_content()}, {"role": "assistant", "content": initial_message}]
         session['biography_outline'] = get_biography_outline()
         session.modified = True
-        return render_template('walt_window2.html', biography_outline=session['biography_outline'], initial_message=initial_message)
+        # Return JSON instead of rendering template for new_bio_start as well, for consistency.
+        return jsonify({
+            "initial_message": initial_message,
+            "biography_outline": session['biography_outline']
+        })
 
     except Exception as e:
         logging.error(f"OpenAI API error on new bio start: {e}")
-        return render_template('walt_window2.html', biography_outline=session['biography_outline'], initial_message=f"Error starting new bio: {str(e)}")
+        return jsonify({
+            "error": f"Error starting new bio: {str(e)}",
+            "biography_outline": session.get('biography_outline') # Still return outline if available
+        })
 
+
+@walt2_bp.route('/app') # NEW route for /walt2/app - serves main app window
+def walt_window(): # Original walt_window function - now for /walt2/app
+    return render_template('walt_window2.html', biography_outline=session.get('biography_outline'), initial_message=None)
 
 @walt2_bp.route('/continue_bio_start', methods=['POST'])
 def continue_bio_start():
     checkpoint_data = request.form.get('checkpoint_data')
     if not checkpoint_data:
+        logging.warning("No checkpoint data received in continue_bio_start request.") # Enhanced logging
         return jsonify({"error": "No checkpoint data received"}), 400
 
     session.pop('conversation', None)
     session.pop('biography_outline', None)
     session.pop('file_content', None)
+
+    logging.debug(f"Checkpoint data received:\n{checkpoint_data[:200]}...") # Log the beginning of checkpoint data
 
     try: # ADDED try...except BLOCK
         try:
@@ -2668,35 +2682,55 @@ def continue_bio_start():
                 max_tokens=200
             )
             initial_message = response.choices[0].message.content.strip()
+            logging.debug(f"Initial message from OpenAI API: {initial_message}") # Log initial message
 
             parts = checkpoint_data.split("--- CONVERSATION HISTORY ---\n\n")
             file_content_part = parts[0].strip()
             conversation_history_text = parts[1].strip() if len(parts) > 1 else ""
 
             session['file_content'] = file_content_part
+            logging.debug(f"File content part extracted:\n{file_content_part[:200]}...") # Log file content part
 
             session['conversation'] = [{"role": "system", "content": get_walt_prompt_content()}]
             if conversation_history_text:
+                logging.debug(f"Conversation history text found:\n{conversation_history_text[:200]}...") # Log conversation history text
                 conversation_messages = []
                 for line in conversation_history_text.strip().split('\n'):
                     if line.strip():
-                        role, content = line.split(':', 1)
-                        conversation_messages.append({"role": role.strip(), "content": content.strip()})
+                        try: # Add try-except for line parsing
+                            role, content = line.split(':', 1)
+                            conversation_messages.append({"role": role.strip(), "content": content.strip()})
+                            logging.debug(f"Parsed line - Role: {role.strip()}, Content: {content.strip()[:100]}...") # Log parsed line
+                        except ValueError as ve:
+                            logging.warning(f"Error parsing conversation history line: {line}. Error: {ve}") # Log parsing errors
                 session['conversation'].extend(conversation_messages)
+            else:
+                logging.debug("No conversation history text found in checkpoint data.") # Log if no history
 
             session['conversation'].append({"role": "assistant", "content": initial_message})
             session['biography_outline'] = get_biography_outline()
             session.modified = True
 
-            return render_template('walt_window2.html', biography_outline=session['biography_outline'], initial_message=initial_message)
+            logging.debug(f"Session variables after checkpoint load: \nConversation: {session.get('conversation')}\nBiography Outline: {session.get('biography_outline')}\nFile Content (start): {session.get('file_content', '')[:200]}...") # Log session variables
+
+            # Return JSON response with initial message and biography outline
+            return jsonify({
+                "initial_message": initial_message,
+                "biography_outline": session['biography_outline']
+            })
 
         except Exception as openai_e: # SPECIFICALLY CATCH OPENAI EXCEPTIONS
             logging.error(f"OpenAI API error in continue_bio_start: {openai_e}", exc_info=True) # LOG OPENAI ERROR WITH TRACEBACK
-            return render_template('walt_window2.html', biography_outline=session['biography_outline'], initial_message=f"Error continuing bio (OpenAI API): {str(openai_e)}")
+            return jsonify({
+                "error": f"Error continuing bio (OpenAI API): {str(openai_e)}",
+                "biography_outline": session.get('biography_outline') # Still return outline if available
+            })
 
     except Exception as e: # CATCH ALL OTHER EXCEPTIONS IN THE ROUTE
         logging.error(f"General error in continue_bio_start: {e}", exc_info=True) # LOG GENERAL ERROR WITH TRACEBACK
-        return jsonify({"error": f"Error processing checkpoint: {str(e)}"}), 500 # RETURN JSON ERROR FOR AJAX CALL
+        return jsonify({
+            "error": f"Error processing checkpoint: {str(e)}"
+        }) # RETURN JSON ERROR FOR AJAX CALL
 
 
 def get_walt_prompt_content():
@@ -2862,7 +2896,6 @@ def get_biography_outline():
 
 --- FILE: walt2/templates/walt_splash2.html ---
 
-
 <!-- file: walt/templates/walt_splash.html -->
 <!DOCTYPE html>
 <html>
@@ -3001,10 +3034,31 @@ def get_biography_outline():
     </style>
     <script>
         function beginNewBiography() {
-            window.location.href = "/walt2/new_bio_start"; // Corrected path to new route
+            console.log("beginNewBiography function called!"); // ADDED LOG
+            // Changed to fetch API call
+            fetch("/walt2/new_bio_start", {
+                method: "GET",
+                headers: {
+                    'Content-Type': 'application/json' // Expecting JSON response
+                },
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert("Error starting new biography: " + data.error);
+                } else {
+                    console.log("Redirecting to /walt2/app"); // ADDED LOGGING BEFORE REDIRECT
+                    window.location.href = "/walt2/app"; // Redirect to /walt2/app, the main app route  <--- CHANGED LINE
+                }
+            })
+            .catch(error => {
+                alert("Error starting new biography.");
+                console.error("Fetch error:", error);
+            });
         }
 
         function loadCheckpointFile() {
+            console.log("loadCheckpointFile function called!"); // ADDED LOG
             document.getElementById('story_upload').click(); // Trigger file input
         }
 
@@ -3040,7 +3094,7 @@ def get_biography_outline():
 
             const csrfToken = getCookie('csrf_token');
 
-            fetch("/walt2/continue_bio_start", { // CORRECTED ROUTE HERE
+            fetch("/walt2/continue_bio_start", { // Corrected path to "/walt2/continue_bio_start"
                 method: "POST",
                 headers: {
                     "Content-Type": "application/x-www-form-urlencoded",
@@ -3048,25 +3102,18 @@ def get_biography_outline():
                 },
                 body: "checkpoint_data=" + encodeURIComponent(fileContent)
             })
-            .then(response => {
-                if (!response.ok) { // Check for HTTP errors (4xx, 5xx)
-                    console.error('HTTP error loading checkpoint:', response.status, response.statusText); // Log HTTP error
-                    alert("HTTP error loading checkpoint: " + response.status + " " + response.statusText);
-                    throw new Error(`HTTP error! status: ${response.status}, text: ${response.statusText}`); // Re-throw to be caught in .catch
-                }
-                return response.json();
-            })
+            .then(response => response.json())
             .then(data => {
                 if (data.error) {
-                    console.error('Server-side error loading checkpoint:', data.error); // Log server error
                     alert("Error loading checkpoint: " + data.error);
                 } else {
-                    window.location.href = "/walt2"; // Redirect on success
+                     console.log("Redirecting to /walt2/app"); // ADDED LOGGING BEFORE REDIRECT
+                    window.location.href = "/walt2/app"; // Redirect to  /walt2/app, the main app route  <--- CHANGED LINE
                 }
             })
             .catch(error => {
-                console.error('Fetch error loading checkpoint:', error); // Log fetch error (network issues etc.)
-                alert("Error loading checkpoint. See console for details."); // Generic user alert
+                alert("Error loading checkpoint.");
+                console.error("Fetch error:", error);
             });
         }
 
@@ -3092,7 +3139,6 @@ def get_biography_outline():
 </html>
 
 --- FILE: walt2/templates/walt_window2.html ---
-
 
 <!DOCTYPE html>
 <html>
@@ -3585,7 +3631,7 @@ def get_biography_outline():
 
                 const csrfToken = getCookie('csrf_token');
 
-                fetch("/walt2/load_checkpoint", {
+                fetch("/walt2/continue_bio_start", { // <-- CORRECTED ROUTE: continue_bio_start
                     method: "POST",
                     headers: {
                         "Content-Type": "application/x-www-form-urlencoded",
@@ -3688,79 +3734,79 @@ def get_biography_outline():
                                 catch (error){
                                     chatOutput.textContent = "Error loading file: " + event.target.error;
                                 }
+                          };
+
+                          reader.onerror = function(event) {
+                             chatOutput.textContent = "Error reading file: " + event.target.error;
+                              console.error("Error reading file:", event.target.error);
                          };
 
-                         reader.onerror = function(event) {
-                            chatOutput.textContent = "Error reading file: " + event.target.error;
-                             console.error("Error reading file:", event.target.error);
-                        };
+                         reader.readAsText(file);
+                      }
+                   })
+             } else {
+                console.log("Story Upload does not exist")
+             }
+         })
 
-                        reader.readAsText(file);
-                     }
-                  })
-            } else {
-               console.log("Story Upload does not exist")
-            }
-        })
+         window.onload = function() {
+             // document.getElementById("chatOutput").textContent = "";  // COMMENTED OUT: Prevent clearing initial message
+         };
+     </script>
+ </body>
+ <body>
+     <h1>Walt the Biographer</h1>
+     <p class="tagline">I want to write your story!</p>
 
-        window.onload = function() {
-            // document.getElementById("chatOutput").textContent = "";  // COMMENTED OUT: Prevent clearing initial message
-        };
-    </script>
-</head>
-<body>
-    <h1>Walt the Biographer</h1>
-    <p class="tagline">I want to write your story!</p>
+        <div id="uploadButtonContainer">
+         <button id="uploadButton" onclick="uploadStory()">Start at last Checkpoint</button>
+     </div>
+     <input type="file" id="story_upload" name="story_upload" accept=".txt, .walt">
 
-       <div id="uploadButtonContainer">
-        <button id="uploadButton" onclick="uploadStory()">Start at last Checkpoint</button>
-    </div>
-    <input type="file" id="story_upload" name="story_upload" accept=".txt, .walt">
-
-    <div class="chat-container">
+     <div class="chat-container">
+          <div class="chat-area">
+             <h2 class="chat-title">Walt</h2>
+             <div class="chat-output" id="chatOutput"></div>
+         </div>
          <div class="chat-area">
-            <h2 class="chat-title">Walt</h2>
-            <div class="chat-output" id="chatOutput"></div>
-        </div>
-        <div class="chat-area">
-            <h2 class="chat-title">Your Prompts</h2>
-            <div class="prompt-area">
-                <textarea id="userPrompt" placeholder="Enter your prompt" rows="13"></textarea>
-                <button id="submitButton" onclick="submitPrompt()">Submit</button>
-            </div>
-        </div>
-    </div>
+             <h2 class="chat-title">Your Prompts</h2>
+             <div class="prompt-area">
+                 <textarea id="userPrompt" placeholder="Enter your prompt" rows="13"></textarea>
+                 <button id="submitButton" onclick="submitPrompt()">Submit</button>
+             </div>
+         </div>
+     </div>
 
-    <h3 class="dataNote">Note: No data is saved by this application, the only memory is through this file alone.</h3>
+     <h3 class="dataNote">Note: No data is saved by this application, the only memory is through this file alone.</h3>
 
-    <div class="save-checkpoint-area">
-        <button id="saveButton" onclick="saveTextAsFile()">Create Checkpoint File</button>
-    </div>
+     <div class="save-checkpoint-area">
+         <button id="saveButton" onclick="saveTextAsFile()">Create Checkpoint File</button>
+     </div>
 
-    <div class="craft-area-container">
-        <div class="tone-and-craft-group">  <!-- NEW GROUPING DIV -->
-            <div class="tone-selector-area">
-                <label for="toneSelector">Biography Tone:</label>
-                <select id="toneSelector">
-                    <option value="default">Default</option>
-                    <option value="humorous">Humor</option>
-                    <option value="reflective">Reflective</option>
-                    <option value="dramatic">Dramatic</option>
-                    <option value="inspirational">Inspirational</option>
-                </select>
-            </div>
-        </div>
-         <div class="checkpoint-area">
-            <div>
-                <button id="craftBiographyButton" onclick="craftBiography()">Craft Biography</button>
-            </div>
-        </div>
-    </div>
+     <div class="craft-area-container">
+         <div class="tone-and-craft-group">  <!-- NEW GROUPING DIV -->
+             <div class="tone-selector-area">
+                 <label for="toneSelector">Biography Tone:</label>
+                 <select id="toneSelector">
+                     <option value="default">Default</option>
+                     <option value="humorous">Humor</option>
+                     <option value="reflective">Reflective</option>
+                     <option value="dramatic">Dramatic</option>
+                     <option value="inspirational">Inspirational</option>
+                 </select>
+             </div>
+         </div>
+          <div class="checkpoint-area">
+             <div>
+                 <button id="craftBiographyButton" onclick="craftBiography()">Craft Biography</button>
+             </div>
+         </div>
+     </div>
 
 
-    <div id="sessionSummary"></div>
-</body>
-</html>
+     <div id="sessionSummary"></div>
+ </body>
+ </html>
 
 --- FILE: walt2/walt_prompts/bio_creator_prompt.txt ---
 
