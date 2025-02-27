@@ -1,7 +1,5 @@
-# walt/bio_creator_prompt.txt
-# walt/bio_creator_prompt.txt
-# Improved bio_creator_prompt.txt (Improvement #4: Tone Adjustment)
-Take the following input and write a brilliant and **{{biography_tone}}** biography of the person.
+
+Take all the following input and write a single brilliant and thoughtful biography of the person incorporating everything provided.
 Do not fill in chapters that have insufficient information to draft. Simply include the chapter in the outline and mark it as "TBD".
-You may rework other chapters already written if the newest conversation improves them.
-After the biography, include a master list of all facts accumulated so far about the person.
+You may rework previous chapters already written if the newest conversation improves them.
+After the biography, include a master list of all facts accumulated so far about the person as attribute value pairs such as "Born On: 25 December 1923:, "Born In: Columbus Ohio".
