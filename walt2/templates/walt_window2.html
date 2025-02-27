@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html>
 <head>
@@ -490,7 +489,7 @@
 
                 const csrfToken = getCookie('csrf_token');
 
-                fetch("/walt2/load_checkpoint", {
+                fetch("/walt2/continue_bio_start", { // <-- CORRECTED ROUTE: continue_bio_start
                     method: "POST",
                     headers: {
                         "Content-Type": "application/x-www-form-urlencoded",
@@ -593,76 +592,76 @@
                                 catch (error){
                                     chatOutput.textContent = "Error loading file: " + event.target.error;
                                 }
+                          };
+
+                          reader.onerror = function(event) {
+                             chatOutput.textContent = "Error reading file: " + event.target.error;
+                              console.error("Error reading file:", event.target.error);
                          };
 
-                         reader.onerror = function(event) {
-                            chatOutput.textContent = "Error reading file: " + event.target.error;
-                             console.error("Error reading file:", event.target.error);
-                        };
+                         reader.readAsText(file);
+                      }
+                   })
+             } else {
+                console.log("Story Upload does not exist")
+             }
+         })
 
-                        reader.readAsText(file);
-                     }
-                  })
-            } else {
-               console.log("Story Upload does not exist")
-            }
-        })
+         window.onload = function() {
+             // document.getElementById("chatOutput").textContent = "";  // COMMENTED OUT: Prevent clearing initial message
+         };
+     </script>
+ </head>
+ <body>
+     <h1>Walt the Biographer</h1>
+     <p class="tagline">I want to write your story!</p>
 
-        window.onload = function() {
-            // document.getElementById("chatOutput").textContent = "";  // COMMENTED OUT: Prevent clearing initial message
-        };
-    </script>
-</head>
-<body>
-    <h1>Walt the Biographer</h1>
-    <p class="tagline">I want to write your story!</p>
+        <div id="uploadButtonContainer">
+         <button id="uploadButton" onclick="uploadStory()">Start at last Checkpoint</button>
+     </div>
+     <input type="file" id="story_upload" name="story_upload" accept=".txt, .walt">
 
-       <div id="uploadButtonContainer">
-        <button id="uploadButton" onclick="uploadStory()">Start at last Checkpoint</button>
-    </div>
-    <input type="file" id="story_upload" name="story_upload" accept=".txt, .walt">
-
-    <div class="chat-container">
+     <div class="chat-container">
+          <div class="chat-area">
+             <h2 class="chat-title">Walt</h2>
+             <div class="chat-output" id="chatOutput"></div>
+         </div>
          <div class="chat-area">
-            <h2 class="chat-title">Walt</h2>
-            <div class="chat-output" id="chatOutput"></div>
-        </div>
-        <div class="chat-area">
-            <h2 class="chat-title">Your Prompts</h2>
-            <div class="prompt-area">
-                <textarea id="userPrompt" placeholder="Enter your prompt" rows="13"></textarea>
-                <button id="submitButton" onclick="submitPrompt()">Submit</button>
-            </div>
-        </div>
-    </div>
+             <h2 class="chat-title">Your Prompts</h2>
+             <div class="prompt-area">
+                 <textarea id="userPrompt" placeholder="Enter your prompt" rows="13"></textarea>
+                 <button id="submitButton" onclick="submitPrompt()">Submit</button>
+             </div>
+         </div>
+     </div>
 
-    <h3 class="dataNote">Note: No data is saved by this application, the only memory is through this file alone.</h3>
+     <h3 class="dataNote">Note: No data is saved by this application, the only memory is through this file alone.</h3>
 
-    <div class="save-checkpoint-area">
-        <button id="saveButton" onclick="saveTextAsFile()">Create Checkpoint File</button>
-    </div>
+     <div class="save-checkpoint-area">
+         <button id="saveButton" onclick="saveTextAsFile()">Create Checkpoint File</button>
+     </div>
 
-    <div class="craft-area-container">
-        <div class="tone-and-craft-group">  <!-- NEW GROUPING DIV -->
-            <div class="tone-selector-area">
-                <label for="toneSelector">Biography Tone:</label>
-                <select id="toneSelector">
-                    <option value="default">Default</option>
-                    <option value="humorous">Humor</option>
-                    <option value="reflective">Reflective</option>
-                    <option value="dramatic">Dramatic</option>
-                    <option value="inspirational">Inspirational</option>
-                </select>
-            </div>
-        </div>
-         <div class="checkpoint-area">
-            <div>
-                <button id="craftBiographyButton" onclick="craftBiography()">Craft Biography</button>
-            </div>
-        </div>
-    </div>
+     <div class="craft-area-container">
+         <div class="tone-and-craft-group">  <!-- NEW GROUPING DIV -->
+             <div class="tone-selector-area">
+                 <label for="toneSelector">Biography Tone:</label>
+                 <select id="toneSelector">
+                     <option value="default">Default</option>
+                     <option value="humorous">Humor</option>
+                     <option value="reflective">Reflective</option>
+                     <option value="dramatic">Dramatic</option>
+                     <option value="inspirational">Inspirational</option>
+                 </select>
+             </div>
+         </div>
+          <div class="checkpoint-area">
+             <div>
+                 <button id="craftBiographyButton" onclick="craftBiography()">Craft Biography</button>
+             </div>
+         </div>
+     </div>
 
 
-    <div id="sessionSummary"></div>
-</body>
-</html>
+     <div id="sessionSummary"></div>
+ </body>
+ </html>
