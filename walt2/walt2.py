@@ -54,17 +54,21 @@ def new_bio_start():
 def continue_bio_start():
     checkpoint_data = request.form.get('checkpoint_data')
     if not checkpoint_data:
+        logging.warning("No checkpoint data received in continue_bio_start request.") # Enhanced logging
         return jsonify({"error": "No checkpoint data received"}), 400
 
     session.pop('conversation', None)
     session.pop('biography_outline', None)
     session.pop('file_content', None)
 
+    logging.debug(f"Checkpoint data received:\n{checkpoint_data[:200]}...") # Log the beginning of checkpoint data
+
     try: # ADDED try...except BLOCK
         try:
             with open('walt2/walt_prompts/continue.txt', 'r', encoding='utf-8') as f:
                 continue_prompt_base = f.read()
         except FileNotFoundError:
+            logging.error("continue.txt prompt not found!") # Keep existing error logging
             return jsonify({"error": "continue.txt prompt not found!"}), 500
 
         continue_prompt = continue_prompt_base + "\n\nCHECKPOINT FILE CONTENT:\n" + checkpoint_data
@@ -81,25 +85,36 @@ def continue_bio_start():
                 max_tokens=200
             )
             initial_message = response.choices[0].message.content.strip()
+            logging.debug(f"Initial message from OpenAI API: {initial_message}") # Log initial message
 
             parts = checkpoint_data.split("--- CONVERSATION HISTORY ---\n\n")
             file_content_part = parts[0].strip()
             conversation_history_text = parts[1].strip() if len(parts) > 1 else ""
 
             session['file_content'] = file_content_part
+            logging.debug(f"File content part extracted:\n{file_content_part[:200]}...") # Log file content part
 
             session['conversation'] = [{"role": "system", "content": get_walt_prompt_content()}]
             if conversation_history_text:
+                logging.debug(f"Conversation history text found:\n{conversation_history_text[:200]}...") # Log conversation history text
                 conversation_messages = []
                 for line in conversation_history_text.strip().split('\n'):
                     if line.strip():
-                        role, content = line.split(':', 1)
-                        conversation_messages.append({"role": role.strip(), "content": content.strip()})
+                        try: # Add try-except for line parsing
+                            role, content = line.split(':', 1)
+                            conversation_messages.append({"role": role.strip(), "content": content.strip()})
+                            logging.debug(f"Parsed line - Role: {role.strip()}, Content: {content.strip()[:100]}...") # Log parsed line
+                        except ValueError as ve:
+                            logging.warning(f"Error parsing conversation history line: {line}. Error: {ve}") # Log parsing errors
                 session['conversation'].extend(conversation_messages)
+            else:
+                logging.debug("No conversation history text found in checkpoint data.") # Log if no history
 
             session['conversation'].append({"role": "assistant", "content": initial_message})
             session['biography_outline'] = get_biography_outline()
             session.modified = True
+
+            logging.debug(f"Session variables after checkpoint load: \nConversation: {session.get('conversation')}\nBiography Outline: {session.get('biography_outline')}\nFile Content (start): {session.get('file_content', '')[:200]}...") # Log session variables
 
             return render_template('walt_window2.html', biography_outline=session['biography_outline'], initial_message=initial_message)
 
