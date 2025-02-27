@@ -60,51 +60,56 @@ def continue_bio_start():
     session.pop('biography_outline', None)
     session.pop('file_content', None)
 
-    try:
-        with open('walt2/walt_prompts/continue.txt', 'r', encoding='utf-8') as f:
-            continue_prompt_base = f.read()
-    except FileNotFoundError:
-        return jsonify({"error": "continue.txt prompt not found!"}), 500
+    try: # ADDED try...except BLOCK
+        try:
+            with open('walt2/walt_prompts/continue.txt', 'r', encoding='utf-8') as f:
+                continue_prompt_base = f.read()
+        except FileNotFoundError:
+            return jsonify({"error": "continue.txt prompt not found!"}), 500
 
-    continue_prompt = continue_prompt_base + "\n\nCHECKPOINT FILE CONTENT:\n" + checkpoint_data
+        continue_prompt = continue_prompt_base + "\n\nCHECKPOINT FILE CONTENT:\n" + checkpoint_data
 
-    try:
-        client = openai.Client()
-        response = client.chat.completions.create(
-            model="gpt-4o",
-            messages=[
-                {"role": "system", "content": "You are Walt, the biographer, continuing a biography from a checkpoint."},
-                {"role": "user", "content": continue_prompt}
-            ],
-            temperature=0.7,
-            max_tokens=200
-        )
-        initial_message = response.choices[0].message.content.strip()
+        try:
+            client = openai.Client()
+            response = client.chat.completions.create(
+                model="gpt-4o",
+                messages=[
+                    {"role": "system", "content": "You are Walt, the biographer, continuing a biography from a checkpoint."},
+                    {"role": "user", "content": continue_prompt}
+                ],
+                temperature=0.7,
+                max_tokens=200
+            )
+            initial_message = response.choices[0].message.content.strip()
 
-        parts = checkpoint_data.split("--- CONVERSATION HISTORY ---\n\n")
-        file_content_part = parts[0].strip()
-        conversation_history_text = parts[1].strip() if len(parts) > 1 else ""
+            parts = checkpoint_data.split("--- CONVERSATION HISTORY ---\n\n")
+            file_content_part = parts[0].strip()
+            conversation_history_text = parts[1].strip() if len(parts) > 1 else ""
 
-        session['file_content'] = file_content_part
+            session['file_content'] = file_content_part
 
-        session['conversation'] = [{"role": "system", "content": get_walt_prompt_content()}]
-        if conversation_history_text:
-            conversation_messages = []
-            for line in conversation_history_text.strip().split('\n'):
-                if line.strip():
-                    role, content = line.split(':', 1)
-                    conversation_messages.append({"role": role.strip(), "content": content.strip()})
-            session['conversation'].extend(conversation_messages)
+            session['conversation'] = [{"role": "system", "content": get_walt_prompt_content()}]
+            if conversation_history_text:
+                conversation_messages = []
+                for line in conversation_history_text.strip().split('\n'):
+                    if line.strip():
+                        role, content = line.split(':', 1)
+                        conversation_messages.append({"role": role.strip(), "content": content.strip()})
+                session['conversation'].extend(conversation_messages)
 
-        session['conversation'].append({"role": "assistant", "content": initial_message})
-        session['biography_outline'] = get_biography_outline()
-        session.modified = True
+            session['conversation'].append({"role": "assistant", "content": initial_message})
+            session['biography_outline'] = get_biography_outline()
+            session.modified = True
 
-        return render_template('walt_window2.html', biography_outline=session['biography_outline'], initial_message=initial_message)
+            return render_template('walt_window2.html', biography_outline=session['biography_outline'], initial_message=initial_message)
 
-    except Exception as e:
-        logging.error(f"OpenAI API error on continue bio start: {e}")
-        return render_template('walt_window2.html', biography_outline=session['biography_outline'], initial_message=f"Error continuing bio: {str(e)}")
+        except Exception as openai_e: # SPECIFICALLY CATCH OPENAI EXCEPTIONS
+            logging.error(f"OpenAI API error in continue_bio_start: {openai_e}", exc_info=True) # LOG OPENAI ERROR WITH TRACEBACK
+            return render_template('walt_window2.html', biography_outline=session['biography_outline'], initial_message=f"Error continuing bio (OpenAI API): {str(openai_e)}")
+
+    except Exception as e: # CATCH ALL OTHER EXCEPTIONS IN THE ROUTE
+        logging.error(f"General error in continue_bio_start: {e}", exc_info=True) # LOG GENERAL ERROR WITH TRACEBACK
+        return jsonify({"error": f"Error processing checkpoint: {str(e)}"}), 500 # RETURN JSON ERROR FOR AJAX CALL
 
 
 def get_walt_prompt_content():
