@@ -1,3 +1,4 @@
+
 <!-- Filename: gallery.html -->
 <!-- Location: templates/gallery.html -->
 <!DOCTYPE html>
@@ -137,6 +138,12 @@
         function openWaltWindow() {
             window.location.href = "/walt";
         }
+
+        function openWalt2Window() {
+            window.location.href = "/walt2/app"; // Corrected to link to Walt2 App
+        }
+
+
         function openDynamicGraph() {
              window.location.href = "/dynamic";
         }
@@ -149,10 +156,10 @@
 
             <!-- Walt Button -->
             <div class="project-tile">
-                <img src="static/icons/amber-button.jpeg" alt="Walt App">
-                <h3>Walt</h3>
+                <img src="static/icons/green-button.jpeg" alt="Walt2 App"> <!-- Changed to green-button.jpeg -->
+                <h3>Walt 2</h3>  <!-- Changed title to Walt 2 -->
                 <p>Walt wants to write your story!</p>
-                <a href="#" onclick="openWaltWindow()">Open App</a>
+                <a href="#" onclick="openWalt2Window()">Open App</a> <!-- Changed onclick to openWalt2Window -->
             </div>
 
             <!-- Jeff's Art Button -->

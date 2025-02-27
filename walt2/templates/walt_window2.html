@@ -30,8 +30,10 @@
         }
 
         #uploadButtonContainer {
-            text-align: center; /* Center the button */
+            text-align: left; /* Align button to the left within its container */
             margin-bottom: 20px;
+            display: flex; /* Enable Flexbox for alignment */
+            align-items: flex-end; /* Vertically align items to the bottom */
         }
 
         #uploadButton {
@@ -42,11 +44,16 @@
             color: white;
             border: none;
             border-radius: 6px;
-            /* Make height one line and width auto adjust */
             height: auto;
             width: auto;
-            white-space: nowrap; /* Prevent text wrapping */
+            white-space: nowrap;
         }
+
+        #waltImage {
+            height: 80px; /* Adjust image height as needed */
+            margin-right: 15px; /* Space between image and button */
+        }
+
 
         input[type="file"] {
             display: none;
@@ -82,13 +89,13 @@
             border-radius: 6px;
             background-color: #2A3D55;
             color: #D9E1EC;
-            min-height: 400px; /* Min height of 400px */
-            height: 450px; /* Adjusted height to fit 18 lines, approximately */
+            min-height: 400px;
+            height: 450px;
             text-align: left;
             white-space: pre-wrap;
             overflow-y: auto;
             box-sizing: border-box;
-            font-size: 16pt; /* Font size set to 16pt */
+            font-size: 16pt;
             align-items: flex-start;
         }
 
@@ -103,7 +110,7 @@
         .prompt-area {
             display: flex;
             flex-direction: column;
-            height: 100%; /* Make sure prompt area takes full height */
+            height: 100%;
         }
 
         textarea {
@@ -113,11 +120,11 @@
             border: 1px solid #4C657E;
             border-radius: 6px;
             resize: vertical;
-            flex: 1; /* Textarea takes up remaining space */
+            flex: 1;
             box-sizing: border-box;
-            font-size: 16pt; /* Font size set to 16pt */
-            background-color: #3d597a; /* Light blue */
-            overflow-y: auto; /* Enable vertical scrolling */
+            font-size: 16pt;
+            background-color: #3d597a;
+            overflow-y: auto;
             color: #D9E1EC;
         }
 
@@ -132,7 +139,7 @@
             width: 100%;
             box-sizing: border-box;
             height: auto;
-            align-self: flex-end; /* Align Submit button to bottom */
+            align-self: flex-end;
 }
 
         h3.dataNote {
@@ -153,10 +160,9 @@
             color: white;
             border: none;
             border-radius: 6px;
-            /* Make height one line and width auto adjust */
             height: auto;
             width: auto;
-            white-space: nowrap; /* Prevent text wrapping */
+            white-space: nowrap;
         }
 
 
@@ -168,30 +174,29 @@
             background-color: #2A3D55;
             white-space: pre-wrap;
             overflow-y: auto;
-            min-height: 0; /*Removes min height so no shape present*/
+            min-height: 0;
             text-align: left;
             box-sizing: border-box;
             font-size: 1.2em;
-            display:none; /*Hides the shape*/
+            display:none;
         }
 
-        #checkpointOutput { /* Renamed from combinedOutput to checkpointOutput, now for combined output */
+        #checkpointOutput {
             width: 90%;
             margin: 10px auto;
             padding: 10px;
             border: 1px solid #4C657E;
             border-radius: 6px;
-            background-color: #4C657E; /* Changed to API output style */
+            background-color: #4C657E;
             color: #D9E1EC;
             text-align: left;
             white-space: pre-wrap;
-            overflow-y: auto; /* Enable scroll if content overflows */
-            max-height: 250px; /* Increased max height */
+            overflow-y: auto;
+            max-height: 250px;
             box-sizing: border-box;
             font-size: 1.2em;
         }
 
-        /* Improvement #5: Biography Outline Styles */
         .biography-outline {
             text-align: left;
             margin-top: 20px;
@@ -222,30 +227,29 @@
         }
 
         .chapter-status-tbd {
-            color: #AEBCCF; /* Greyed out for TBD chapters */
+            color: #AEBCCF;
             font-style: italic;
         }
         .chapter-status-complete {
-            color: #27AE60; /* Green for completed chapters */
+            color: #27AE60;
             font-weight: bold;
         }
 
-        /* New Styles for layout and "Craft Biography" Button */
         .checkpoint-area {
             display: flex;
-            flex-direction: column; /* Stack items vertically */
-            justify-content: center; /* Center items horizontally in container */
-            align-items: center; /* Center items horizontally in flex direction (which is column now) */
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
             margin-top: 20px;
-            gap: 20px; /* Space between tone selector area and craft button */
+            gap: 20px;
         }
 
         .tone-and-craft-group {
-            display: flex; /* Arrange tone selector and craft button horizontally */
-            justify-content: center; /* Center content horizontally within this group */
-            align-items: flex-end; /* Align items to the bottom of this group */
-            gap: 20px; /* Space between tone selector and craft button inside group */
-            width: 80%; /* Adjust width to content */
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            gap: 20px;
+            width: 80%;
             max-width: 600px;
             min-width: 500px;
             padding: 20px;
@@ -260,12 +264,12 @@
 
         .craft-area-container {
             display: flex;
-            flex-direction: column; /* Stack items vertically */
-            justify-content: center; /* Center items horizontally in container */
-            align-items: center; /* Center items horizontally in flex direction (which is column now) */
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
             margin-top: 20px;
-            gap: 20px; /* Space between tone selector area and craft button */
-             width: 80%; /* Adjust width to content */
+            gap: 20px;
+             width: 80%;
             max-width: 900px;
             min-width: 600px;
              padding: 20px;
@@ -276,61 +280,55 @@
             text-align: left;
             margin-left: auto;
             margin-right: auto;
-
         }
-            margin: 0 auto; /* Center the tone-and-craft-group itself if needed within checkpoint-area */
-        }
-
 
         .tone-selector-area {
-            text-align: left; /* Align tone selector to the left */
-            flex-grow: 1; /* Allow tone selector area to take available space if needed - not needed now but keep */
-            display: flex; /* Use flexbox for horizontal alignment */
-            align-items: baseline; /* Align label and select text baselines */
-            gap: 10px; /* Space between label and select */
-            justify-content: flex-end; /* Align to the right side - now within tone-and-craft-group */
+            text-align: left;
+            flex-grow: 1;
+            display: flex;
+            align-items: baseline;
+            gap: 10px;
+            justify-content: flex-end;
         }
 
         .tone-selector-area label {
-            margin-bottom: 0; /* Remove default margin for label */
+            margin-bottom: 0;
         }
 
 
         #craftBiographyButton {
-            padding: 15px 30px; /* Larger padding */
-            font-size: 20px; /* Larger font size */
+            padding: 15px 30px;
+            font-size: 20px;
             cursor: pointer;
-            background-color: #FFA500; /* Example: Orange color */
+            background-color: #FFA500;
             color: black;
             border: none;
-            border-radius: 8px; /* Slightly more rounded */
-            font-weight: bold; /* Bold text */
-            box-shadow: 0 4px 8px rgba(255, 165, 0, 0.5); /* Example shadow */
+            border-radius: 8px;
+            font-weight: bold;
+            box-shadow: 0 4px 8px rgba(255, 165, 0, 0.5);
             transition: background-color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
-            white-space: nowrap; /* Prevent text wrapping */
+            white-space: nowrap;
             width: 100%;
-            /* align-self: flex-end;  Not needed anymore as alignment is within tone-and-craft-group */
         }
 
         #craftBiographyButton:hover {
-            background-color: #FF8C00; /* Darker orange on hover */
-            transform: scale(1.05); /* Slight scale up on hover */
-            box-shadow: 0 6px 12px rgba(255, 165, 0, 0.7); /* Enhanced shadow on hover */
+            background-color: #FF8C00;
+            transform: scale(1.05);
+            box-shadow: 0 6px 12px rgba(255, 165, 0, 0.7);
         }
 
 
         .save-checkpoint-area {
-            text-align: center; /* Center the save checkpoint button */
-            margin-top: 20px; /* Add some space above the button */
+            text-align: center;
+            margin-top: 20px;
         }
 
 
     </style>
     <script>
-        // All the code here is to ensure it is loaded at the top level scope.
-        let uploaded_content = ""; //Global variable to store uploaded content
-        let storyUpload; // Declare storyUpload outside the event listener
-        let biographyOutline; // For storing biography outline (Improvement #5)
+        let uploaded_content = "";
+        let storyUpload;
+        let biographyOutline;
 
         function submitPrompt() {
             let userInput = document.getElementById("userPrompt").value;
@@ -342,7 +340,6 @@
         }
 
          function sendToOpenAI(userInput, chatOutput, fileContent) {
-            // Get CSRF token from cookie
             function getCookie(name) {
                 const value = `; ${document.cookie}`;
                 const parts = value.split(`; ${name}=`);
@@ -383,7 +380,6 @@
          }
 
        function saveTextAsFile() {
-            // Get CSRF token from cookie
             function getCookie(name) {
                 const value = `; ${document.cookie}`;
                 const parts = value.split(`; ${name}=`);
@@ -434,8 +430,7 @@
         }
 
         function craftBiography() {
-             // Get CSRF token from cookie
-            function getCookie(name) {
+             function getCookie(name) {
                 const value = `; ${document.cookie}`;
                 const parts = value.split(`; ${name}=`);
                 if (parts.length === 2) return parts.pop().split(';').shift();
@@ -445,7 +440,7 @@
             let chatOutput = document.getElementById("chatOutput");
             chatOutput.textContent = "Crafting Biography... Please wait.  This may take a minute.";
 
-            fetch("/walt2/craft_biography", { // Call new route for crafting biography
+            fetch("/walt2/craft_biography", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/x-www-form-urlencoded",
@@ -458,12 +453,11 @@
                     alert("Error crafting biography: " + data.error);
                     chatOutput.textContent = "Error crafting biography: " + data.error;
                 } else {
-                    chatOutput.innerHTML = data.api_response; // Display formatted biography
+                    chatOutput.innerHTML = data.api_response;
 
-                    // Trigger file download
-                    const fileContent = data.api_response.replace(/<br>/g, '\n'); //Revert <br> to line breaks for download
+                    const fileContent = data.api_response.replace(/<br>/g, '\n');
                     const textFileAsBlob = new Blob([fileContent], { type: 'text/plain' });
-                    const fileNameToSaveAs = data.file_download_name || "Full_biography.txt"; // Use filename from response or default
+                    const fileNameToSaveAs = data.file_download_name || "Full_biography.txt";
                     const downloadLink = document.createElement("a");
                     downloadLink.download = fileNameToSaveAs;
                     downloadLink.href = window.URL.createObjectURL(textFileAsBlob);
@@ -480,7 +474,6 @@
 
          function sendCheckpointData(fileContent) {
               try {
-                // Get CSRF token from cookie
                 function getCookie(name) {
                     const value = `; ${document.cookie}`;
                     const parts = value.split(`; ${name}=`);
@@ -489,7 +482,7 @@
 
                 const csrfToken = getCookie('csrf_token');
 
-                fetch("/walt2/continue_bio_start", { // <-- CORRECTED ROUTE: continue_bio_start
+                fetch("/walt2/continue_bio_start", {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/x-www-form-urlencoded",
@@ -502,7 +495,7 @@
                     if (data.error) {
                         document.getElementById("chatOutput").textContent = "Error: " + data.error;
                     } else {
-                        document.getElementById("chatOutput").textContent = data.initial_message; // CORRECTED: Use initial_message
+                        document.getElementById("chatOutput").textContent = data.initial_message;
                         if (data.biography_outline) {
                             biographyOutline = data.biography_outline;
                             updateBiographyOutlineDisplay();
@@ -523,28 +516,25 @@
             let chatOutput = document.getElementById("chatOutput");
             chatOutput.textContent ="Oh I see! I'd forgotten what we already did. Wonderful";
          }
-         // This function is triggered when the "Start at last Checkpoint" is pressed
+
          function uploadStory() {
               console.log("Firing Upload Story Trigger");
               if (storyUpload) {
-                  storyUpload.click(); //Programitcally fire "load a checkpoint file."
+                  storyUpload.click();
                } else {
                  console.error("storyUpload element not found");
                }
-
            }
 
-        // Function to handle initial message from session storage on page load
         function displayInitialMessageOnLoad() {
             const initialMessage = sessionStorage.getItem('initial_message');
             if (initialMessage) {
                 document.getElementById("chatOutput").textContent = initialMessage;
-                sessionStorage.removeItem('initial_message'); // Clear from session storage after display
+                sessionStorage.removeItem('initial_message');
             }
         }
 
 
-        // Function to update biography outline display (Improvement #5)
         function updateBiographyOutlineDisplay() {
             const outlineDiv = document.getElementById('biographyOutline');
             if (!biographyOutline || !outlineDiv) return;
@@ -559,7 +549,6 @@
         }
 
 
-        //Event Handling
         document.addEventListener('DOMContentLoaded', function() {
             storyUpload = document.getElementById("story_upload");
             biographyOutline = {{ biography_outline|tojson }};
@@ -567,13 +556,12 @@
             const chatOutput = document.getElementById("chatOutput");
             const initialMessage = "{{ initial_message|default('') | safe }}";
 
-            displayInitialMessageOnLoad(); // Call to display initial message from session storage if present
+            displayInitialMessageOnLoad();
 
 
              console.log("Story Upload: Document is loaded");
             if (storyUpload) {
-               //Event
-               storyUpload.addEventListener("change", function(event) { //Make sure event is captured
+               storyUpload.addEventListener("change", function(event) {
                     console.log("Event Listener Triggered");
                     if (this.files && this.files[0]) {
                       const fileInput = document.getElementById("story_upload");
@@ -582,20 +570,13 @@
                       const file = fileInput.files[0];
 
                        const reader = new FileReader();
-                          //Set value for upload
                          reader.onload = function(event) {
                                try{
-                                    console.log ("Story Uploaded to the Chat Output", event.target.result); //Check log before
-                                    //Capture the file upload
+                                    console.log ("Story Uploaded to the Chat Output", event.target.result);
                                     uploaded_content = event.target.result;
-
-                                    //Display Load
                                     chatOutput.textContent = "Loading Checkpoint...";
-
-                                    //Load the checkpoint
                                      sendCheckpointData(event.target.result);
                                 }
-
                                 catch (error){
                                     chatOutput.textContent = "Error loading file: " + event.target.error;
                                 }
@@ -615,7 +596,6 @@
          })
 
          window.onload = function() {
-             // document.getElementById("chatOutput").textContent = "";  // COMMENTED OUT: Prevent clearing initial message
          };
      </script>
  <body>
@@ -623,6 +603,7 @@
      <p class="tagline">I want to write your story!</p>
 
         <div id="uploadButtonContainer">
+            <img id="waltImage" src="{{ url_for('static', filename='images/walt.png') }}" alt="Walt Biographer">
          <button id="uploadButton" onclick="uploadStory()">Start at last Checkpoint</button>
      </div>
      <input type="file" id="story_upload" name="story_upload" accept=".txt, .walt">
@@ -633,7 +614,7 @@
              <div class="chat-output" id="chatOutput"></div>
          </div>
          <div class="chat-area">
-             <h2 class="chat-title">Your Prompts</h2>
+             <h2 class="chat-title">Your Response</h2>  <!-- Changed text here -->
              <div class="prompt-area">
                  <textarea id="userPrompt" placeholder="Enter your prompt" rows="13"></textarea>
                  <button id="submitButton" onclick="submitPrompt()">Submit</button>
@@ -648,7 +629,7 @@
      </div>
 
      <div class="craft-area-container">
-         <div class="tone-and-craft-group">  <!-- NEW GROUPING DIV -->
+         <div class="tone-and-craft-group">
              <div class="tone-selector-area">
                  <label for="toneSelector">Biography Tone:</label>
                  <select id="toneSelector">

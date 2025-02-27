@@ -1,5 +1,6 @@
 
-Take all the following input and write a single brilliant and thoughtful biography of the person incorporating everything provided.
+Take all the following input and write a single brilliant and thoughtful complete biography of the person incorporating everything provided.
+Do not repeat everything sent to you back.  Just incorporate all the information into a single biography.
 Do not fill in chapters that have insufficient information to draft. Simply include the chapter in the outline and mark it as "TBD".
 You may rework previous chapters already written if the newest conversation improves them.
-After the biography, include a master list of all facts accumulated so far about the person as attribute value pairs such as "Born On: 25 December 1923:, "Born In: Columbus Ohio".
+After the biography, include a list of each and every facts accumulated so far about the person as attribute value pairs such as "Born On: 25 December 1923:, "Born In: Columbus Ohio".
