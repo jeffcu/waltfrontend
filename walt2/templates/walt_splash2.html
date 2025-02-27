@@ -149,7 +149,8 @@
                 if (data.error) {
                     alert("Error starting new biography: " + data.error);
                 } else {
-                    window.location.href = "/walt2"; // Redirect to Walt2 window on success
+                    console.log("Redirecting to /gallery"); // ADDED LOGGING BEFORE REDIRECT
+                    window.location.href = "/gallery"; // Redirect to GALLERY for test
                 }
             })
             .catch(error => {
@@ -208,7 +209,8 @@
                 if (data.error) {
                     alert("Error loading checkpoint: " + data.error);
                 } else {
-                    window.location.href = "/walt2"; // Redirect to Walt2 window on success
+                     console.log("Redirecting to /gallery"); // ADDED LOGGING BEFORE REDIRECT
+                    window.location.href = "/gallery"; // Redirect to GALLERY for test
                 }
             })
             .catch(error => {
