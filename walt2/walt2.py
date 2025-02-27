@@ -43,11 +43,18 @@ def new_bio_start():
         session['conversation'] = [{"role": "system", "content": get_walt_prompt_content()}, {"role": "assistant", "content": initial_message}]
         session['biography_outline'] = get_biography_outline()
         session.modified = True
-        return render_template('walt_window2.html', biography_outline=session['biography_outline'], initial_message=initial_message)
+        # Return JSON instead of rendering template for new_bio_start as well, for consistency.
+        return jsonify({
+            "initial_message": initial_message,
+            "biography_outline": session['biography_outline']
+        })
 
     except Exception as e:
         logging.error(f"OpenAI API error on new bio start: {e}")
-        return render_template('walt_window2.html', biography_outline=session['biography_outline'], initial_message=f"Error starting new bio: {str(e)}")
+        return jsonify({
+            "error": f"Error starting new bio: {str(e)}",
+            "biography_outline": session.get('biography_outline') # Still return outline if available
+        })
 
 
 @walt2_bp.route('/continue_bio_start', methods=['POST'])
@@ -116,15 +123,24 @@ def continue_bio_start():
 
             logging.debug(f"Session variables after checkpoint load: \nConversation: {session.get('conversation')}\nBiography Outline: {session.get('biography_outline')}\nFile Content (start): {session.get('file_content', '')[:200]}...") # Log session variables
 
-            return render_template('walt_window2.html', biography_outline=session['biography_outline'], initial_message=initial_message)
+            # Return JSON response with initial message and biography outline
+            return jsonify({
+                "initial_message": initial_message,
+                "biography_outline": session['biography_outline']
+            })
 
         except Exception as openai_e: # SPECIFICALLY CATCH OPENAI EXCEPTIONS
             logging.error(f"OpenAI API error in continue_bio_start: {openai_e}", exc_info=True) # LOG OPENAI ERROR WITH TRACEBACK
-            return render_template('walt_window2.html', biography_outline=session['biography_outline'], initial_message=f"Error continuing bio (OpenAI API): {str(openai_e)}")
+            return jsonify({
+                "error": f"Error continuing bio (OpenAI API): {str(openai_e)}",
+                "biography_outline": session.get('biography_outline') # Still return outline if available
+            })
 
     except Exception as e: # CATCH ALL OTHER EXCEPTIONS IN THE ROUTE
         logging.error(f"General error in continue_bio_start: {e}", exc_info=True) # LOG GENERAL ERROR WITH TRACEBACK
-        return jsonify({"error": f"Error processing checkpoint: {str(e)}"}), 500 # RETURN JSON ERROR FOR AJAX CALL
+        return jsonify({
+            "error": f"Error processing checkpoint: {str(e)}"
+        }) # RETURN JSON ERROR FOR AJAX CALL
 
 
 def get_walt_prompt_content():
