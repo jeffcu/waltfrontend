@@ -136,6 +136,7 @@
     </style>
     <script>
         function beginNewBiography() {
+            console.log("beginNewBiography function called!"); // ADDED LOG
             // Changed to fetch API call
             fetch("/walt2/new_bio_start", {
                 method: "GET",
@@ -158,6 +159,7 @@
         }
 
         function loadCheckpointFile() {
+            console.log("loadCheckpointFile function called!"); // ADDED LOG
             document.getElementById('story_upload').click(); // Trigger file input
         }
 
