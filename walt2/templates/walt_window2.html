@@ -1,3 +1,5 @@
+--- FILE: walt2/templates/walt_window2.html ---
+```html
 <!DOCTYPE html>
 <html>
 <head>
@@ -30,10 +32,14 @@
         }
 
         #uploadButtonContainer {
-            text-align: left; /* Align button to the left within its container */
             margin-bottom: 20px;
-            display: flex; /* Enable Flexbox for alignment */
-            align-items: flex-end; /* Vertically align items to the bottom */
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between; /* Space between image and button */
+            width: 100%;         /* Full width of parent container */
+            box-sizing: border-box; /* Ensure padding is inside width */
+            padding-left: 10px;     /* Align left with chat-output */
+            padding-right: 10px;    /* Align right with prompt-area */
         }
 
         #uploadButton {
@@ -47,11 +53,14 @@
             height: auto;
             width: auto;
             white-space: nowrap;
+            margin-left: auto; /* Push button to the right */
+            text-align: right; /* Align text inside button to right if needed */
         }
 
         #waltImage {
-            height: 80px; /* Adjust image height as needed */
-            margin-right: 15px; /* Space between image and button */
+            height: 80px;
+            margin-right: 15px;
+            align-self: flex-start; /* Align image to the top of the container */
         }
 
 
