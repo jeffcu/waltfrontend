@@ -1,4 +1,3 @@
-
 <!-- file: walt/templates/walt_splash.html -->
 <!DOCTYPE html>
 <html>
@@ -137,7 +136,25 @@
     </style>
     <script>
         function beginNewBiography() {
-            window.location.href = "/walt2/new_bio_start"; // Corrected path to new route
+            // Changed to fetch API call
+            fetch("/walt2/new_bio_start", {
+                method: "GET",
+                headers: {
+                    'Content-Type': 'application/json' // Expecting JSON response
+                },
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert("Error starting new biography: " + data.error);
+                } else {
+                    window.location.href = "/walt2"; // Redirect to Walt2 window on success
+                }
+            })
+            .catch(error => {
+                alert("Error starting new biography.");
+                console.error("Fetch error:", error);
+            });
         }
 
         function loadCheckpointFile() {
@@ -176,7 +193,7 @@
 
             const csrfToken = getCookie('csrf_token');
 
-            fetch("/walt2/continue_bio_start", { // CORRECTED ROUTE HERE
+            fetch("/walt2/continue_bio_start", { // Corrected path to "/walt2/continue_bio_start"
                 method: "POST",
                 headers: {
                     "Content-Type": "application/x-www-form-urlencoded",
@@ -184,25 +201,17 @@
                 },
                 body: "checkpoint_data=" + encodeURIComponent(fileContent)
             })
-            .then(response => {
-                if (!response.ok) { // Check for HTTP errors (4xx, 5xx)
-                    console.error('HTTP error loading checkpoint:', response.status, response.statusText); // Log HTTP error
-                    alert("HTTP error loading checkpoint: " + response.status + " " + response.statusText);
-                    throw new Error(`HTTP error! status: ${response.status}, text: ${response.statusText}`); // Re-throw to be caught in .catch
-                }
-                return response.json();
-            })
+            .then(response => response.json())
             .then(data => {
                 if (data.error) {
-                    console.error('Server-side error loading checkpoint:', data.error); // Log server error
                     alert("Error loading checkpoint: " + data.error);
                 } else {
-                    window.location.href = "/walt2"; // Redirect on success
+                    window.location.href = "/walt2"; // Redirect to Walt2 window on success
                 }
             })
             .catch(error => {
-                console.error('Fetch error loading checkpoint:', error); // Log fetch error (network issues etc.)
-                alert("Error loading checkpoint. See console for details."); // Generic user alert
+                alert("Error loading checkpoint.");
+                console.error("Fetch error:", error);
             });
         }
 
