@@ -13,8 +13,8 @@ def format_openai_text(text):
     return formatted_text
 
 @walt2_bp.route('/')
-def walt_window():
-    return render_template('walt_window2.html', biography_outline=session.get('biography_outline'), initial_message=None) # CORRECTED: render walt_window2.html
+def walt_window_splash(): # Renamed to walt_window_splash to be more descriptive
+    return render_template('walt_splash2.html')
 
 @walt2_bp.route('/new_bio_start', methods=['GET'])
 def new_bio_start():
@@ -57,6 +57,10 @@ def new_bio_start():
         })
 
 
+@walt2_bp.route('/app') # NEW route for /walt2/app - serves main app window
+def walt_window(): # Original walt_window function - now for /walt2/app
+    return render_template('walt_window2.html', biography_outline=session.get('biography_outline'), initial_message=None)
+
 @walt2_bp.route('/continue_bio_start', methods=['POST'])
 def continue_bio_start():
     checkpoint_data = request.form.get('checkpoint_data')
@@ -75,7 +79,6 @@ def continue_bio_start():
             with open('walt2/walt_prompts/continue.txt', 'r', encoding='utf-8') as f:
                 continue_prompt_base = f.read()
         except FileNotFoundError:
-            logging.error("continue.txt prompt not found!") # Keep existing error logging
             return jsonify({"error": "continue.txt prompt not found!"}), 500
 
         continue_prompt = continue_prompt_base + "\n\nCHECKPOINT FILE CONTENT:\n" + checkpoint_data
