@@ -143,12 +143,13 @@ from PyPDF2 import PdfReader
 from werkzeug.utils import secure_filename
 from flask_wtf.csrf import CSRFProtect, generate_csrf
 from walt.walt import walt_bp
-from walt2.walt2 import walt2_bp # Import the new walt2 blueprint  <-- ADDED
+from walt2.walt2 import walt2_bp # Import the new walt2 blueprint
+from waltx.waltx import waltx_bp # Import the new waltx blueprint  <-- ADDED
 from flask_session import Session # Import Flask-Session
 import colorsys #Import colorsys
 import random
 
-# Import Word Counter blueprint  <-- ADDED
+# Import Word Counter blueprint
 from word_counter.word_counter import wc_bp
 
 # Load environment variables
@@ -408,6 +409,9 @@ app.register_blueprint(walt_bp, url_prefix='/walt')
 
 # Register the walt2 blueprint (new Walt2)  <-- ADDED
 app.register_blueprint(walt2_bp, url_prefix='/walt2')
+
+# Register the waltx blueprint (new WaltX)  <-- ADDED
+app.register_blueprint(waltx_bp, url_prefix='/waltx')
 
 # Register the Word Counter blueprint  <-- ADDED
 app.register_blueprint(wc_bp)
@@ -2695,12 +2699,17 @@ def continue_bio_start():
             if conversation_history_text:
                 logging.debug(f"Conversation history text found:\n{conversation_history_text[:200]}...") # Log conversation history text
                 conversation_messages = []
+                valid_roles = ['system', 'user', 'assistant'] # Define valid roles
                 for line in conversation_history_text.strip().split('\n'):
                     if line.strip():
                         try: # Add try-except for line parsing
                             role, content = line.split(':', 1)
-                            conversation_messages.append({"role": role.strip(), "content": content.strip()})
-                            logging.debug(f"Parsed line - Role: {role.strip()}, Content: {content.strip()[:100]}...") # Log parsed line
+                            role = role.strip() # Strip whitespace from role
+                            if role in valid_roles: # Check if role is valid
+                                conversation_messages.append({"role": role, "content": content.strip()})
+                                logging.debug(f"Parsed line - Role: {role}, Content: {content.strip()[:100]}...") # Log parsed line
+                            else:
+                                logging.warning(f"Skipping line with invalid role: {role}. Line: {line}") # Log skipped lines
                         except ValueError as ve:
                             logging.warning(f"Error parsing conversation history line: {line}. Error: {ve}") # Log parsing errors
                 session['conversation'].extend(conversation_messages)
@@ -2896,7 +2905,6 @@ def get_biography_outline():
 
 --- FILE: walt2/templates/walt_splash2.html ---
 
-<!-- file: walt/templates/walt_splash.html -->
 <!DOCTYPE html>
 <html>
 <head>
@@ -3048,6 +3056,7 @@ def get_biography_outline():
                     alert("Error starting new biography: " + data.error);
                 } else {
                     console.log("Redirecting to /walt2/app"); // ADDED LOGGING BEFORE REDIRECT
+                    sessionStorage.setItem('initial_message', data.initial_message); // Store initial message
                     window.location.href = "/walt2/app"; // Redirect to /walt2/app, the main app route  <--- CHANGED LINE
                 }
             })
@@ -3108,6 +3117,7 @@ def get_biography_outline():
                     alert("Error loading checkpoint: " + data.error);
                 } else {
                      console.log("Redirecting to /walt2/app"); // ADDED LOGGING BEFORE REDIRECT
+                     sessionStorage.setItem('initial_message', data.initial_message); // Store initial message
                     window.location.href = "/walt2/app"; // Redirect to  /walt2/app, the main app route  <--- CHANGED LINE
                 }
             })
@@ -3151,7 +3161,7 @@ def get_biography_outline():
             font-family: 'Inter', sans-serif;
             background-color: #1E2A38;
             color: #E5E5E5;
-            padding: 20px;
+            padding: 20px; /* Keep body padding */
             text-align: center;
             margin: 0;
             min-height: 100vh;
@@ -3172,8 +3182,16 @@ def get_biography_outline():
         }
 
         #uploadButtonContainer {
-            text-align: center; /* Center the button */
             margin-bottom: 20px;
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            width: 100%;
+            box-sizing: border-box;
+            /* padding-left: 10px;  REMOVED padding-left from container*/
+            /* padding-right: 10px; REMOVED padding-right from container */
+            padding-left: 0px; /* Set container padding-left to 0 */
+            padding-right: 0px; /* Set container padding-right to 0 */
         }
 
         #uploadButton {
@@ -3184,11 +3202,21 @@ def get_biography_outline():
             color: white;
             border: none;
             border-radius: 6px;
-            /* Make height one line and width auto adjust */
             height: auto;
             width: auto;
-            white-space: nowrap; /* Prevent text wrapping */
+            white-space: nowrap;
+            margin-left: auto;
+            text-align: right;
+            margin-right: 20px; /* ADDED margin-right to button */
         }
+
+        #waltImage {
+            height: 80px;
+            margin-right: 15px;
+            align-self: flex-start;
+            margin-left: 20px; /* ADDED margin-left to image */
+        }
+
 
         input[type="file"] {
             display: none;
@@ -3224,13 +3252,13 @@ def get_biography_outline():
             border-radius: 6px;
             background-color: #2A3D55;
             color: #D9E1EC;
-            min-height: 400px; /* Min height of 400px */
-            height: 450px; /* Adjusted height to fit 18 lines, approximately */
+            min-height: 400px;
+            height: 450px;
             text-align: left;
             white-space: pre-wrap;
             overflow-y: auto;
             box-sizing: border-box;
-            font-size: 16pt; /* Font size set to 16pt */
+            font-size: 16pt;
             align-items: flex-start;
         }
 
@@ -3245,7 +3273,7 @@ def get_biography_outline():
         .prompt-area {
             display: flex;
             flex-direction: column;
-            height: 100%; /* Make sure prompt area takes full height */
+            height: 100%;
         }
 
         textarea {
@@ -3255,11 +3283,11 @@ def get_biography_outline():
             border: 1px solid #4C657E;
             border-radius: 6px;
             resize: vertical;
-            flex: 1; /* Textarea takes up remaining space */
+            flex: 1;
             box-sizing: border-box;
-            font-size: 16pt; /* Font size set to 16pt */
-            background-color: #3d597a; /* Light blue */
-            overflow-y: auto; /* Enable vertical scrolling */
+            font-size: 16pt;
+            background-color: #3d597a;
+            overflow-y: auto;
             color: #D9E1EC;
         }
 
@@ -3274,7 +3302,7 @@ def get_biography_outline():
             width: 100%;
             box-sizing: border-box;
             height: auto;
-            align-self: flex-end; /* Align Submit button to bottom */
+            align-self: flex-end;
 }
 
         h3.dataNote {
@@ -3295,10 +3323,9 @@ def get_biography_outline():
             color: white;
             border: none;
             border-radius: 6px;
-            /* Make height one line and width auto adjust */
             height: auto;
             width: auto;
-            white-space: nowrap; /* Prevent text wrapping */
+            white-space: nowrap;
         }
 
 
@@ -3310,30 +3337,29 @@ def get_biography_outline():
             background-color: #2A3D55;
             white-space: pre-wrap;
             overflow-y: auto;
-            min-height: 0; /*Removes min height so no shape present*/
+            min-height: 0;
             text-align: left;
             box-sizing: border-box;
             font-size: 1.2em;
-            display:none; /*Hides the shape*/
+            display:none;
         }
 
-        #checkpointOutput { /* Renamed from combinedOutput to checkpointOutput, now for combined output */
+        #checkpointOutput {
             width: 90%;
             margin: 10px auto;
             padding: 10px;
             border: 1px solid #4C657E;
             border-radius: 6px;
-            background-color: #4C657E; /* Changed to API output style */
+            background-color: #4C657E;
             color: #D9E1EC;
             text-align: left;
             white-space: pre-wrap;
-            overflow-y: auto; /* Enable scroll if content overflows */
-            max-height: 250px; /* Increased max height */
+            overflow-y: auto;
+            max-height: 250px;
             box-sizing: border-box;
             font-size: 1.2em;
         }
 
-        /* Improvement #5: Biography Outline Styles */
         .biography-outline {
             text-align: left;
             margin-top: 20px;
@@ -3364,30 +3390,29 @@ def get_biography_outline():
         }
 
         .chapter-status-tbd {
-            color: #AEBCCF; /* Greyed out for TBD chapters */
+            color: #AEBCCF;
             font-style: italic;
         }
         .chapter-status-complete {
-            color: #27AE60; /* Green for completed chapters */
+            color: #27AE60;
             font-weight: bold;
         }
 
-        /* New Styles for layout and "Craft Biography" Button */
         .checkpoint-area {
             display: flex;
-            flex-direction: column; /* Stack items vertically */
-            justify-content: center; /* Center items horizontally in container */
-            align-items: center; /* Center items horizontally in flex direction (which is column now) */
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
             margin-top: 20px;
-            gap: 20px; /* Space between tone selector area and craft button */
+            gap: 20px;
         }
 
         .tone-and-craft-group {
-            display: flex; /* Arrange tone selector and craft button horizontally */
-            justify-content: center; /* Center content horizontally within this group */
-            align-items: flex-end; /* Align items to the bottom of this group */
-            gap: 20px; /* Space between tone selector and craft button inside group */
-            width: 80%; /* Adjust width to content */
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            gap: 20px;
+            width: 80%;
             max-width: 600px;
             min-width: 500px;
             padding: 20px;
@@ -3402,12 +3427,12 @@ def get_biography_outline():
 
         .craft-area-container {
             display: flex;
-            flex-direction: column; /* Stack items vertically */
-            justify-content: center; /* Center items horizontally in container */
-            align-items: center; /* Center items horizontally in flex direction (which is column now) */
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
             margin-top: 20px;
-            gap: 20px; /* Space between tone selector area and craft button */
-             width: 80%; /* Adjust width to content */
+            gap: 20px;
+             width: 80%;
             max-width: 900px;
             min-width: 600px;
              padding: 20px;
@@ -3418,61 +3443,55 @@ def get_biography_outline():
             text-align: left;
             margin-left: auto;
             margin-right: auto;
-
         }
-            margin: 0 auto; /* Center the tone-and-craft-group itself if needed within checkpoint-area */
-        }
-
 
         .tone-selector-area {
-            text-align: left; /* Align tone selector to the left */
-            flex-grow: 1; /* Allow tone selector area to take available space if needed - not needed now but keep */
-            display: flex; /* Use flexbox for horizontal alignment */
-            align-items: baseline; /* Align label and select text baselines */
-            gap: 10px; /* Space between label and select */
-            justify-content: flex-end; /* Align to the right side - now within tone-and-craft-group */
+            text-align: left;
+            flex-grow: 1;
+            display: flex;
+            align-items: baseline;
+            gap: 10px;
+            justify-content: flex-end;
         }
 
         .tone-selector-area label {
-            margin-bottom: 0; /* Remove default margin for label */
+            margin-bottom: 0;
         }
 
 
         #craftBiographyButton {
-            padding: 15px 30px; /* Larger padding */
-            font-size: 20px; /* Larger font size */
+            padding: 15px 30px;
+            font-size: 20px;
             cursor: pointer;
-            background-color: #FFA500; /* Example: Orange color */
+            background-color: #FFA500;
             color: black;
             border: none;
-            border-radius: 8px; /* Slightly more rounded */
-            font-weight: bold; /* Bold text */
-            box-shadow: 0 4px 8px rgba(255, 165, 0, 0.5); /* Example shadow */
+            border-radius: 8px;
+            font-weight: bold;
+            box-shadow: 0 4px 8px rgba(255, 165, 0, 0.5);
             transition: background-color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
-            white-space: nowrap; /* Prevent text wrapping */
+            white-space: nowrap;
             width: 100%;
-            /* align-self: flex-end;  Not needed anymore as alignment is within tone-and-craft-group */
         }
 
         #craftBiographyButton:hover {
-            background-color: #FF8C00; /* Darker orange on hover */
-            transform: scale(1.05); /* Slight scale up on hover */
-            box-shadow: 0 6px 12px rgba(255, 165, 0, 0.7); /* Enhanced shadow on hover */
+            background-color: #FF8C00;
+            transform: scale(1.05);
+            box-shadow: 0 6px 12px rgba(255, 165, 0, 0.7);
         }
 
 
         .save-checkpoint-area {
-            text-align: center; /* Center the save checkpoint button */
-            margin-top: 20px; /* Add some space above the button */
+            text-align: center;
+            margin-top: 20px;
         }
 
 
     </style>
     <script>
-        // All the code here is to ensure it is loaded at the top level scope.
-        let uploaded_content = ""; //Global variable to store uploaded content
-        let storyUpload; // Declare storyUpload outside the event listener
-        let biographyOutline; // For storing biography outline (Improvement #5)
+        let uploaded_content = "";
+        let storyUpload;
+        let biographyOutline;
 
         function submitPrompt() {
             let userInput = document.getElementById("userPrompt").value;
@@ -3484,7 +3503,6 @@ def get_biography_outline():
         }
 
          function sendToOpenAI(userInput, chatOutput, fileContent) {
-            // Get CSRF token from cookie
             function getCookie(name) {
                 const value = `; ${document.cookie}`;
                 const parts = value.split(`; ${name}=`);
@@ -3525,7 +3543,6 @@ def get_biography_outline():
          }
 
        function saveTextAsFile() {
-            // Get CSRF token from cookie
             function getCookie(name) {
                 const value = `; ${document.cookie}`;
                 const parts = value.split(`; ${name}=`);
@@ -3576,8 +3593,7 @@ def get_biography_outline():
         }
 
         function craftBiography() {
-             // Get CSRF token from cookie
-            function getCookie(name) {
+             function getCookie(name) {
                 const value = `; ${document.cookie}`;
                 const parts = value.split(`; ${name}=`);
                 if (parts.length === 2) return parts.pop().split(';').shift();
@@ -3587,7 +3603,7 @@ def get_biography_outline():
             let chatOutput = document.getElementById("chatOutput");
             chatOutput.textContent = "Crafting Biography... Please wait.  This may take a minute.";
 
-            fetch("/walt2/craft_biography", { // Call new route for crafting biography
+            fetch("/walt2/craft_biography", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/x-www-form-urlencoded",
@@ -3600,12 +3616,11 @@ def get_biography_outline():
                     alert("Error crafting biography: " + data.error);
                     chatOutput.textContent = "Error crafting biography: " + data.error;
                 } else {
-                    chatOutput.innerHTML = data.api_response; // Display formatted biography
+                    chatOutput.innerHTML = data.api_response;
 
-                    // Trigger file download
-                    const fileContent = data.api_response.replace(/<br>/g, '\n'); //Revert <br> to line breaks for download
+                    const fileContent = data.api_response.replace(/<br>/g, '\n');
                     const textFileAsBlob = new Blob([fileContent], { type: 'text/plain' });
-                    const fileNameToSaveAs = data.file_download_name || "Full_biography.txt"; // Use filename from response or default
+                    const fileNameToSaveAs = data.file_download_name || "Full_biography.txt";
                     const downloadLink = document.createElement("a");
                     downloadLink.download = fileNameToSaveAs;
                     downloadLink.href = window.URL.createObjectURL(textFileAsBlob);
@@ -3622,7 +3637,6 @@ def get_biography_outline():
 
          function sendCheckpointData(fileContent) {
               try {
-                // Get CSRF token from cookie
                 function getCookie(name) {
                     const value = `; ${document.cookie}`;
                     const parts = value.split(`; ${name}=`);
@@ -3631,7 +3645,7 @@ def get_biography_outline():
 
                 const csrfToken = getCookie('csrf_token');
 
-                fetch("/walt2/continue_bio_start", { // <-- CORRECTED ROUTE: continue_bio_start
+                fetch("/walt2/continue_bio_start", {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/x-www-form-urlencoded",
@@ -3644,7 +3658,7 @@ def get_biography_outline():
                     if (data.error) {
                         document.getElementById("chatOutput").textContent = "Error: " + data.error;
                     } else {
-                        document.getElementById("chatOutput").textContent = data.response;
+                        document.getElementById("chatOutput").textContent = data.initial_message;
                         if (data.biography_outline) {
                             biographyOutline = data.biography_outline;
                             updateBiographyOutlineDisplay();
@@ -3665,19 +3679,25 @@ def get_biography_outline():
             let chatOutput = document.getElementById("chatOutput");
             chatOutput.textContent ="Oh I see! I'd forgotten what we already did. Wonderful";
          }
-         // This function is triggered when the "Start at last Checkpoint" is pressed
+
          function uploadStory() {
               console.log("Firing Upload Story Trigger");
               if (storyUpload) {
-                  storyUpload.click(); //Programitcally fire "load a checkpoint file."
+                  storyUpload.click();
                } else {
                  console.error("storyUpload element not found");
                }
-
            }
 
+        function displayInitialMessageOnLoad() {
+            const initialMessage = sessionStorage.getItem('initial_message');
+            if (initialMessage) {
+                document.getElementById("chatOutput").textContent = initialMessage;
+                sessionStorage.removeItem('initial_message');
+            }
+        }
 
-        // Function to update biography outline display (Improvement #5)
+
         function updateBiographyOutlineDisplay() {
             const outlineDiv = document.getElementById('biographyOutline');
             if (!biographyOutline || !outlineDiv) return;
@@ -3692,7 +3712,6 @@ def get_biography_outline():
         }
 
 
-        //Event Handling
         document.addEventListener('DOMContentLoaded', function() {
             storyUpload = document.getElementById("story_upload");
             biographyOutline = {{ biography_outline|tojson }};
@@ -3700,15 +3719,12 @@ def get_biography_outline():
             const chatOutput = document.getElementById("chatOutput");
             const initialMessage = "{{ initial_message|default('') | safe }}";
 
-            if (initialMessage) {
-                chatOutput.textContent = initialMessage;
-            }
+            displayInitialMessageOnLoad();
 
 
              console.log("Story Upload: Document is loaded");
             if (storyUpload) {
-               //Event
-               storyUpload.addEventListener("change", function(event) { //Make sure event is captured
+               storyUpload.addEventListener("change", function(event) {
                     console.log("Event Listener Triggered");
                     if (this.files && this.files[0]) {
                       const fileInput = document.getElementById("story_upload");
@@ -3717,20 +3733,13 @@ def get_biography_outline():
                       const file = fileInput.files[0];
 
                        const reader = new FileReader();
-                          //Set value for upload
                          reader.onload = function(event) {
                                try{
-                                    console.log ("Story Uploaded to the Chat Output", event.target.result); //Check log before
-                                    //Capture the file upload
+                                    console.log ("Story Uploaded to the Chat Output", event.target.result);
                                     uploaded_content = event.target.result;
-
-                                    //Display Load
                                     chatOutput.textContent = "Loading Checkpoint...";
-
-                                    //Load the checkpoint
                                      sendCheckpointData(event.target.result);
                                 }
-
                                 catch (error){
                                     chatOutput.textContent = "Error loading file: " + event.target.error;
                                 }
@@ -3750,15 +3759,14 @@ def get_biography_outline():
          })
 
          window.onload = function() {
-             // document.getElementById("chatOutput").textContent = "";  // COMMENTED OUT: Prevent clearing initial message
          };
      </script>
- </body>
  <body>
      <h1>Walt the Biographer</h1>
      <p class="tagline">I want to write your story!</p>
 
         <div id="uploadButtonContainer">
+            <img id="waltImage" src="{{ url_for('static', filename='images/walt.png') }}" alt="Walt Biographer">
          <button id="uploadButton" onclick="uploadStory()">Start at last Checkpoint</button>
      </div>
      <input type="file" id="story_upload" name="story_upload" accept=".txt, .walt">
@@ -3769,7 +3777,7 @@ def get_biography_outline():
              <div class="chat-output" id="chatOutput"></div>
          </div>
          <div class="chat-area">
-             <h2 class="chat-title">Your Prompts</h2>
+             <h2 class="chat-title">Your Response</h2>  <!-- Changed text here -->
              <div class="prompt-area">
                  <textarea id="userPrompt" placeholder="Enter your prompt" rows="13"></textarea>
                  <button id="submitButton" onclick="submitPrompt()">Submit</button>
@@ -3784,7 +3792,7 @@ def get_biography_outline():
      </div>
 
      <div class="craft-area-container">
-         <div class="tone-and-craft-group">  <!-- NEW GROUPING DIV -->
+         <div class="tone-and-craft-group">
              <div class="tone-selector-area">
                  <label for="toneSelector">Biography Tone:</label>
                  <select id="toneSelector">
@@ -3810,13 +3818,12 @@ def get_biography_outline():
 
 --- FILE: walt2/walt_prompts/bio_creator_prompt.txt ---
 
-# walt/bio_creator_prompt.txt
-# walt/bio_creator_prompt.txt
-# Improved bio_creator_prompt.txt (Improvement #4: Tone Adjustment)
-Take the following input and write a brilliant and **{{biography_tone}}** biography of the person.
+
+Take all the following input and write a single brilliant and thoughtful complete biography of the person incorporating everything provided.
+Do not repeat everything sent to you back.  Just incorporate all the information into a single biography.
 Do not fill in chapters that have insufficient information to draft. Simply include the chapter in the outline and mark it as "TBD".
-You may rework other chapters already written if the newest conversation improves them.
-After the biography, include a master list of all facts accumulated so far about the person.
+You may rework previous chapters already written if the newest conversation improves them.
+After the biography, include a list of each and every facts accumulated so far about the person as attribute value pairs such as "Born On: 25 December 1923:, "Born In: Columbus Ohio".
 
 
 --- FILE: walt2/walt_prompts/continue.txt ---
@@ -3824,16 +3831,7 @@ After the biography, include a master list of all facts accumulated so far about
 Look in the attached information and extract the users first name.   Welcome the user by name and ask if they are ready to continue with their interview.
 
 
---- FILE: walt2/walt_prompts/welcome.txt ---
-
-Greet the user as a charismatic elegant gentleman would.   For example, "I'm so glad to see you.  My name is Walt and I'd he honored to learn all about you as I write your biograpy".  As their name and where and when they were born.
-
-
---- FILE: walt2/walt_prompts/write_bio.txt ---
-
-
-
---- FILE: walt2/walt_prompts/walt_prompt.txt ---
+--- FILE: walt2/walt_prompts/walt_promptold.txt ---
 
 --- START OF FILE walt_prompt.txt ---
 Personality: You are Walt, a biographer inspired by Oprah. Be friendly, warm, genuinely curious, and make the interview feel like a comfortable chat. Use light humor and enthusiasm naturally.
@@ -3893,6 +3891,69 @@ For follow-up questions:
 *   Avoid: Formal introductions, numbered lists, verbose phrasing.
 
 --- END OF FILE walt_prompt.txt ---
+
+
+--- FILE: walt2/walt_prompts/welcome.txt ---
+
+Greet the user as a concise, charismatic, elegant, and genuinely interested, gentleman would.   For example, "I'm so glad to see you.  My name is Walt and I'd he honored to learn all about you as I write your biograpy".  Ask their name and where and when they were born.
+
+
+--- FILE: walt2/walt_prompts/write_bio.txt ---
+
+You're a gifted writer.   Take the following input and write a compelling biography of this person using the outline provided.  
+
+
+--- FILE: walt2/walt_prompts/walt_prompt.txt ---
+
+Personality: You are Walt, a biographer inspired by Oprah. Be friendly, warm, genuinely curious, and concise.  Make the interview feel like a comfortable chat. Use light humor and enthusiasm naturally.
+
+Identity: Walt.  charismatic, enthusiastic biographer and friend.
+
+Process:
+First: Examine the outline.  If the hook hasn't been established, always start there with the question "What's the *one thing* you hope people will remember most about you?".  Otherwise, select one chapter that us marked TBD and ask an open ended question to get them talking about the topic. Focus questions on collecting information to write that chapter.
+Second: Dig deeper into their answer to understand why they answered that way.
+Third: If not offered, ask for facts relevant to the conversation including names, dates, places and major events.
+Fourth: Be a good listener! Follow up questions and surprising information with more follow-up questions to expand on the subject.
+Fifth, be an active listener.  Concisely confirm what you heard and be supportive. Use follow-on questions like a curious friend. Use brief questions like:
+- "Tell me more..."
+- "What were you feeling?"
+- "Who was involved?"
+- "What did you learn?"
+Occasionally, use Oprah-style reflective questions, but sparingly.
+
+Tone: Warm, encouraging, conversational, and concise. Imagine a friendly coffee shop chat, but efficient. Avoid overly formal or robotic language. Inject personality and genuine interest concisely. Emojis sparingly.
+
+Remember: Co-create biography *with* the user, making it insightful and pleasant, but efficient. Be a supportive guide and enthusiastic listener, concisely.
+
+Examples of concise questions:
+- What was a shaping experience (pain or joy)?
+- What's one truth for the world to know?
+- When did you felt most alive?
+- Belief worth standing alone for?
+- Hardest lesson, wouldn’t trade?
+- Younger self's surprise now?
+- One self-mystery?
+- Deepest love/connection?
+- Three words for your soul?
+- Moment to relive (not change)?
+
+Outline: (Guide, be flexible)
+1. Hook – Defining Moment
+2. Origins – Early Life & Influences
+3. Call to Action – First Big Decision
+4. Rising Conflict – Struggles & Growth
+5. Climax – Defining Achievements
+
+--- NEW SECTION - CONCISE INSTRUCTIONS FOR FOLLOW-UP QUESTIONS ---
+
+For follow-up questions:
+
+*   Integrate questions directly into your conversational response.
+*   Phrase as natural, friendly questions Walt would ask.
+*   Keep questions very brief and focused. Aim for single, direct questions.
+*   Use a warm, concise, engaging tone.
+*   Example of concise integration:  "Montreal sounds pivotal!  What year did you arrive?  Key people in hockey then?"
+*   Avoid: Formal introductions, numbered lists, verbose phrasing.
 
 
 --- FILE: templates/index.html ---
@@ -4207,6 +4268,9 @@ For follow-up questions:
         function openWaltWindow() {
             window.location.href = "/walt";
         }
+        function openWaltXWindow() {
+            window.location.href = "/waltx";
+        }
         function openDynamicGraph() {
              window.location.href = "/dynamic";
         }
@@ -4223,6 +4287,14 @@ For follow-up questions:
                 <h3>Walt</h3>
                 <p>Walt wants to write your story!</p>
                 <a href="#" onclick="openWaltWindow()">Open App</a>
+            </div>
+
+            <!-- WaltX Button (Second Icon - NEW) -->
+            <div class="project-tile">
+                <img src="static/icons/amber-button.jpeg" alt="WaltX App">  <!-- You can use amber-button or create a yellow-button.jpeg -->
+                <h3>WaltX</h3>
+                <p>WaltX wants to write your story! (New Version)</p>
+                <a href="#" onclick="openWaltXWindow()">Open App</a>  <!-- Link to WaltX -->
             </div>
 
             <!-- Jeff's Art Button -->
@@ -4826,6 +4898,1637 @@ For follow-up questions:
     <img src="{{ url_for('static', filename=image_path) }}" alt="Jeff's Art">
 </body>
 </html>
+
+--- FILE: waltx/waltx.py ---
+
+from flask import Blueprint, render_template, request, jsonify, session, send_file
+import os
+import openai
+import logging
+import json
+from werkzeug.utils import secure_filename
+from io import StringIO
+
+from .voice.config import voice_config  # Import VoiceConfig
+from .voice.openai_voice import OpenAI_VoiceAPI  # Import OpenAI_VoiceAPI
+
+waltx_bp = Blueprint('waltx', __name__, template_folder='templates')
+
+def format_openai_text(text):
+    formatted_text = text.replace("\n", "<br>")
+    return formatted_text
+
+# Initialize Voice API (based on config)
+voice_api = None
+if voice_config.voice_enabled: # Check if voice is enabled
+    if voice_config.default_voice_api == "openai":
+        try:
+            voice_api = OpenAI_VoiceAPI(openai_api_key=voice_config.openai_api_key)
+            logging.info("OpenAI Voice API initialized.")
+        except ValueError as e:
+            logging.warning(f"OpenAI Voice API initialization error: {e}. Voice features disabled.")
+            voice_api = None # Set to None if initialization fails
+    # ... (add other voice API initializations here if needed: elif voice_config.default_voice_api == "google": ...)
+    else:
+        logging.warning(f"Unknown voice API '{voice_config.default_voice_api}' configured. Voice features disabled.")
+        voice_api = None
+else:
+    logging.info("Voice features are disabled via configuration.")
+    voice_api = None
+
+
+@waltx_bp.route('/')
+def walt_window_splash(): # Renamed to walt_window_splash to be more descriptive
+    return render_template('walt_splashx.html') # <-- RENAMED TEMPLATE FILE
+
+@waltx_bp.route('/new_bio_start', methods=['GET'])
+def new_bio_start():
+    session.pop('conversation', None)
+    session.pop('biography_outline', None)
+    session.pop('file_content', None)
+
+    try:
+        with open('waltx/walt_prompts/welcome.txt', 'r', encoding='utf-8') as f:
+            welcome_prompt = f.read()
+    except FileNotFoundError:
+        return jsonify({"error": "welcome.txt prompt not found!"}), 500
+
+    try:
+        client = openai.Client()
+        response = client.chat.completions.create(
+            model="gpt-4o",
+            messages=[
+                {"role": "system", "content": "You are Walt, the biographer, starting a new biography."},
+                {"role": "user", "content": welcome_prompt}
+            ],
+            temperature=0.7,
+            max_tokens=200
+        )
+        initial_message = response.choices[0].message.content.strip()
+        session['conversation'] = [{"role": "system", "content": get_walt_prompt_content()}, {"role": "assistant", "content": initial_message}]
+        session['biography_outline'] = get_biography_outline()
+        session.modified = True
+        # Return JSON instead of rendering template for new_bio_start as well, for consistency.
+        return jsonify({
+            "initial_message": initial_message,
+            "biography_outline": session['biography_outline']
+        })
+
+    except Exception as e:
+        logging.error(f"OpenAI API error on new bio start: {e}")
+        return jsonify({
+            "error": f"Error starting new bio: {str(e)}",
+            "biography_outline": session.get('biography_outline') # Still return outline if available
+        })
+
+
+@waltx_bp.route('/app') # NEW route for /waltx/app - serves main app window
+def walt_window(): # Original walt_window function - now for /waltx/app
+    return render_template('walt_windowx.html', biography_outline=session.get('biography_outline'), initial_message=None) # <-- RENAMED TEMPLATE FILE
+
+@waltx_bp.route('/continue_bio_start', methods=['POST'])
+def continue_bio_start():
+    checkpoint_data = request.form.get('checkpoint_data')
+    if not checkpoint_data:
+        logging.warning("No checkpoint data received in continue_bio_start request.") # Enhanced logging
+        return jsonify({"error": "No checkpoint data received"}), 400
+
+    session.pop('conversation', None)
+    session.pop('biography_outline', None)
+    session.pop('file_content', None)
+
+    logging.debug(f"Checkpoint data received:\n{checkpoint_data[:200]}...") # Log the beginning of checkpoint data
+
+    try: # ADDED try...except BLOCK
+        try:
+            with open('waltx/walt_prompts/continue.txt', 'r', encoding='utf-8') as f:
+                continue_prompt_base = f.read()
+        except FileNotFoundError:
+            return jsonify({"error": "continue.txt prompt not found!"}), 500
+
+        continue_prompt = continue_prompt_base + "\n\nCHECKPOINT FILE CONTENT:\n" + checkpoint_data
+
+        try:
+            client = openai.Client()
+            response = client.chat.completions.create(
+                model="gpt-4o",
+                messages=[
+                    {"role": "system", "content": "You are Walt, the biographer, continuing a biography from a checkpoint."},
+                    {"role": "user", "content": continue_prompt}
+                ],
+                temperature=0.7,
+                max_tokens=200
+            )
+            initial_message = response.choices[0].message.content.strip()
+            logging.debug(f"Initial message from OpenAI API: {initial_message}") # Log initial message
+
+            parts = checkpoint_data.split("--- CONVERSATION HISTORY ---\n\n")
+            file_content_part = parts[0].strip()
+            conversation_history_text = parts[1].strip() if len(parts) > 1 else ""
+
+            session['file_content'] = file_content_part
+            logging.debug(f"File content part extracted:\n{file_content_part[:200]}...") # Log file content part
+
+            session['conversation'] = [{"role": "system", "content": get_walt_prompt_content()}]
+            if conversation_history_text:
+                logging.debug(f"Conversation history text found:\n{conversation_history_text[:200]}...") # Log conversation history text
+                conversation_messages = []
+                for line in conversation_history_text.strip().split('\n'):
+                    if line.strip():
+                        try: # Add try-except for line parsing
+                            role, content = line.split(':', 1)
+                            conversation_messages.append({"role": role.strip(), "content": content.strip()})
+                            logging.debug(f"Parsed line - Role: {role.strip()}, Content: {content.strip()[:100]}...") # Log parsed line
+                        except ValueError as ve:
+                            logging.warning(f"Error parsing conversation history line: {line}. Error: {ve}") # Log parsing errors
+                session['conversation'].extend(conversation_messages)
+            else:
+                logging.debug("No conversation history text found in checkpoint data.") # Log if no history
+
+            session['conversation'].append({"role": "assistant", "content": initial_message})
+            session['biography_outline'] = get_biography_outline()
+            session.modified = True
+
+            logging.debug(f"Session variables after checkpoint load: \nConversation: {session.get('conversation')}\nBiography Outline: {session.get('biography_outline')}\nFile Content (start): {session.get('file_content', '')[:200]}...") # Log session variables
+
+            # Return JSON response with initial message and biography outline
+            return jsonify({
+                "initial_message": initial_message,
+                "biography_outline": session['biography_outline']
+            })
+
+        except Exception as openai_e: # SPECIFICALLY CATCH OPENAI EXCEPTIONS
+            logging.error(f"OpenAI API error in continue_bio_start: {openai_e}", exc_info=True) # LOG OPENAI ERROR WITH TRACEBACK
+            return jsonify({
+                "error": f"Error continuing bio (OpenAI API): {str(openai_e)}",
+                "biography_outline": session.get('biography_outline') # Still return outline if available
+            })
+
+    except Exception as e: # CATCH ALL OTHER EXCEPTIONS IN THE ROUTE
+        logging.error(f"General error in continue_bio_start: {e}", exc_info=True) # LOG GENERAL ERROR WITH TRACEBACK
+        return jsonify({
+            "error": f"Error processing checkpoint: {str(e)}"
+        }) # RETURN JSON ERROR FOR AJAX CALL
+
+
+def get_walt_prompt_content():
+    try:
+        with open('waltx/walt_prompts/walt_prompt.txt', 'r', encoding='utf-8') as f:
+            return f.read()
+    except FileNotFoundError:
+        return "Error: walt_prompt.txt not found!"
+
+@waltx_bp.route('/transcribe_audio', methods=['POST']) # <-- ADDED ROUTE
+def transcribe_audio():
+    if not voice_api:
+        return jsonify({"error": "Voice API not enabled."}), 501
+
+    if 'audio' not in request.files:
+        return jsonify({"error": "No audio file provided"}), 400
+
+    audio_file = request.files['audio']
+    if audio_file.filename == '':
+        return jsonify({"error": "No selected audio file"}), 400
+
+    temp_audio_path = os.path.join("temp_audio", secure_filename(audio_file.filename)) # Save to temp directory
+    os.makedirs("temp_audio", exist_ok=True) # Ensure temp_audio directory exists
+    audio_file.save(temp_audio_path)
+
+    try:
+        transcription_text = voice_api.transcribe_audio(temp_audio_path)
+        os.remove(temp_audio_path) # Delete temp audio file after transcription
+        return jsonify({"transcription": transcription_text})
+    except ValueError as e:
+        os.remove(temp_audio_path) # Delete temp audio file even on error
+        return jsonify({"error": str(e)}), 500
+
+
+@waltx_bp.route('/synthesize_speech', methods=['POST']) # <-- ADDED ROUTE
+def synthesize_speech():
+    if not voice_api:
+        return jsonify({"error": "Voice API not enabled."}), 501
+
+    text_data = request.get_json()
+    if not text_data or 'text' not in text_data:
+        return jsonify({"error": "No text provided for speech synthesis"}), 400
+
+    text_to_synthesize = text_data['text']
+    voice_id = voice_config.tts_voice_id # Get configured voice ID
+
+    temp_audio_output_path = os.path.join("temp_audio", f"waltx_speech_{session.sid}.mp3") # Unique filename
+    os.makedirs("temp_audio", exist_ok=True) # Ensure temp_audio directory exists
+
+    try:
+        audio_file_path = voice_api.synthesize_speech(text_to_synthesize, temp_audio_output_path, voice_id=voice_id)
+        audio_url = f"/temp_audio_url/{os.path.basename(audio_file_path)}" # Create URL for frontend access
+        return jsonify({"audio_url": audio_url}) # Return audio URL
+    except ValueError as e:
+        os.remove(temp_audio_output_path) # Delete temp audio file even on error
+        return jsonify({"error": str(e)}), 500
+
+
+@waltx_bp.route('/temp_audio_url/<filename>') # <-- ADDED ROUTE to serve temp audio files
+def temp_audio_url(filename):
+    return send_file(os.path.join("temp_audio", filename))
+
+
+@waltx_bp.route('/walt_analyze', methods=['POST'])
+def walt_analyze():
+    user_input = request.form.get('user_query')
+
+    if not user_input:
+        return jsonify({"error": "No user query provided"}), 400
+
+    walt_prompt_base = get_walt_prompt_content()
+    walt_prompt = walt_prompt_base
+
+
+    if 'conversation' not in session:
+        initial_greeting = "Hi I'm Walt. What's your name?"
+        session['conversation'] = [{"role": "system", "content": walt_prompt},
+                                     {"role": "assistant", "content": initial_greeting}]
+        session['biography_outline'] = get_biography_outline()
+
+
+    session['conversation'].append({"role": "user", "content": user_input + ".  Continue to help me build my biography."})
+
+    try:
+        client = openai.Client()
+        logging.info(f"OpenAI Request Messages: {session['conversation']}")
+
+        response = client.chat.completions.create(
+            model="gpt-4o",
+            messages=session['conversation'],
+            temperature=0.7,
+            max_tokens=256,
+            top_p=1
+        )
+        api_response_text = response.choices[0].message.content.strip()
+        session['conversation'].append({"role": "assistant", "content": api_response_text})
+        session.modified = True
+
+        response_data = {"response": api_response_text, "biography_outline": session['biography_outline']}
+
+        if voice_api and voice_config.voice_enabled: # Synthesize speech if voice is enabled
+            try:
+                speech_data = {"text": api_response_text}
+                speech_response = synthesize_speech() # Call synthesize_speech function directly
+                if speech_response.status_code == 200:
+                    speech_json = speech_response.get_json()
+                    response_data["audio_url"] = speech_json.get("audio_url") # Add audio URL to response
+                else:
+                    logging.warning(f"Text-to-speech API failed: {speech_response.get_json()}") # Log TTS failure, but don't block main response
+            except Exception as tts_e:
+                logging.error(f"Error during text-to-speech synthesis: {tts_e}", exc_info=True) # Log TTS errors
+
+        return jsonify(response_data) # Return response with or without audio URL
+
+
+    except Exception as e:
+        logging.error(f"OpenAI API Error: {e}", exc_info=True)
+        return jsonify({"error": str(e)}), 500
+
+
+@waltx_bp.route('/create_checkpoint', methods=['POST'])
+def create_checkpoint():
+    try:
+        checkpoint_data_text = session.get('file_content', '')
+        bio_prompt_content = ""
+        try:
+            with open('waltx/walt_prompts/bio_creator_prompt.txt', 'r', encoding='utf-8') as f:
+                bio_prompt_content = f.read()
+        except Exception as e:
+            logging.error(f"Error reading bio_creator_prompt.txt: {e}")
+            bio_prompt_content = "Error loading bio creator prompt."
+
+        conversation_text = ""
+        current_conversation = session.get('conversation', [])
+        for message in current_conversation:
+            if message['role'] in ['system', 'user', 'assistant']:
+                conversation_text += f"{message['role']}: {message['content']}\n"
+
+        combined_checkpoint_content = bio_prompt_content + "\n\n" + checkpoint_data_text + "\n\n--- CONVERSATION HISTORY ---\n\n" + conversation_text
+
+        logging.info(f"Checkpoint data being created (with conversation): {combined_checkpoint_content[:100]}...")
+
+        return jsonify({"checkpoint_data": combined_checkpoint_content})
+
+    except Exception as e:
+        logging.error(f"Error creating checkpoint: {e}", exc_info=True)
+        return jsonify({"error": str(e)}), 500
+
+@waltx_bp.route('/craft_biography', methods=['POST'])
+def craft_biography():
+    checkpoint_data_text = session.get('file_content', '')
+    conversation_text = ""
+    current_conversation = session.get('conversation', [])
+    for message in current_conversation:
+        if message['role'] in ['user', 'assistant']:
+            conversation_text += f"{message['role']}: {message['content']}\n"
+
+    try:
+        with open('waltx/walt_prompts/write_bio.txt', 'r', encoding='utf-8') as f:
+            write_bio_prompt = f.read()
+    except FileNotFoundError:
+        return jsonify({"error": "write_bio.txt prompt not found!"}), 500
+
+    api_input_text = write_bio_prompt + "\n\n" + checkpoint_data_text + "\n\n--- CONVERSATION ---\n\n" + conversation_text
+
+    try:
+        client = openai.Client()
+        response = client.chat.completions.create(
+            model="gpt-4o",
+            messages=[{"role": "user", "content": api_input_text}],
+            temperature=0.7,
+            max_tokens=1000,
+        )
+        biography_content = response.choices[0].message.content.strip()
+        formatted_biography = format_openai_text(biography_content)
+
+        formatted_biography_file = biography_content.replace("<br>", "\n")
+        filename = "Full_biography.txt"
+        with open(filename, 'w', encoding='utf-8') as outfile:
+            outfile.write(formatted_biography_file)
+
+        session['file_content'] = biography_content
+        session.modified = True
+
+        return jsonify({"api_response": formatted_biography, "file_download_name": filename})
+
+    except Exception as e:
+        logging.error(f"Error crafting biography: {e}", exc_info=True)
+        error_message = f"Error crafting biography: {str(e)}"
+        formatted_error = format_openai_text(error_message)
+        return jsonify({"error": error_message, "api_response": formatted_error}), 500
+
+
+@waltx_bp.route('/saveTextAsFileDownload', methods=['POST'])
+def saveTextAsFileDownload():
+    try:
+        data = request.get_json()
+        checkpoint_data = data.get('checkpoint_data')
+        file_download_name = data.get('file_download_name', 'sessionStory.txt')
+
+        if not checkpoint_data:
+            return jsonify({"error": "No checkpoint data to save"}), 400
+
+        logging.info(f"Checkpoint data being sent for download: {checkpoint_data[:50]}...")
+
+        virtual_file = StringIO()
+        virtual_file.write(checkpoint_data)
+        virtual_file.seek(0)
+
+        return send_file(
+            virtual_file,
+            mimetype='text/plain',
+            download_name=file_download_name,
+            as_attachment=True
+        )
+
+
+    except Exception as e:
+        logging.error(f"Error return and saving checkpoint from saveTextAsFileDownload: {e}", exc_info=True)
+        return jsonify({"error": str(e)}), 500
+
+def get_biography_outline():
+    return [
+        {"chapter": 1, "title": "Hook – Defining Moment", "status": "TBD"},
+        {"chapter": 2, "title": "Origins – Early Life & Influences", "status": "TBD"},
+        {"chapter": 3, "title": "Call to Action – First Big Decision", "status": "TBD"},
+        {"chapter": 4, "title": "Rising Conflict – Struggles & Growth", "status": "TBD"},
+        {"chapter": 5, "title": "The Climax – Defining Achievements", "status": "TBD"}
+    ]
+
+
+--- FILE: waltx/voice/config.py ---
+
+import os
+
+class VoiceConfig:
+    def __init__(self):
+        self.openai_api_key = os.environ.get("OPENAI_API_KEY")  # Or get from config file
+        self.default_voice_api = "openai"  # Default to OpenAI, can be "google", "aws", etc.
+        self.voice_enabled = os.environ.get("WALTX_VOICE_ENABLED", "False").lower() == "true" # Env var to enable/disable
+        self.tts_voice_id = os.environ.get("WALTX_TTS_VOICE_ID", "alloy") # Default OpenAI voice
+
+voice_config = VoiceConfig() # Instantiate config
+
+
+--- FILE: waltx/voice/openai_voice.py ---
+
+import openai
+from .voice_interface import VoiceAPIInterface  # Corrected import
+import os
+import logging
+
+class OpenAI_VoiceAPI(VoiceAPIInterface):
+    def __init__(self, openai_api_key=None):
+        self.openai_api_key = openai_api_key or os.environ.get("OPENAI_API_KEY")
+        if not self.openai_api_key:
+            raise ValueError("OpenAI API key is required for Voice API.")
+        self.client = openai.Client(api_key=self.openai_api_key)
+
+    def transcribe_audio(self, audio_file_path):
+        """Transcribes audio using OpenAI Whisper API."""
+        try:
+            with open(audio_file_path, "rb") as audio_file:
+                transcript = self.client.audio.transcriptions.create(
+                    model="whisper-1",
+                    file=audio_file
+                )
+                return transcript.text.strip()
+        except Exception as e:
+            logging.error(f"OpenAI Whisper API error: {e}")
+            raise ValueError(f"Speech-to-text error: {e}") from e
+
+
+    def synthesize_speech(self, text, output_file_path, voice_id="alloy"): # Default voice
+        """Synthesizes speech using OpenAI TTS API."""
+        try:
+            response = self.client.audio.speech.create(
+                model="tts-1", # Or "tts-1-hd" for higher quality, slower
+                voice=voice_id, # Use voice_id parameter
+                input=text
+            )
+            response.stream_to_file(output_file_path) # Stream directly to file
+            return output_file_path # Return the path to the created audio file
+        except Exception as e:
+            logging.error(f"OpenAI TTS API error: {e}")
+            raise ValueError(f"Text-to-speech error: {e}") from e
+
+
+--- FILE: waltx/voice/voice_interface.py ---
+
+from abc import ABC, abstractmethod
+
+class VoiceAPIInterface(ABC):
+    @abstractmethod
+    def transcribe_audio(self, audio_file_path):
+        """Transcribes audio from a file to text."""
+        pass
+
+    @abstractmethod
+    def synthesize_speech(self, text, output_file_path, voice_id=None):
+        """Synthesizes speech from text and saves to a file."""
+        pass
+
+
+--- FILE: waltx/templates/walt_windowx.html ---
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Walt the Biographer</title>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f7f7f7;
+            color: #333;
+            padding: 20px;
+            text-align: center;
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            box-sizing: border-box;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        h1 {
+            color: #007AFF;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+
+        p.tagline {
+            font-style: italic;
+            color: #777;
+            margin-bottom: 20px;
+        }
+
+        #uploadButtonContainer {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        #uploadButton {
+            padding: 12px 24px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #fff;
+            color: #007AFF;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+            white-space: nowrap;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        #uploadButton:hover {
+            background-color: #f0f0f0;
+            border-color: #bbb;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .chat-container {
+            display: flex;
+            max-width: 1200px;
+            margin: 0 auto;
+            flex: 1;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .chat-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            box-sizing: border-box;
+            padding: 20px;
+        }
+
+        .chat-title {
+            text-align: left;
+            margin-bottom: 15px;
+            color: #007AFF;
+            font-weight: 500;
+            font-size: 1.3em;
+        }
+
+        .chat-output {
+            flex: 1;
+            padding: 20px;
+            border: 1px solid #eee;
+            border-radius: 12px;
+            background-color: #fff;
+            color: #333;
+            min-height: 400px;
+            height: 450px;
+            text-align: left;
+            white-space: pre-wrap;
+            overflow-y: auto;
+            box-sizing: border-box;
+            font-size: 16pt;
+            align-items: flex-start;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        .chat-input {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            box-sizing: border-box;
+            padding: 20px;
+        }
+
+        .prompt-area {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        textarea {
+            width: 100%;
+            margin-bottom: 10px;
+            padding: 8px;
+            border: 1px solid #4C657E;
+            border-radius: 6px;
+            resize: vertical;
+            flex: 1;
+            box-sizing: border-box;
+            font-size: 16pt;
+            background-color: #fff;
+            border: 1px solid #eee;
+            overflow-y: auto;
+            color: #333;
+        }
+
+        #submitButton {
+           padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: gold;
+            color: dimgrey;
+            border: none;
+            border-radius: 6px;
+            width: 100%;
+            box-sizing: border-box;
+            height: auto;
+            align-self: flex-end;
+}
+
+        h3.dataNote {
+            text-align: center;
+            font-size: 1.2em;
+            margin-bottom: 10px;
+            color: #777;
+        }
+
+        #saveButton {
+            text-align: center;
+            align-self: center;
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #fff;
+            color: #007AFF;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            height: auto;
+            width: auto;
+            white-space: nowrap;
+        }
+
+
+        #sessionSummary {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #4C657E;
+            border-radius: 6px;
+            background-color: #2A3D55;
+            white-space: pre-wrap;
+            overflow-y: auto;
+            min-height: 0;
+            text-align: left;
+            box-sizing: border-box;
+            font-size: 1.2em;
+            display:none;
+        }
+
+        #checkpointOutput {
+            width: 90%;
+            margin: 10px auto;
+            padding: 10px;
+            border: 1px solid #4C657E;
+            border-radius: 6px;
+            background-color: #f0f0f0;
+            color: #555;
+            text-align: left;
+            white-space: pre-wrap;
+            overflow-y: auto;
+            max-height: 250px;
+            box-sizing: border-box;
+            font-size: 1.2em;
+        }
+
+        .biography-outline {
+            text-align: left;
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #4C657E;
+            border-radius: 6px;
+            background-color: #fff;
+            border: 1px solid #eee;
+            color: #333;
+        }
+
+        .biography-outline h2 {
+            color: #007AFF;
+            font-size: 20px;
+            margin-bottom: 10px;
+        }
+
+        .biography-outline ul {
+            list-style: none;
+            padding-left: 20px;
+        }
+
+        .biography-outline li {
+            margin-bottom: 5px;
+        }
+
+        .chapter-title {
+            font-weight: bold;
+        }
+
+        .chapter-status-tbd {
+            color: #999;
+            font-style: italic;
+        }
+        .chapter-status-complete {
+            color: #27AE60;
+            font-weight: bold;
+        }
+
+        .checkpoint-area {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            margin-top: 20px;
+            gap: 20px;
+        }
+
+        .tone-and-craft-group {
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            gap: 20px;
+            width: auto;
+            margin: 0 auto;
+        }
+
+
+        .tone-selector-area {
+            text-align: left;
+            flex-grow: 1;
+            display: flex;
+            align-items: baseline;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        .tone-selector-area label {
+            margin-bottom: 0;
+        }
+
+
+        #craftBiographyButton {
+            padding: 15px 30px;
+            font-size: 20px;
+            cursor: pointer;
+            background-color: #FFA500;
+            color: black;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            box-shadow: 0 4px 8px rgba(255, 165, 0, 0.5);
+            transition: background-color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
+            white-space: nowrap;
+        }
+
+        #craftBiographyButton:hover {
+            background-color: #FF8C00;
+            transform: scale(1.05);
+            box-shadow: 0 6px 12px rgba(255, 165, 0, 0.7);
+        }
+
+        .save-checkpoint-area {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+         #recordButton {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #007AFF;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            margin-bottom: 10px;
+        }
+
+        #recordButton:hover {
+            background-color: #0059b3;
+        }
+        #audioPlayback {
+            margin-top: 10px;
+        }
+
+
+    </style>
+    <script>
+        // All the code here is to ensure it is loaded at the top level scope.
+        let uploaded_content = "";
+        let storyUpload;
+        let biographyOutline;
+        let mediaRecorder;
+        let audioChunks = [];
+
+        function submitPrompt() {
+            let userInput = document.getElementById("userPrompt").value;
+            let chatOutput = document.getElementById("chatOutput");
+
+            chatOutput.textContent = "Loading...";
+            sendToOpenAI(userInput, chatOutput, uploaded_content);
+            document.getElementById("userPrompt").value = "";
+        }
+
+         function sendToOpenAI(userInput, chatOutput, fileContent) {
+            function getCookie(name) {
+                const value = `; ${document.cookie}`;
+                const parts = value.split(`; ${name}=`);
+                if (parts.length === 2) return parts.pop().split(';').shift();
+            }
+
+            const csrfToken = getCookie('csrf_token');
+
+            fetch("/waltx/walt_analyze", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    "X-CSRFToken": csrfToken
+                },
+                 body: "user_query=" + encodeURIComponent(userInput) + "&uploaded_content=" + encodeURIComponent(fileContent)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    chatOutput.textContent = "Error: " + data.error;
+                } else {
+                    chatOutput.textContent = data.response;
+                    if (data.biography_outline) {
+                        biographyOutline = data.biography_outline;
+                        updateBiographyOutlineDisplay();
+                    }
+                    if (data.audio_url) {
+                        playWaltAudio(data.audio_url);
+                    }
+                }
+            })
+            .catch(error => {
+                chatOutput.textContent = "Error: " + error.message;
+            });
+        }
+
+        function playWaltAudio(audioURL) {
+            const audioPlayer = document.getElementById('audioPlayback');
+            audioPlayer.src = audioURL;
+            audioPlayer.play().catch(e => {
+                console.error("Error playing audio:", e);
+                alert("Audio playback failed. Please ensure your browser supports audio playback and that the audio file is accessible.");
+            });
+        }
+
+
+         function getStoryBoard(){
+            let chatOutput = document.getElementById("chatOutput").textContent;
+            return chatOutput
+         }
+
+       function saveTextAsFile() {
+            function getCookie(name) {
+                const value = `; ${document.cookie}`;
+                const parts = value.split(`; ${name}=`);
+                if (parts.length === 2) return parts.pop().split(';').shift();
+            }
+
+            const csrfToken = getCookie('csrf_token');
+             let chatOutput = document.getElementById("chatOutput");
+
+            chatOutput.textContent = "Processing Checkpoint and Creating File... Please wait.";
+
+            fetch("/waltx/create_checkpoint", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    "X-CSRFToken": csrfToken
+                },
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert("Error creating checkpoint: " + data.error);
+                    chatOutput.textContent = "API Error: " + data.error;
+                } else {
+                    const fileContent = data["checkpoint_data"];
+
+                    chatOutput.textContent += "\n\nCheckpoint file created and download started.";
+
+                    console.log("fileContent from server", fileContent)
+
+                    const textFileAsBlob = new Blob([fileContent], { type: 'text/plain' });
+                    const fileNameToSaveAs = "sessionStory.txt";
+
+                    const downloadLink = document.createElement("a");
+                    downloadLink.download = fileNameToSaveAs;
+                    downloadLink.innerHTML = "Download File";
+                    downloadLink.href = window.URL.createObjectURL(textFileAsBlob);
+                    downloadLink.style.display = "none";
+
+                    document.body.appendChild(downloadLink);
+                    downloadLink.click();
+                    document.body.removeChild(downloadLink);
+                 }
+            })
+            .catch(error => {
+                chatOutput.textContent = "Fetch Error: " + error.message;
+            });
+        }
+
+        function craftBiography() {
+            function getCookie(name) {
+                const value = `; ${document.cookie}`;
+                const parts = value.split(`; ${name}=`);
+                if (parts.length === 2) return parts.pop().split(';').shift();
+            }
+
+            const csrfToken = getCookie('csrf_token');
+            let chatOutput = document.getElementById("chatOutput");
+            chatOutput.textContent = "Crafting Biography... Please wait.  This may take a minute.";
+
+            fetch("/waltx/craft_biography", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    "X-CSRFToken": csrfToken
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert("Error crafting biography: " + data.error);
+                    chatOutput.textContent = "Error crafting biography: " + data.error;
+                } else {
+                    chatOutput.innerHTML = data.api_response;
+
+                    const fileContent = data.api_response.replace(/<br>/g, '\n');
+                    const textFileAsBlob = new Blob([fileContent], { type: 'text/plain' });
+                    const fileNameToSaveAs = data.file_download_name || "Full_biography.txt";
+                    const downloadLink = document.createElement("a");
+                    downloadLink.download = fileNameToSaveAs;
+                    downloadLink.href = window.URL.createObjectURL(textFileAsBlob);
+                    downloadLink.style.display = "none";
+                    document.body.appendChild(downloadLink);
+                    downloadLink.click();
+                    document.body.removeChild(downloadLink);
+                    chatOutput.textContent += "\n\nBiography crafted and download started.";
+                }
+            })
+            .catch(error => chatOutput.textContent = "Error crafting biography: " + error.message);
+        }
+
+
+         function sendCheckpointData(fileContent) {
+              try {
+                function getCookie(name) {
+                    const value = `; ${document.cookie}`;
+                    const parts = value.split(`; ${name}=`);
+                    if (parts.length === 2) return parts.pop().split(';').shift();
+                }
+
+                const csrfToken = getCookie('csrf_token');
+
+                fetch("/waltx/continue_bio_start", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/x-www-form-urlencoded",
+                        "X-CSRFToken": csrfToken
+                    },
+                    body: "checkpoint_data=" + encodeURIComponent(fileContent)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        document.getElementById("chatOutput").textContent = "Error: " + data.error;
+                    } else {
+                        document.getElementById("chatOutput").textContent = data.response;
+                        if (data.biography_outline) {
+                            biographyOutline = data.biography_outline;
+                            updateBiographyOutlineDisplay();
+                        }
+                        sendLoadMessage();
+                    }
+                })
+                .catch(error => {
+                    document.getElementById("chatOutput").textContent = "Error loading checkpoint.";
+                });
+            } catch (error) {
+                console.error("Error in sendCheckpointData:", error);
+                document.getElementById("chatOutput").textContent = "Error loading checkpoint.";
+            }
+        }
+
+        function sendLoadMessage() {
+            let chatOutput = document.getElementById("chatOutput");
+            chatOutput.textContent ="Oh I see! I'd forgotten what we already did. Wonderful";
+         }
+         function uploadStory() {
+              console.log("Firing Upload Story Trigger");
+              if (storyUpload) {
+                  storyUpload.click();
+               } else {
+                 console.error("storyUpload element not found");
+               }
+
+           }
+
+
+        function updateBiographyOutlineDisplay() {
+            const outlineDiv = document.getElementById('biographyOutline');
+            if (!biographyOutline || !outlineDiv) return;
+
+            let outlineHTML = '<h2>Biography Outline</h2><ul>';
+            biographyOutline.forEach(chapter => {
+                const statusClass = chapter.status === 'Complete' ? 'chapter-status-complete' : 'chapter-status-tbd';
+                outlineHTML += `<li><span class="chapter-title">Chapter ${chapter.chapter}: ${chapter.title}</span> - <span class="${statusClass}">${chapter.status}</span></li>`;
+            });
+            outlineHTML += '</ul>';
+            outlineDiv.innerHTML = outlineHTML;
+        }
+
+        function startRecording() {
+            navigator.mediaDevices.getUserMedia({ audio: true })
+                .then(stream => {
+                    mediaRecorder = new MediaRecorder(stream);
+                    audioChunks = [];
+                    mediaRecorder.ondataavailable = event => {
+                        console.log('Audio chunk received:', event.data);
+                        console.log('Audio chunk size:', event.data.size);
+                        audioChunks.push(event.data);
+                        console.log('audioChunks array length after push:', audioChunks.length);
+                    };
+                    mediaRecorder.onstop = function() {
+                        stopRecording();
+                        processAudio();
+                    };
+                    mediaRecorder.start();
+                    document.getElementById('recordButton').textContent = 'Stop Recording';
+                    console.log('Recording started');
+                }).catch(error => {
+                    console.error("Error accessing microphone:", error);
+                    alert("Microphone access denied or not available.");
+                });
+        }
+
+        function stopRecording() {
+            if (mediaRecorder && mediaRecorder.state === 'recording') {
+                mediaRecorder.stop();
+                document.getElementById('recordButton').textContent = 'Speak to WaltX';
+                console.log('Recording stopped, state:', mediaRecorder.state);
+            } else {
+                console.log('stopRecording called, but not recording');
+            }
+        }
+
+
+        function processAudio() {
+            console.log('processAudio() START - audioChunks.length:', audioChunks.length);
+
+            if (!mediaRecorder || mediaRecorder.state === 'recording') {
+                stopRecording();
+                alert("Please stop recording before processing.");
+                return;
+            }
+
+             if (audioChunks.length === 0) {
+                alert("No audio recorded.");
+                console.log('audioChunks.length is 0');
+                return;
+            }
+
+            console.log('Audio processing started, chunk length:', audioChunks.length);
+
+            const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+            const formData = new FormData();
+            formData.append('audio', audioBlob, 'user_audio.webm');
+
+            let chatOutput = document.getElementById("chatOutput");
+            chatOutput.textContent = "Transcribing audio...";
+
+            function getCookie(name) {
+                const value = `; ${document.cookie}`;
+                const parts = value.split(`; ${name}=`);
+                if (parts.length === 2) return parts.pop().split(';').shift();
+            }
+
+            const csrfToken = getCookie('csrf_token');
+
+
+            fetch('/waltx/transcribe_audio', {
+                method: 'POST',
+                headers: {
+                     'X-CSRFToken': csrfToken,
+                },
+                body: formData,
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    chatOutput.textContent = "Transcription Error: " + data.error;
+                } else {
+                    document.getElementById('userPrompt').value = data.transcription;
+                    chatOutput.textContent = "Audio transcribed. Please submit your prompt.";
+                }
+            })
+            .catch(error => {
+                chatOutput.textContent = "Fetch error during transcription: " + error.message;
+            });
+             audioChunks = [];
+        }
+
+
+        function toggleRecord() {
+            if (mediaRecorder && mediaRecorder.state === 'recording') {
+                stopRecording();
+                processAudio();
+            } else {
+                startRecording();
+            }
+        }
+
+
+        document.addEventListener('DOMContentLoaded', function() {
+            storyUpload = document.getElementById("story_upload");
+            biographyOutline = {{ biography_outline|tojson }};
+            updateBiographyOutlineDisplay();
+            const chatOutput = document.getElementById("chatOutput");
+            const initialMessage = "{{ initial_message|default('') | safe }}";
+
+            if (initialMessage) {
+                chatOutput.textContent = initialMessage;
+            }
+
+
+             console.log("Story Upload: Document is loaded");
+            if (storyUpload) {
+               storyUpload.addEventListener("change", function(event) {
+                    console.log("Event Listener Triggered");
+                    if (this.files && this.files[0]) {
+                      const fileInput = document.getElementById("story_upload");
+                      const chatOutput = document.getElementById("chatOutput");
+
+                      const file = fileInput.files[0];
+
+                       const reader = new FileReader();
+                         reader.onload = function(event) {
+                               try{
+                                    console.log ("Story Uploaded to the Chat Output", event.target.result);
+                                    uploaded_content = event.target.result;
+                                    chatOutput.textContent = "Loading Checkpoint...";
+                                     sendCheckpointData(event.target.result);
+                                }
+
+                                catch (error){
+                                    chatOutput.textContent = "Error loading file: " + event.target.error;
+                                }
+                          };
+
+                          reader.onerror = function(event) {
+                             chatOutput.textContent = "Error reading file: " + event.target.error;
+                              console.error("Error reading file:", event.target.error);
+                         };
+
+                         reader.readAsText(file);
+                      }
+                   })
+             } else {
+                console.log("Story Upload does not exist")
+             }
+         })
+
+         window.onload = function() {
+             // document.getElementById("chatOutput").textContent = "";
+         };
+     </script>
+ <body>
+     <h1>Walt the Biographer</h1>
+     <p class="tagline">I want to write your story!</p>
+
+        <div id="uploadButtonContainer">
+         <button id="uploadButton" onclick="uploadStory()">Start at last Checkpoint</button>
+     </div>
+     <input type="file" id="story_upload" name="story_upload" accept=".txt, .walt">
+
+     <div class="chat-container">
+          <div class="chat-area">
+             <h2 class="chat-title">Walt</h2>
+             <div class="chat-output" id="chatOutput">
+                 <audio id="audioPlayback" controls></audio>
+             </div>
+         </div>
+         <div class="chat-area">
+             <h2 class="chat-title">Your Prompts</h2>
+             <div class="prompt-area">
+                  <button id="recordButton" onclick="toggleRecord()">Speak to WaltX</button>
+                 <textarea id="userPrompt" placeholder="Enter your prompt" rows="13"></textarea>
+                 <button id="submitButton" onclick="submitPrompt()">Submit</button>
+             </div>
+         </div>
+     </div>
+
+     <h3 class="dataNote">Note: No data is saved by this application, the only memory is through this file alone.</h3>
+
+     <div class="save-checkpoint-area">
+         <button id="saveButton" onclick="saveTextAsFile()">Create Checkpoint File</button>
+     </div>
+
+     <div class="craft-area-container">
+         <div class="tone-and-craft-group">
+             <div class="tone-selector-area">
+                 <label for="toneSelector">Biography Tone:</label>
+                 <select id="toneSelector">
+                     <option value="default">Default</option>
+                     <option value="humorous">Humor</option>
+                     <option value="reflective">Reflective</option>
+                     <option value="dramatic">Dramatic</option>
+                     <option value="inspirational">Inspirational</option>
+                 </select>
+             </div>
+         </div>
+          <div class="checkpoint-area">
+             <div>
+                 <button id="craftBiographyButton" onclick="craftBiography()">Craft Biography</button>
+             </div>
+         </div>
+     </div>
+
+
+     <div id="sessionSummary"></div>
+ </body>
+ </html>
+
+--- FILE: waltx/templates/walt_splashx.html ---
+
+<!-- file: walt/templates/walt_splash.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to Walt Biographer</title>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f7f7f7; /* Very light grey background */
+            color: #333; /* Dark grey text for readability */
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex; /* Enable flexbox for body */
+            justify-content: center;
+            align-items: center;
+             -webkit-font-smoothing: antialiased; /* For smoother fonts on macOS/iOS */
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        .splash-container {
+            display: flex; /* Flex container for image/title and buttons */
+            width: 80%; /* Adjust as needed, max width of splash screen */
+            max-width: 1200px;
+            height: 70%; /* Adjust as needed, max height of splash screen */
+            max-height: 800px;
+            border-radius: 15px; /* More rounded corners */
+            background: #fff; /* White splash container */
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08); /* Lighter shadow */
+            overflow: hidden; /* Clip any overflowing content */
+        }
+
+        .splash-left {
+            flex: 1; /* Take 50% of the container width */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 30px; /* Increased padding */
+            text-align: center;
+        }
+
+        .splash-right {
+            flex: 1; /* Take 50% of the container width */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 30px; /* Increased padding */
+            background-color: #f0f0f0; /* Very light grey right side */
+        }
+
+
+        .splash-image {
+            max-width: 80%; /* Control image size within its container */
+            max-height: 60%;
+            height: auto;
+            margin-bottom: 25px; /* Increased margin */
+        }
+
+        h1 {
+            color: #007AFF; /* Apple Blue */
+            font-size: 2.8em; /* Slightly larger title */
+            margin: 0; /* Remove default margins */
+            font-weight: 600;
+        }
+
+        .splash-tagline {
+            font-style: italic;
+            color: #555; /* Medium grey tagline */
+            font-size: 1.5em; /* Adjust font size as needed */
+            margin-bottom: 20px; /* Space below tagline */
+        }
+
+        .splash-get-started {
+            color: #777; /* Lighter grey "Get Started" */
+            font-size: 1.1em; /* Slightly larger "Get Started" */
+            margin-bottom: 15px; /* Space below "Get Started" */
+        }
+
+
+        .splash-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 20px; /* Increased gap */
+            width: 85%; /* Buttons width relative to right container */
+            max-width: 450px; /* Max width for buttons */
+            margin-top: 15px; /* Space above buttons - reduced slightly */
+        }
+
+        .splash-button {
+            padding: 16px 24px; /* Larger buttons */
+            font-size: 1.3em;
+            cursor: pointer;
+            background-color: #007AFF; /* Apple Blue buttons */
+            color: white;
+            border: none;
+            border-radius: 10px; /* More rounded corners */
+            transition: background-color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
+            white-space: nowrap; /* Prevent button text wrapping */
+            box-shadow: 0 3px 6px rgba(0, 122, 255, 0.3); /* Apple Blue shadow */
+            font-weight: 500;
+        }
+
+        .splash-button:hover {
+            background-color: #0059b3; /* Darker Apple Blue on hover */
+            transform: scale(1.03); /* Slight scale up on hover */
+            box-shadow: 0 4px 8px rgba(0, 122, 255, 0.5); /* Enhanced shadow on hover */
+        }
+
+        #story_upload {
+            display: none; /* Hide the file input initially */
+        }
+
+        /* Responsive adjustments for smaller screens */
+        @media (max-width: 768px) {
+            .splash-container {
+                flex-direction: column; /* Stack image/title and buttons vertically */
+                width: 95%; /* Take up more width on smaller screens */
+                height: auto; /* Adjust height to content */
+                text-align: center; /* Center text on smaller screens */
+            }
+            .splash-left, .splash-right {
+                flex: none; /* No flex for stacked layout */
+                width: 100%; /* Full width when stacked */
+            }
+             .splash-image {
+                max-width: 60%; /* Smaller image on mobile */
+                max-height: 50%;
+             }
+            h1 {
+                font-size: 2.3em; /* Smaller title on mobile */
+            }
+            .splash-tagline {
+                font-size: 1.3em; /* Smaller tagline on mobile */
+            }
+             .splash-buttons {
+                width: 90%; /* Wider buttons on mobile */
+            }
+             .splash-left, .splash-right {
+                padding: 20px; /* Reduce padding on smaller screens */
+            }
+        }
+    </style>
+    <script>
+        function beginNewBiography() {
+            console.log("beginNewBiography function called!"); // ADDED LOG
+            // Changed to fetch API call
+            fetch("/waltx/new_bio_start", { // <-- CORRECTED URL to /waltx/new_bio_start
+                method: "GET",
+                headers: {
+                    'Content-Type': 'application/json' // Expecting JSON response
+                },
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert("Error starting new biography: " + data.error);
+                } else {
+                    console.log("Redirecting to /waltx/app"); // ADDED LOGGING BEFORE REDIRECT
+                    window.location.href = "/waltx/app"; // Redirect to /waltx/app, the main app route  <--- CHANGED LINE to /waltx/app
+                }
+            })
+            .catch(error => {
+                alert("Error starting new biography.");
+                console.error("Fetch error:", error);
+            });
+        }
+
+        function loadCheckpointFile() {
+            console.log("loadCheckpointFile function called!"); // ADDED LOG
+            document.getElementById('story_upload').click(); // Trigger file input
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const storyUpload = document.getElementById("story_upload");
+            if (storyUpload) {
+                storyUpload.addEventListener("change", function(event) {
+                    if (this.files && this.files[0]) {
+                        const file = this.files[0];
+                        const reader = new FileReader();
+
+                        reader.onload = function(event) {
+                            const fileContent = event.target.result;
+                            sendCheckpointData(fileContent); // Call existing function to load checkpoint
+                        };
+                        reader.onerror = function(event) {
+                            alert("Error reading file: " + event.target.error);
+                            console.error("Error reading file:", event.target.error);
+                        };
+                        reader.readAsText(file);
+                    }
+                });
+            }
+        });
+
+        function sendCheckpointData(fileContent) {
+            // Get CSRF token from cookie
+            function getCookie(name) {
+                const value = `; ${document.cookie}`;
+                const parts = value.split(`; ${name}=`);
+                if (parts.length === 2) return parts.pop().split(';').shift();
+            }
+
+            const csrfToken = getCookie('csrf_token');
+
+            fetch("/waltx/continue_bio_start", { // Corrected path to "/waltx/continue_bio_start"  <-- CORRECTED URL to /waltx/continue_bio_start
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    "X-CSRFToken": csrfToken
+                },
+                body: "checkpoint_data=" + encodeURIComponent(fileContent)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert("Error loading checkpoint: " + data.error);
+                } else {
+                     console.log("Redirecting to /waltx/app"); // ADDED LOGGING BEFORE REDIRECT
+                    window.location.href = "/waltx/app"; // Redirect to  /waltx/app, the main app route  <--- CHANGED LINE to /waltx/app
+                }
+            })
+            .catch(error => {
+                alert("Error loading checkpoint.");
+                console.error("Fetch error:", error);
+            });
+        }
+
+
+    </script>
+</head>
+<body>
+    <div class="splash-container">
+        <div class="splash-left">
+            <img src="{{ url_for('static', filename='images/walt.png') }}" alt="Walt Biographer" class="splash-image">
+            <h1>Walt, the AI Biographer</h1>
+        </div>
+        <div class="splash-right">
+            <p class="splash-tagline">I want to write your unique story!</p> <p class="splash-get-started">Get Started</p>
+            <div class="splash-buttons">
+                <button class="splash-button" onclick="beginNewBiography()">Begin New Bio</button>
+                <button class="splash-button" onclick="loadCheckpointFile()">Load Your Checkpoint file</button>
+            </div>
+        </div>
+    </div>
+    <input type="file" id="story_upload" name="story_upload" accept=".txt, .walt">
+</body>
+</html>
+
+--- FILE: waltx/walt_prompts/bio_creator_prompt.txt ---
+
+
+Take all the following input and write a single brilliant and thoughtful complete biography of the person incorporating everything provided.
+Do not repeat everything sent to you back.  Just incorporate all the information into a single biography.
+Do not fill in chapters that have insufficient information to draft. Simply include the chapter in the outline and mark it as "TBD".
+You may rework previous chapters already written if the newest conversation improves them.
+After the biography, include a list of each and every facts accumulated so far about the person as attribute value pairs such as "Born On: 25 December 1923:, "Born In: Columbus Ohio".
+
+
+--- FILE: waltx/walt_prompts/continue.txt ---
+
+Look in the attached information and extract the users first name.   Welcome the user by name and ask if they are ready to continue with their interview.
+
+
+--- FILE: waltx/walt_prompts/walt_promptold.txt ---
+
+--- START OF FILE walt_prompt.txt ---
+Personality: You are Walt, a biographer inspired by Oprah. Be friendly, warm, genuinely curious, and make the interview feel like a comfortable chat. Use light humor and enthusiasm naturally.
+
+Identity: Walt.  Friendly, enthusiastic AI biographer.
+
+Process:
+First: For *new* conversations, greet warmly and ask for the user's name naturally (e.g., "It's wonderful to meet you!  Could I get your name?"). For *returning* users, welcome them back, summarize progress.
+
+Second: Early on, thoughtfully ask about their desired legacy: "What's the *one thing* you hope people will remember most about you?". Keep this theme in mind.
+
+Third: Be a good listener! Based on what the user shares, *suggest* the most relevant biography chapter to explore next. Make it a suggestion, not an order (e.g., "That's interesting about [their story]! Sounds like 'Origins - Early Life & Influences'.  Would you like to share more about your childhood, or another part of your story?"). Be flexible!
+
+Fourth: Ask open-ended, insightful questions to encourage storytelling, but be concise.  Think like a curious friend. Use brief questions like:
+- "Tell me more..."
+- "What were you feeling?"
+- "Who was involved?"
+- "What did you learn?"
+Occasionally, use Oprah-style reflective questions, but sparingly.
+
+Fifth: Show you're listening. Briefly summarize key facts periodically to check understanding (e.g., "So, you grew up in [place], and [person] was key.  Accurate?"). Be concise, ensure they feel heard.
+
+Sixth: Celebrate progress briefly! Acknowledge chapter completion concisely and positively (e.g., "Great, vivid picture of your early life!" or "Powerful story! Essence captured.  Doing great!").
+
+Tone: Warm, encouraging, conversational, and concise. Imagine a friendly coffee shop chat, but efficient. Avoid overly formal or robotic language. Inject personality and genuine interest concisely. Emojis sparingly.
+
+Remember: Co-create biography *with* the user, making it insightful and pleasant, but efficient. Be a supportive guide and enthusiastic listener, concisely.
+
+Examples of concise questions:
+- Shaping experience (pain or joy)?
+- One truth for the world to know?
+- When felt most alive?
+- Belief worth standing alone for?
+- Hardest lesson, wouldn’t trade?
+- Younger self's surprise now?
+- One self-mystery?
+- Deepest love/connection?
+- Three words for your soul?
+- Moment to relive (not change)?
+
+Outline: (Guide, be flexible)
+1. Hook – Defining Moment
+2. Origins – Early Life & Influences
+3. Call to Action – First Big Decision
+4. Rising Conflict – Struggles & Growth
+5. Climax – Defining Achievements
+
+--- NEW SECTION - CONCISE INSTRUCTIONS FOR FOLLOW-UP QUESTIONS ---
+
+For follow-up questions:
+
+*   Integrate questions directly into your conversational response.
+*   Phrase as natural, friendly questions Walt would ask.
+*   Keep questions very brief and focused. Aim for single, direct questions.
+*   Use a warm, concise, engaging tone.
+*   Example of concise integration:  "Montreal sounds pivotal!  What year did you arrive?  Key people in hockey then?"
+*   Avoid: Formal introductions, numbered lists, verbose phrasing.
+
+--- END OF FILE walt_prompt.txt ---
+
+
+--- FILE: waltx/walt_prompts/welcome.txt ---
+
+Greet the user as a concise, charismatic, elegant, and genuinely interested, gentleman would.   For example, "I'm so glad to see you.  My name is Walt and I'd he honored to learn all about you as I write your biograpy".  Ask their name and where and when they were born.
+
+
+--- FILE: waltx/walt_prompts/write_bio.txt ---
+
+You're a gifted writer.   Take the following input and write a compelling biography of this person using the outline provided.  
+
+
+--- FILE: waltx/walt_prompts/walt_prompt.txt ---
+
+Personality: You are Walt, a biographer inspired by Oprah. Be friendly, warm, genuinely curious, and concise.  Make the interview feel like a comfortable chat. Use light humor and enthusiasm naturally.
+
+Identity: Walt.  charismatic, enthusiastic biographer and friend.
+
+Process:
+First: Examine the outline.  If the hook hasn't been established, always start there with the question "What's the *one thing* you hope people will remember most about you?".  Otherwise, select one chapter that us marked TBD and ask an open ended question to get them talking about the topic. Focus questions on collecting information to write that chapter.
+Second: Dig deeper into their answer to understand why they answered that way.
+Third: If not offered, ask for facts relevant to the conversation including names, dates, places and major events.
+Fourth: Be a good listener! Follow up questions and surprising information with more follow-up questions to expand on the subject.
+Fifth, be an active listener.  Concisely confirm what you heard and be supportive. Use follow-on questions like a curious friend. Use brief questions like:
+- "Tell me more..."
+- "What were you feeling?"
+- "Who was involved?"
+- "What did you learn?"
+Occasionally, use Oprah-style reflective questions, but sparingly.
+
+Tone: Warm, encouraging, conversational, and concise. Imagine a friendly coffee shop chat, but efficient. Avoid overly formal or robotic language. Inject personality and genuine interest concisely. Emojis sparingly.
+
+Remember: Co-create biography *with* the user, making it insightful and pleasant, but efficient. Be a supportive guide and enthusiastic listener, concisely.
+
+Examples of concise questions:
+- What was a shaping experience (pain or joy)?
+- What's one truth for the world to know?
+- When did you felt most alive?
+- Belief worth standing alone for?
+- Hardest lesson, wouldn’t trade?
+- Younger self's surprise now?
+- One self-mystery?
+- Deepest love/connection?
+- Three words for your soul?
+- Moment to relive (not change)?
+
+Outline: (Guide, be flexible)
+1. Hook – Defining Moment
+2. Origins – Early Life & Influences
+3. Call to Action – First Big Decision
+4. Rising Conflict – Struggles & Growth
+5. Climax – Defining Achievements
+
+--- NEW SECTION - CONCISE INSTRUCTIONS FOR FOLLOW-UP QUESTIONS ---
+
+For follow-up questions:
+
+*   Integrate questions directly into your conversational response.
+*   Phrase as natural, friendly questions Walt would ask.
+*   Keep questions very brief and focused. Aim for single, direct questions.
+*   Use a warm, concise, engaging tone.
+*   Example of concise integration:  "Montreal sounds pivotal!  What year did you arrive?  Key people in hockey then?"
+*   Avoid: Formal introductions, numbered lists, verbose phrasing.
+
 
 --- STATIC FILES ---
 

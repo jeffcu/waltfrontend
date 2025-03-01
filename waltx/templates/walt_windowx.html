@@ -503,7 +503,7 @@
                     if (data.error) {
                         document.getElementById("chatOutput").textContent = "Error: " + data.error;
                     } else {
-                        document.getElementById("chatOutput").textContent = data.response;
+                        document.getElementById("chatOutput").textContent = data.initial_message;
                         if (data.biography_outline) {
                             biographyOutline = data.biography_outline;
                             updateBiographyOutlineDisplay();
@@ -549,56 +549,63 @@
         }
 
         function startRecording() {
+            console.log('startRecording() START'); // --- ADDED LOGGING ---
             navigator.mediaDevices.getUserMedia({ audio: true })
                 .then(stream => {
+                    console.log('getUserMedia() success - stream obtained', stream); // --- ADDED LOGGING ---
                     mediaRecorder = new MediaRecorder(stream);
                     audioChunks = [];
                     mediaRecorder.ondataavailable = event => {
-                        console.log('Audio chunk received:', event.data);
-                        console.log('Audio chunk size:', event.data.size);
+                        console.log('ondataavailable - event.data:', event.data); // --- ADDED LOGGING ---
+                        console.log('ondataavailable - event.data.size:', event.data.size); // --- ADDED LOGGING ---
                         audioChunks.push(event.data);
-                        console.log('audioChunks array length after push:', audioChunks.length);
+                        console.log('ondataavailable - audioChunks.length after push:', audioChunks.length); // --- ADDED LOGGING ---
                     };
                     mediaRecorder.onstop = function() {
+                        console.log('mediaRecorder.onstop - calling stopRecording() and processAudio()'); // --- ADDED LOGGING ---
                         stopRecording();
                         processAudio();
                     };
                     mediaRecorder.start();
                     document.getElementById('recordButton').textContent = 'Stop Recording';
-                    console.log('Recording started');
+                    console.log('Recording started - mediaRecorder.state:', mediaRecorder.state); // --- ADDED LOGGING ---
                 }).catch(error => {
                     console.error("Error accessing microphone:", error);
                     alert("Microphone access denied or not available.");
+                    console.log('startRecording() - getUserMedia ERROR', error); // --- ADDED LOGGING ---
                 });
         }
 
         function stopRecording() {
+            console.log('stopRecording() START - mediaRecorder:', mediaRecorder); // --- ADDED LOGGING ---
             if (mediaRecorder && mediaRecorder.state === 'recording') {
+                console.log('stopRecording() - mediaRecorder.stop() called'); // --- ADDED LOGGING ---
                 mediaRecorder.stop();
                 document.getElementById('recordButton').textContent = 'Speak to WaltX';
-                console.log('Recording stopped, state:', mediaRecorder.state);
+                console.log('Recording stopped - mediaRecorder.state:', mediaRecorder.state); // --- ADDED LOGGING ---
             } else {
-                console.log('stopRecording called, but not recording');
+                console.log('stopRecording() - mediaRecorder not recording or not initialized'); // --- ADDED LOGGING ---
             }
         }
 
 
         function processAudio() {
-            console.log('processAudio() START - audioChunks.length:', audioChunks.length);
+            console.log('processAudio() START - audioChunks.length:', audioChunks.length); // --- ADDED LOGGING ---
 
             if (!mediaRecorder || mediaRecorder.state === 'recording') {
                 stopRecording();
                 alert("Please stop recording before processing.");
+                console.log('processAudio() - mediaRecorder still recording or not initialized'); // --- ADDED LOGGING ---
                 return;
             }
 
              if (audioChunks.length === 0) {
                 alert("No audio recorded.");
-                console.log('audioChunks.length is 0');
+                console.log('processAudio() - audioChunks.length is 0'); // --- ADDED LOGGING ---
                 return;
             }
 
-            console.log('Audio processing started, chunk length:', audioChunks.length);
+            console.log('Audio processing started, chunk length:', audioChunks.length); // --- ADDED LOGGING ---
 
             const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
             const formData = new FormData();
@@ -627,13 +634,16 @@
             .then(data => {
                 if (data.error) {
                     chatOutput.textContent = "Transcription Error: " + data.error;
+                    console.log('processAudio() - transcription API error:', data.error); // --- ADDED LOGGING ---
                 } else {
                     document.getElementById('userPrompt').value = data.transcription;
                     chatOutput.textContent = "Audio transcribed. Please submit your prompt.";
+                    console.log('processAudio() - transcription success, transcription:', data.transcription); // --- ADDED LOGGING ---
                 }
             })
             .catch(error => {
                 chatOutput.textContent = "Fetch error during transcription: " + error.message;
+                 console.error('processAudio() - fetch error during transcription:', error); // --- ADDED LOGGING ---
             });
              audioChunks = [];
         }
