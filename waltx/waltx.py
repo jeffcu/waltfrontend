@@ -183,20 +183,21 @@ def transcribe_audio():
     if audio_file.filename == '':
         return jsonify({"error": "No selected audio file"}), 400
 
-    # Construct temp_audio_dir and temp_audio_path explicitly using os.path.abspath and os.path.join
-    temp_audio_dir = os.path.abspath("temp_audio") # Use absolute path for directory
-    temp_audio_path = os.path.join(temp_audio_dir, secure_filename(audio_file.filename)) # Join directory and filename
-
-    logging.info(f"Temp audio directory: {temp_audio_dir}") # Log directory path
-    logging.info(f"Temp audio file path: {temp_audio_path}") # Log file path
+    temp_audio_dir = os.path.join('/app', 'temp_audio') # ABSOLUTE PATH for directory
+    temp_audio_path = os.path.join(temp_audio_dir, secure_filename(audio_file.filename)) # ABSOLUTE PATH for file
 
     try: # ADDED try...except for makedirs
-        os.makedirs(temp_audio_dir, exist_ok=True) # Ensure temp_audio directory exists using absolute path
+        os.makedirs(temp_audio_dir, exist_ok=True) # Ensure temp_audio directory exists - ABSOLUTE PATH
     except FileExistsError:
         pass # Directory likely already exists due to concurrency - ignore error
+    except OSError as e: # Catch other OS errors during directory creation
+        logging.error(f"Error creating temp_audio directory: {e}", exc_info=True)
+        return jsonify({"error": f"Could not create temp audio directory: {str(e)}"}), 500
+
 
     try:
         audio_file.save(temp_audio_path) # Save audio file FIRST - move here
+        logging.info(f"Audio file saved to: {temp_audio_path}") # Log file path
 
         try: # Inner try-except for OpenAI transcription specifically
             transcription_text = voice_api.transcribe_audio(temp_audio_path)
