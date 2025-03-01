@@ -1,172 +1,341 @@
-<script>
-    // All the code here is to ensure it is loaded at the top level scope.
-    let uploaded_content = ""; //Global variable to store uploaded content
-    let storyUpload; // Declare storyUpload outside the event listener
-    let biographyOutline; // For storing biography outline (Improvement #5)
-    let mediaRecorder; // For recording audio
-    let audioChunks = []; // To store audio data chunks
-
-    function submitPrompt() {
-        let userInput = document.getElementById("userPrompt").value;
-        let chatOutput = document.getElementById("chatOutput");
-
-        chatOutput.textContent = "Loading...";
-        sendToOpenAI(userInput, chatOutput, uploaded_content);
-        document.getElementById("userPrompt").value = "";
-    }
-
-     function sendToOpenAI(userInput, chatOutput, fileContent) {
-        // Get CSRF token from cookie
-        function getCookie(name) {
-            const value = `; ${document.cookie}`;
-            const parts = value.split(`; ${name}=`);
-            if (parts.length === 2) return parts.pop().split(';').shift();
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Walt the Biographer</title>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f7f7f7;
+            color: #333;
+            padding: 20px;
+            text-align: center;
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            box-sizing: border-box;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
 
-        const csrfToken = getCookie('csrf_token');
-
-        fetch("/waltx/walt_analyze", { // <-- CORRECTED URL to /waltx/walt_analyze
-            method: "POST",
-            headers: {
-                "Content-Type": "application/x-www-form-urlencoded",
-                "X-CSRFToken": csrfToken
-            },
-             body: "user_query=" + encodeURIComponent(userInput) + "&uploaded_content=" + encodeURIComponent(fileContent)
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.error) {
-                chatOutput.textContent = "Error: " + data.error;
-            } else {
-                chatOutput.textContent = data.response;
-                if (data.biography_outline) {
-                    biographyOutline = data.biography_outline;
-                    updateBiographyOutlineDisplay();
-                }
-                if (data.audio_url) { // Play audio if audio_url is in response
-                    playWaltAudio(data.audio_url);
-                }
-            }
-        })
-        .catch(error => {
-            chatOutput.textContent = "Error: " + error.message;
-        });
-    }
-
-    function playWaltAudio(audioURL) {
-        const audioPlayer = document.getElementById('audioPlayback');
-        audioPlayer.src = audioURL;
-        audioPlayer.play().catch(e => {
-            console.error("Error playing audio:", e);
-            alert("Audio playback failed. Please ensure your browser supports audio playback and that the audio file is accessible.");
-        });
-    }
-
-
-     function getStoryBoard(){
-        let chatOutput = document.getElementById("chatOutput").textContent;
-        return chatOutput
-     }
-
-   function saveTextAsFile() {
-        // Get CSRF token from cookie
-        function getCookie(name) {
-            const value = `; ${document.cookie}`;
-            const parts = value.split(`; ${name}=`);
-            if (parts.length === 2) return parts.pop().split(';').shift();
+        h1 {
+            color: #007AFF;
+            margin-bottom: 5px;
+            font-weight: 600;
         }
 
-        const csrfToken = getCookie('csrf_token');
-         let chatOutput = document.getElementById("chatOutput");
-
-        chatOutput.textContent = "Processing Checkpoint and Creating File... Please wait.";
-
-        fetch("/waltx/create_checkpoint", { // <-- CORRECTED URL to /waltx/create_checkpoint
-            method: "POST",
-            headers: {
-                "Content-Type": "application/x-www-form-urlencoded",
-                "X-CSRFToken": csrfToken
-            },
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.error) {
-                alert("Error creating checkpoint: " + data.error);
-                chatOutput.textContent = "API Error: " + data.error;
-            } else {
-                const fileContent = data["checkpoint_data"];
-
-                chatOutput.textContent += "\n\nCheckpoint file created and download started.";
-
-                console.log("fileContent from server", fileContent)
-
-                const textFileAsBlob = new Blob([fileContent], { type: 'text/plain' });
-                const fileNameToSaveAs = "sessionStory.txt";
-
-                const downloadLink = document.createElement("a");
-                downloadLink.download = fileNameToSaveAs;
-                downloadLink.innerHTML = "Download File";
-                downloadLink.href = window.URL.createObjectURL(textFileAsBlob);
-                downloadLink.style.display = "none";
-
-                document.body.appendChild(downloadLink);
-                downloadLink.click();
-                document.body.removeChild(downloadLink);
-             }
-        })
-        .catch(error => {
-            chatOutput.textContent = "Fetch Error: " + error.message;
-        });
-    }
-
-    function craftBiography() {
-         // Get CSRF token from cookie
-        function getCookie(name) {
-            const value = `; ${document.cookie}`;
-            const parts = value.split(`; ${name}=`);
-            if (parts.length === 2) return parts.pop().split(';').shift();
+        p.tagline {
+            font-style: italic;
+            color: #777;
+            margin-bottom: 20px;
         }
 
-        const csrfToken = getCookie('csrf_token');
-        let chatOutput = document.getElementById("chatOutput");
-        chatOutput.textContent = "Crafting Biography... Please wait.  This may take a minute.";
+        #uploadButtonContainer {
+            text-align: center;
+            margin-bottom: 20px;
+        }
 
-        fetch("/waltx/craft_biography", { // Call new route for crafting biography  <-- CORRECTED URL to /waltx/craft_biography
-            method: "POST",
-            headers: {
-                "Content-Type": "application/x-www-form-urlencoded",
-                "X-CSRFToken": csrfToken
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.error) {
-                alert("Error crafting biography: " + data.error);
-                chatOutput.textContent = "Error crafting biography: " + data.error;
-            } else {
-                chatOutput.innerHTML = data.api_response; // Display formatted biography
+        #uploadButton {
+            padding: 12px 24px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #fff;
+            color: #007AFF;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+            white-space: nowrap;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
 
-                // Trigger file download
-                const fileContent = data.api_response.replace(/<br>/g, '\n'); //Revert <br> to line breaks for download
-                const textFileAsBlob = new Blob([fileContent], { type: 'text/plain' });
-                const fileNameToSaveAs = data.file_download_name || "Full_biography.txt"; // Use filename from response or default
-                const downloadLink = document.createElement("a");
-                downloadLink.download = fileNameToSaveAs;
-                downloadLink.href = window.URL.createObjectURL(textFileAsBlob);
-                downloadLink.style.display = "none";
-                document.body.appendChild(downloadLink);
-                downloadLink.click();
-                document.body.removeChild(downloadLink);
-                chatOutput.textContent += "\n\nBiography crafted and download started.";
-            }
-        })
-        .catch(error => chatOutput.textContent = "Error crafting biography: " + error.message);
-    }
+        #uploadButton:hover {
+            background-color: #f0f0f0;
+            border-color: #bbb;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .chat-container {
+            display: flex;
+            max-width: 1200px;
+            margin: 0 auto;
+            flex: 1;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .chat-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            box-sizing: border-box;
+            padding: 20px;
+        }
+
+        .chat-title {
+            text-align: left;
+            margin-bottom: 15px;
+            color: #007AFF;
+            font-weight: 500;
+            font-size: 1.3em;
+        }
+
+        .chat-output {
+            flex: 1;
+            padding: 20px;
+            border: 1px solid #eee;
+            border-radius: 12px;
+            background-color: #fff;
+            color: #333;
+            min-height: 400px;
+            height: 450px;
+            text-align: left;
+            white-space: pre-wrap;
+            overflow-y: auto;
+            box-sizing: border-box;
+            font-size: 16pt;
+            align-items: flex-start;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        .chat-input {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            box-sizing: border-box;
+            padding: 20px;
+        }
+
+        .prompt-area {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        textarea {
+            width: 100%;
+            margin-bottom: 10px;
+            padding: 8px;
+            border: 1px solid #4C657E;
+            border-radius: 6px;
+            resize: vertical;
+            flex: 1;
+            box-sizing: border-box;
+            font-size: 16pt;
+            background-color: #fff;
+            border: 1px solid #eee;
+            overflow-y: auto;
+            color: #333;
+        }
+
+        #submitButton {
+           padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: gold;
+            color: dimgrey;
+            border: none;
+            border-radius: 6px;
+            width: 100%;
+            box-sizing: border-box;
+            height: auto;
+            align-self: flex-end;
+}
+
+        h3.dataNote {
+            text-align: center;
+            font-size: 1.2em;
+            margin-bottom: 10px;
+            color: #777;
+        }
+
+        #saveButton {
+            text-align: center;
+            align-self: center;
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #fff;
+            color: #007AFF;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            height: auto;
+            width: auto;
+            white-space: nowrap;
+        }
 
 
-     function sendCheckpointData(fileContent) {
-          try {
-            // Get CSRF token from cookie
+        #sessionSummary {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #4C657E;
+            border-radius: 6px;
+            background-color: #2A3D55;
+            white-space: pre-wrap;
+            overflow-y: auto;
+            min-height: 0;
+            text-align: left;
+            box-sizing: border-box;
+            font-size: 1.2em;
+            display:none;
+        }
+
+        #checkpointOutput {
+            width: 90%;
+            margin: 10px auto;
+            padding: 10px;
+            border: 1px solid #4C657E;
+            border-radius: 6px;
+            background-color: #f0f0f0;
+            color: #555;
+            text-align: left;
+            white-space: pre-wrap;
+            overflow-y: auto;
+            max-height: 250px;
+            box-sizing: border-box;
+            font-size: 1.2em;
+        }
+
+        .biography-outline {
+            text-align: left;
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #4C657E;
+            border-radius: 6px;
+            background-color: #fff;
+            border: 1px solid #eee;
+            color: #333;
+        }
+
+        .biography-outline h2 {
+            color: #007AFF;
+            font-size: 20px;
+            margin-bottom: 10px;
+        }
+
+        .biography-outline ul {
+            list-style: none;
+            padding-left: 20px;
+        }
+
+        .biography-outline li {
+            margin-bottom: 5px;
+        }
+
+        .chapter-title {
+            font-weight: bold;
+        }
+
+        .chapter-status-tbd {
+            color: #999;
+            font-style: italic;
+        }
+        .chapter-status-complete {
+            color: #27AE60;
+            font-weight: bold;
+        }
+
+        .checkpoint-area {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            margin-top: 20px;
+            gap: 20px;
+        }
+
+        .tone-and-craft-group {
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            gap: 20px;
+            width: auto;
+            margin: 0 auto;
+        }
+
+
+        .tone-selector-area {
+            text-align: left;
+            flex-grow: 1;
+            display: flex;
+            align-items: baseline;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        .tone-selector-area label {
+            margin-bottom: 0;
+        }
+
+
+        #craftBiographyButton {
+            padding: 15px 30px;
+            font-size: 20px;
+            cursor: pointer;
+            background-color: #FFA500;
+            color: black;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            box-shadow: 0 4px 8px rgba(255, 165, 0, 0.5);
+            transition: background-color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
+            white-space: nowrap;
+        }
+
+        #craftBiographyButton:hover {
+            background-color: #FF8C00;
+            transform: scale(1.05);
+            box-shadow: 0 6px 12px rgba(255, 165, 0, 0.7);
+        }
+
+        .save-checkpoint-area {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+         #recordButton {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #007AFF;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            margin-bottom: 10px;
+        }
+
+        #recordButton:hover {
+            background-color: #0059b3;
+        }
+        #audioPlayback {
+            margin-top: 10px;
+        }
+
+
+    </style>
+    <script>
+        // All the code here is to ensure it is loaded at the top level scope.
+        let uploaded_content = "";
+        let storyUpload;
+        let biographyOutline;
+        let mediaRecorder;
+        let audioChunks = [];
+
+        function submitPrompt() {
+            let userInput = document.getElementById("userPrompt").value;
+            let chatOutput = document.getElementById("chatOutput");
+
+            chatOutput.textContent = "Loading...";
+            sendToOpenAI(userInput, chatOutput, uploaded_content);
+            document.getElementById("userPrompt").value = "";
+        }
+
+         function sendToOpenAI(userInput, chatOutput, fileContent) {
             function getCookie(name) {
                 const value = `; ${document.cookie}`;
                 const parts = value.split(`; ${name}=`);
@@ -175,277 +344,412 @@
 
             const csrfToken = getCookie('csrf_token');
 
-            fetch("/waltx/continue_bio_start", { // <-- CORRECTED ROUTE: continue_bio_start  <-- CORRECTED URL to /waltx/continue_bio_start
+            fetch("/waltx/walt_analyze", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/x-www-form-urlencoded",
                     "X-CSRFToken": csrfToken
                 },
-                body: "checkpoint_data=" + encodeURIComponent(fileContent)
+                 body: "user_query=" + encodeURIComponent(userInput) + "&uploaded_content=" + encodeURIComponent(fileContent)
             })
             .then(response => response.json())
             .then(data => {
                 if (data.error) {
-                    document.getElementById("chatOutput").textContent = "Error: " + data.error;
+                    chatOutput.textContent = "Error: " + data.error;
                 } else {
-                    document.getElementById("chatOutput").textContent = data.response;
+                    chatOutput.textContent = data.response;
                     if (data.biography_outline) {
                         biographyOutline = data.biography_outline;
                         updateBiographyOutlineDisplay();
                     }
-                    sendLoadMessage();
+                    if (data.audio_url) {
+                        playWaltAudio(data.audio_url);
+                    }
                 }
             })
             .catch(error => {
-                document.getElementById("chatOutput").textContent = "Error loading checkpoint.";
+                chatOutput.textContent = "Error: " + error.message;
             });
-        } catch (error) {
-            console.error("Error in sendCheckpointData:", error);
-            document.getElementById("chatOutput").textContent = "Error loading checkpoint.";
         }
-    }
 
-    function sendLoadMessage() {
-        let chatOutput = document.getElementById("chatOutput");
-        chatOutput.textContent ="Oh I see! I'd forgotten what we already did. Wonderful";
-     }
-     // This function is triggered when the "Start at last Checkpoint" is pressed
-     function uploadStory() {
-          console.log("Firing Upload Story Trigger");
-          if (storyUpload) {
-              storyUpload.click(); //Programitcally fire "load a checkpoint file."
-           } else {
-             console.error("storyUpload element not found");
+        function playWaltAudio(audioURL) {
+            const audioPlayer = document.getElementById('audioPlayback');
+            audioPlayer.src = audioURL;
+            audioPlayer.play().catch(e => {
+                console.error("Error playing audio:", e);
+                alert("Audio playback failed. Please ensure your browser supports audio playback and that the audio file is accessible.");
+            });
+        }
+
+
+         function getStoryBoard(){
+            let chatOutput = document.getElementById("chatOutput").textContent;
+            return chatOutput
+         }
+
+       function saveTextAsFile() {
+            function getCookie(name) {
+                const value = `; ${document.cookie}`;
+                const parts = value.split(`; ${name}=`);
+                if (parts.length === 2) return parts.pop().split(';').shift();
+            }
+
+            const csrfToken = getCookie('csrf_token');
+             let chatOutput = document.getElementById("chatOutput");
+
+            chatOutput.textContent = "Processing Checkpoint and Creating File... Please wait.";
+
+            fetch("/waltx/create_checkpoint", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    "X-CSRFToken": csrfToken
+                },
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert("Error creating checkpoint: " + data.error);
+                    chatOutput.textContent = "API Error: " + data.error;
+                } else {
+                    const fileContent = data["checkpoint_data"];
+
+                    chatOutput.textContent += "\n\nCheckpoint file created and download started.";
+
+                    console.log("fileContent from server", fileContent)
+
+                    const textFileAsBlob = new Blob([fileContent], { type: 'text/plain' });
+                    const fileNameToSaveAs = "sessionStory.txt";
+
+                    const downloadLink = document.createElement("a");
+                    downloadLink.download = fileNameToSaveAs;
+                    downloadLink.innerHTML = "Download File";
+                    downloadLink.href = window.URL.createObjectURL(textFileAsBlob);
+                    downloadLink.style.display = "none";
+
+                    document.body.appendChild(downloadLink);
+                    downloadLink.click();
+                    document.body.removeChild(downloadLink);
+                 }
+            })
+            .catch(error => {
+                chatOutput.textContent = "Fetch Error: " + error.message;
+            });
+        }
+
+        function craftBiography() {
+            function getCookie(name) {
+                const value = `; ${document.cookie}`;
+                const parts = value.split(`; ${name}=`);
+                if (parts.length === 2) return parts.pop().split(';').shift();
+            }
+
+            const csrfToken = getCookie('csrf_token');
+            let chatOutput = document.getElementById("chatOutput");
+            chatOutput.textContent = "Crafting Biography... Please wait.  This may take a minute.";
+
+            fetch("/waltx/craft_biography", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    "X-CSRFToken": csrfToken
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert("Error crafting biography: " + data.error);
+                    chatOutput.textContent = "Error crafting biography: " + data.error;
+                } else {
+                    chatOutput.innerHTML = data.api_response;
+
+                    const fileContent = data.api_response.replace(/<br>/g, '\n');
+                    const textFileAsBlob = new Blob([fileContent], { type: 'text/plain' });
+                    const fileNameToSaveAs = data.file_download_name || "Full_biography.txt";
+                    const downloadLink = document.createElement("a");
+                    downloadLink.download = fileNameToSaveAs;
+                    downloadLink.href = window.URL.createObjectURL(textFileAsBlob);
+                    downloadLink.style.display = "none";
+                    document.body.appendChild(downloadLink);
+                    downloadLink.click();
+                    document.body.removeChild(downloadLink);
+                    chatOutput.textContent += "\n\nBiography crafted and download started.";
+                }
+            })
+            .catch(error => chatOutput.textContent = "Error crafting biography: " + error.message);
+        }
+
+
+         function sendCheckpointData(fileContent) {
+              try {
+                function getCookie(name) {
+                    const value = `; ${document.cookie}`;
+                    const parts = value.split(`; ${name}=`);
+                    if (parts.length === 2) return parts.pop().split(';').shift();
+                }
+
+                const csrfToken = getCookie('csrf_token');
+
+                fetch("/waltx/continue_bio_start", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/x-www-form-urlencoded",
+                        "X-CSRFToken": csrfToken
+                    },
+                    body: "checkpoint_data=" + encodeURIComponent(fileContent)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        document.getElementById("chatOutput").textContent = "Error: " + data.error;
+                    } else {
+                        document.getElementById("chatOutput").textContent = data.response;
+                        if (data.biography_outline) {
+                            biographyOutline = data.biography_outline;
+                            updateBiographyOutlineDisplay();
+                        }
+                        sendLoadMessage();
+                    }
+                })
+                .catch(error => {
+                    document.getElementById("chatOutput").textContent = "Error loading checkpoint.";
+                });
+            } catch (error) {
+                console.error("Error in sendCheckpointData:", error);
+                document.getElementById("chatOutput").textContent = "Error loading checkpoint.";
+            }
+        }
+
+        function sendLoadMessage() {
+            let chatOutput = document.getElementById("chatOutput");
+            chatOutput.textContent ="Oh I see! I'd forgotten what we already did. Wonderful";
+         }
+         function uploadStory() {
+              console.log("Firing Upload Story Trigger");
+              if (storyUpload) {
+                  storyUpload.click();
+               } else {
+                 console.error("storyUpload element not found");
+               }
+
            }
 
-       }
 
+        function updateBiographyOutlineDisplay() {
+            const outlineDiv = document.getElementById('biographyOutline');
+            if (!biographyOutline || !outlineDiv) return;
 
-    // Function to update biography outline display (Improvement #5)
-    function updateBiographyOutlineDisplay() {
-        const outlineDiv = document.getElementById('biographyOutline');
-        if (!biographyOutline || !outlineDiv) return;
-
-        let outlineHTML = '<h2>Biography Outline</h2><ul>';
-        biographyOutline.forEach(chapter => {
-            const statusClass = chapter.status === 'Complete' ? 'chapter-status-complete' : 'chapter-status-tbd';
-            outlineHTML += `<li><span class="chapter-title">Chapter ${chapter.chapter}: ${chapter.title}</span> - <span class="${statusClass}">${chapter.status}</span></li>`;
-        });
-        outlineHTML += '</ul>';
-        outlineDiv.innerHTML = outlineHTML;
-    }
-
-    function startRecording() {
-        navigator.mediaDevices.getUserMedia({ audio: true })
-            .then(stream => {
-                mediaRecorder = new MediaRecorder(stream);
-                audioChunks = []; // Clear existing chunks
-                mediaRecorder.ondataavailable = event => {
-                    console.log('Audio chunk received:', event.data); // <-- ADDED LOG: Inspect event.data
-                    console.log('Audio chunk size:', event.data.size); // <-- ADDED LOG: Check chunk size
-                    audioChunks.push(event.data);
-                    console.log('audioChunks array length after push:', audioChunks.length); // <-- ADDED LOG: Check array length after push
-                };
-                mediaRecorder.onstop = stopRecording; // Call stopRecording on stop
-                mediaRecorder.start();
-                document.getElementById('recordButton').textContent = 'Stop Recording'; // Change button text
-                console.log('Recording started');
-            }).catch(error => {
-                console.error("Error accessing microphone:", error);
-                alert("Microphone access denied or not available.");
+            let outlineHTML = '<h2>Biography Outline</h2><ul>';
+            biographyOutline.forEach(chapter => {
+                const statusClass = chapter.status === 'Complete' ? 'chapter-status-complete' : 'chapter-status-tbd';
+                outlineHTML += `<li><span class="chapter-title">Chapter ${chapter.chapter}: ${chapter.title}</span> - <span class="${statusClass}">${chapter.status}</span></li>`;
             });
-    }
-
-    function stopRecording() {
-        if (mediaRecorder && mediaRecorder.state === 'recording') {
-            mediaRecorder.stop();
-            document.getElementById('recordButton').textContent = 'Speak to WaltX'; // Restore button text
-            console.log('Recording stopped, state:', mediaRecorder.state); // <-- ADDED LOG
-        } else {
-            console.log('stopRecording called, but not recording'); // <-- ADDED LOG
-        }
-    }
-
-
-    function processAudio() {
-        if (!mediaRecorder || mediaRecorder.state === 'recording') {
-            stopRecording(); // Stop recording if active
-            alert("Please stop recording before processing."); // Inform user to stop recording
-            return; // Exit if still recording
+            outlineHTML += '</ul>';
+            outlineDiv.innerHTML = outlineHTML;
         }
 
-         if (audioChunks.length === 0) {
-            alert("No audio recorded.");
-            console.log('audioChunks.length is 0'); // <-- ADDED LOG
-            return;
+        function startRecording() {
+            navigator.mediaDevices.getUserMedia({ audio: true })
+                .then(stream => {
+                    mediaRecorder = new MediaRecorder(stream);
+                    audioChunks = [];
+                    mediaRecorder.ondataavailable = event => {
+                        console.log('Audio chunk received:', event.data);
+                        console.log('Audio chunk size:', event.data.size);
+                        audioChunks.push(event.data);
+                        console.log('audioChunks array length after push:', audioChunks.length);
+                    };
+                    mediaRecorder.onstop = stopRecording;
+                    mediaRecorder.start();
+                    document.getElementById('recordButton').textContent = 'Stop Recording';
+                    console.log('Recording started');
+                }).catch(error => {
+                    console.error("Error accessing microphone:", error);
+                    alert("Microphone access denied or not available.");
+                });
         }
 
-        console.log('Audio processing started, chunk length:', audioChunks.length); // <-- ADDED LOG
-
-        const audioBlob = new Blob(audioChunks, { type: 'audio/webm' }); // Or audio/wav, audio/mp3
-        const formData = new FormData();
-        formData.append('audio', audioBlob, 'user_audio.webm'); // Or user_audio.mp3
-
-        let chatOutput = document.getElementById("chatOutput");
-        chatOutput.textContent = "Transcribing audio..."; // Indicate transcription start
-
-         // Get CSRF token from cookie
-        function getCookie(name) {
-            const value = `; ${document.cookie}`;
-            const parts = value.split(`; ${name}=`);
-            if (parts.length === 2) return parts.pop().split(';').shift();
-        }
-
-        const csrfToken = getCookie('csrf_token');
-
-
-        fetch('/waltx/transcribe_audio', { // <-- CORRECTED URL to /waltx/transcribe_audio
-            method: 'POST',
-            headers: {
-                 'X-CSRFToken': csrfToken, // Include CSRF token
-            },
-            body: formData,
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.error) {
-                chatOutput.textContent = "Transcription Error: " + data.error;
+        function stopRecording() {
+            if (mediaRecorder && mediaRecorder.state === 'recording') {
+                mediaRecorder.stop();
+                document.getElementById('recordButton').textContent = 'Speak to WaltX';
+                console.log('Recording stopped, state:', mediaRecorder.state);
             } else {
-                document.getElementById('userPrompt').value = data.transcription; // Set textarea with transcription
-                chatOutput.textContent = "Audio transcribed. Please submit your prompt."; // Inform user of transcription success
+                console.log('stopRecording called, but not recording');
             }
-        })
-        .catch(error => {
-            chatOutput.textContent = "Fetch error during transcription: " + error.message;
-        });
-         audioChunks = []; // Clear audio chunks after processing (or on error)
-    }
-
-
-    function toggleRecord() {
-        if (mediaRecorder && mediaRecorder.state === 'recording') {
-            stopRecording(); // Stop recording if active
-            processAudio(); // Then process audio after stopping
-        } else {
-            startRecording(); // Start recording if not active
-        }
-    }
-
-
-    //Event Handling
-    document.addEventListener('DOMContentLoaded', function() {
-        storyUpload = document.getElementById("story_upload");
-        biographyOutline = {{ biography_outline|tojson }};
-        updateBiographyOutlineDisplay();
-        const chatOutput = document.getElementById("chatOutput");
-        const initialMessage = "{{ initial_message|default('') | safe }}";
-
-        if (initialMessage) {
-            chatOutput.textContent = initialMessage;
         }
 
 
-         console.log("Story Upload: Document is loaded");
-        if (storyUpload) {
-           //Event
-           storyUpload.addEventListener("change", function(event) { //Make sure event is captured
-                console.log("Event Listener Triggered");
-                if (this.files && this.files[0]) {
-                  const fileInput = document.getElementById("story_upload");
-                  const chatOutput = document.getElementById("chatOutput");
+        function processAudio() {
+            if (!mediaRecorder || mediaRecorder.state === 'recording') {
+                stopRecording();
+                alert("Please stop recording before processing.");
+                return;
+            }
 
-                  const file = fileInput.files[0];
+             if (audioChunks.length === 0) {
+                alert("No audio recorded.");
+                console.log('audioChunks.length is 0');
+                return;
+            }
 
-                   const reader = new FileReader();
-                      //Set value for upload
-                     reader.onload = function(event) {
-                           try{
-                                console.log ("Story Uploaded to the Chat Output", event.target.result); //Check log before
-                                //Capture the file upload
-                                uploaded_content = event.target.result;
+            console.log('Audio processing started, chunk length:', audioChunks.length);
 
-                                //Display Load
-                                chatOutput.textContent = "Loading Checkpoint...";
+            const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+            const formData = new FormData();
+            formData.append('audio', audioBlob, 'user_audio.webm');
 
-                                //Load the checkpoint
-                                 sendCheckpointData(event.target.result);
-                            }
+            let chatOutput = document.getElementById("chatOutput");
+            chatOutput.textContent = "Transcribing audio...";
 
-                            catch (error){
-                                chatOutput.textContent = "Error loading file: " + event.target.error;
-                            }
-                      };
+            function getCookie(name) {
+                const value = `; ${document.cookie}`;
+                const parts = value.split(`; ${name}=`);
+                if (parts.length === 2) return parts.pop().split(';').shift();
+            }
 
-                      reader.onerror = function(event) {
-                         chatOutput.textContent = "Error reading file: " + event.target.error;
-                          console.error("Error reading file:", event.target.error);
-                     };
+            const csrfToken = getCookie('csrf_token');
 
-                     reader.readAsText(file);
-                  }
-               })
-         } else {
-            console.log("Story Upload does not exist")
-         }
-     })
 
-     window.onload = function() {
-         // document.getElementById("chatOutput").textContent = "";  // COMMENTED OUT: Prevent clearing initial message
-     };
- </script>
-<body>
- <h1>Walt the Biographer</h1>
- <p class="tagline">I want to write your story!</p>
+            fetch('/waltx/transcribe_audio', {
+                method: 'POST',
+                headers: {
+                     'X-CSRFToken': csrfToken,
+                },
+                body: formData,
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    chatOutput.textContent = "Transcription Error: " + data.error;
+                } else {
+                    document.getElementById('userPrompt').value = data.transcription;
+                    chatOutput.textContent = "Audio transcribed. Please submit your prompt.";
+                }
+            })
+            .catch(error => {
+                chatOutput.textContent = "Fetch error during transcription: " + error.message;
+            });
+             audioChunks = [];
+        }
 
-    <div id="uploadButtonContainer">
-     <button id="uploadButton" onclick="uploadStory()">Start at last Checkpoint</button>
- </div>
- <input type="file" id="story_upload" name="story_upload" accept=".txt, .walt">
 
- <div class="chat-container">
-      <div class="chat-area">
-         <h2 class="chat-title">Walt</h2>
-         <div class="chat-output" id="chatOutput">
-             <audio id="audioPlayback" controls></audio>  <!-- Audio playback element -->
+        function toggleRecord() {
+            if (mediaRecorder && mediaRecorder.state === 'recording') {
+                stopRecording();
+                processAudio();
+            } else {
+                startRecording();
+            }
+        }
+
+
+        document.addEventListener('DOMContentLoaded', function() {
+            storyUpload = document.getElementById("story_upload");
+            biographyOutline = {{ biography_outline|tojson }};
+            updateBiographyOutlineDisplay();
+            const chatOutput = document.getElementById("chatOutput");
+            const initialMessage = "{{ initial_message|default('') | safe }}";
+
+            if (initialMessage) {
+                chatOutput.textContent = initialMessage;
+            }
+
+
+             console.log("Story Upload: Document is loaded");
+            if (storyUpload) {
+               storyUpload.addEventListener("change", function(event) {
+                    console.log("Event Listener Triggered");
+                    if (this.files && this.files[0]) {
+                      const fileInput = document.getElementById("story_upload");
+                      const chatOutput = document.getElementById("chatOutput");
+
+                      const file = fileInput.files[0];
+
+                       const reader = new FileReader();
+                         reader.onload = function(event) {
+                               try{
+                                    console.log ("Story Uploaded to the Chat Output", event.target.result);
+                                    uploaded_content = event.target.result;
+                                    chatOutput.textContent = "Loading Checkpoint...";
+                                     sendCheckpointData(event.target.result);
+                                }
+
+                                catch (error){
+                                    chatOutput.textContent = "Error loading file: " + event.target.error;
+                                }
+                          };
+
+                          reader.onerror = function(event) {
+                             chatOutput.textContent = "Error reading file: " + event.target.error;
+                              console.error("Error reading file:", event.target.error);
+                         };
+
+                         reader.readAsText(file);
+                      }
+                   })
+             } else {
+                console.log("Story Upload does not exist")
+             }
+         })
+
+         window.onload = function() {
+             // document.getElementById("chatOutput").textContent = "";
+         };
+     </script>
+ <body>
+     <h1>Walt the Biographer</h1>
+     <p class="tagline">I want to write your story!</p>
+
+        <div id="uploadButtonContainer">
+         <button id="uploadButton" onclick="uploadStory()">Start at last Checkpoint</button>
+     </div>
+     <input type="file" id="story_upload" name="story_upload" accept=".txt, .walt">
+
+     <div class="chat-container">
+          <div class="chat-area">
+             <h2 class="chat-title">Walt</h2>
+             <div class="chat-output" id="chatOutput">
+                 <audio id="audioPlayback" controls></audio>
+             </div>
+         </div>
+         <div class="chat-area">
+             <h2 class="chat-title">Your Prompts</h2>
+             <div class="prompt-area">
+                  <button id="recordButton" onclick="toggleRecord()">Speak to WaltX</button>
+                 <textarea id="userPrompt" placeholder="Enter your prompt" rows="13"></textarea>
+                 <button id="submitButton" onclick="submitPrompt()">Submit</button>
+             </div>
          </div>
      </div>
-     <div class="chat-area">
-         <h2 class="chat-title">Your Prompts</h2>
-         <div class="prompt-area">
-              <button id="recordButton" onclick="toggleRecord()">Speak to WaltX</button>  <!-- Record button -->
-             <textarea id="userPrompt" placeholder="Enter your prompt" rows="13"></textarea>
-             <button id="submitButton" onclick="submitPrompt()">Submit</button>
+
+     <h3 class="dataNote">Note: No data is saved by this application, the only memory is through this file alone.</h3>
+
+     <div class="save-checkpoint-area">
+         <button id="saveButton" onclick="saveTextAsFile()">Create Checkpoint File</button>
+     </div>
+
+     <div class="craft-area-container">
+         <div class="tone-and-craft-group">
+             <div class="tone-selector-area">
+                 <label for="toneSelector">Biography Tone:</label>
+                 <select id="toneSelector">
+                     <option value="default">Default</option>
+                     <option value="humorous">Humor</option>
+                     <option value="reflective">Reflective</option>
+                     <option value="dramatic">Dramatic</option>
+                     <option value="inspirational">Inspirational</option>
+                 </select>
+             </div>
+         </div>
+          <div class="checkpoint-area">
+             <div>
+                 <button id="craftBiographyButton" onclick="craftBiography()">Craft Biography</button>
+             </div>
          </div>
      </div>
- </div>
-
- <h3 class="dataNote">Note: No data is saved by this application, the only memory is through this file alone.</h3>
-
- <div class="save-checkpoint-area">
-     <button id="saveButton" onclick="saveTextAsFile()">Create Checkpoint File</button>
- </div>
-
- <div class="craft-area-container">
-     <div class="tone-and-craft-group">  <!-- NEW GROUPING DIV -->
-         <div class="tone-selector-area">
-             <label for="toneSelector">Biography Tone:</label>
-             <select id="toneSelector">
-                 <option value="default">Default</option>
-                 <option value="humorous">Humor</option>
-                 <option value="reflective">Reflective</option>
-                 <option value="dramatic">Dramatic</option>
-                 <option value="inspirational">Inspirational</option>
-             </select>
-         </div>
-     </div>
-      <div class="checkpoint-area">
-         <div>
-             <button id="craftBiographyButton" onclick="craftBiography()">Craft Biography</button>
-         </div>
-     </div>
- </div>
 
 
- <div id="sessionSummary"></div>
-</body>
-</html>
+     <div id="sessionSummary"></div>
+ </body>
+ </html>
