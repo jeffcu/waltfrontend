@@ -559,7 +559,10 @@
                         audioChunks.push(event.data);
                         console.log('audioChunks array length after push:', audioChunks.length);
                     };
-                    mediaRecorder.onstop = stopRecording;
+                    mediaRecorder.onstop = function() {
+                        stopRecording();
+                        processAudio();
+                    };
                     mediaRecorder.start();
                     document.getElementById('recordButton').textContent = 'Stop Recording';
                     console.log('Recording started');
@@ -581,6 +584,8 @@
 
 
         function processAudio() {
+            console.log('processAudio() START - audioChunks.length:', audioChunks.length);
+
             if (!mediaRecorder || mediaRecorder.state === 'recording') {
                 stopRecording();
                 alert("Please stop recording before processing.");
