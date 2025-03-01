@@ -173,7 +173,7 @@ def get_walt_prompt_content():
 
 @waltx_bp.route('/transcribe_audio', methods=['POST']) # <-- ADDED ROUTE
 def transcribe_audio():
-    if not voice_api: # Keep this check for robustness, even though voice_api should always be initialized now
+    if not voice_api: # Keep this check for robustness
         return jsonify({"error": "Voice API not initialized. Please check server logs."}), 501 # More informative error
 
     if 'audio' not in request.files:
@@ -184,16 +184,27 @@ def transcribe_audio():
         return jsonify({"error": "No selected audio file"}), 400
 
     temp_audio_path = os.path.join("temp_audio", secure_filename(audio_file.filename)) # Save to temp directory
-    os.makedirs("temp_audio", exist_ok=True) # Ensure temp_audio directory exists
-    audio_file.save(temp_audio_path)
+
+    try: # ADDED try...except for makedirs
+        os.makedirs("temp_audio", exist_ok=True) # Ensure temp_audio directory exists
+    except FileExistsError:
+        pass # Directory likely already exists due to concurrency - ignore error
 
     try:
-        transcription_text = voice_api.transcribe_audio(temp_audio_path)
-        os.remove(temp_audio_path) # Delete temp audio file after transcription
-        return jsonify({"transcription": transcription_text})
-    except ValueError as e:
-        os.remove(temp_audio_path) # Delete temp audio file even on error
-        return jsonify({"error": str(e)}), 500
+        audio_file.save(temp_audio_path) # Save audio file FIRST - move here
+
+        try: # Inner try-except for OpenAI transcription specifically
+            transcription_text = voice_api.transcribe_audio(temp_audio_path)
+            os.remove(temp_audio_path) # Delete temp audio file after transcription
+            return jsonify({"transcription": transcription_text})
+        except ValueError as openai_err: # Catch OpenAI specific errors
+            os.remove(temp_audio_path) # Delete temp audio file even on OpenAI error
+            logging.error(f"OpenAI Transcription API error: {openai_err}", exc_info=True) # Log OpenAI error with traceback
+            return jsonify({"error": f"OpenAI Transcription error: {str(openai_err)}"}), 500 # Return JSON error to client
+
+    except Exception as e: # Catch any other errors (file saving, etc.)
+        logging.error(f"General error during audio transcription: {e}", exc_info=True) # Log general error with traceback
+        return jsonify({"error": f"Error processing audio file: {str(e)}"}), 500 # Return JSON error
 
 
 @waltx_bp.route('/synthesize_speech', methods=['POST']) # <-- ADDED ROUTE
@@ -213,7 +224,7 @@ def synthesize_speech():
 
     try:
         audio_file_path = voice_api.synthesize_speech(text_to_synthesize, temp_audio_output_path, voice_id=voice_id)
-        audio_url = f"/temp_audio_url/{os.path.basename(audio_file_path)}" # Create URL for frontend access
+        audio_url = f"/temp_audio_url/<filename>" # Corrected line: use <filename> for URL construction
         return jsonify({"audio_url": audio_url}) # Return audio URL
     except ValueError as e:
         os.remove(temp_audio_output_path) # Delete temp audio file even on error
