@@ -144,7 +144,7 @@ def continue_bio_start():
 
             logging.debug(f"Session variables after checkpoint load: \nConversation: {session.get('conversation')}\nBiography Outline: {session.get('biography_outline')}\nFile Content (start): {session.get('file_content', '')[:200]}...") # Log session variables
 
-            # Return JSON response with initial message and biography outline
+            # Return JSON response with initial message and biography_outline
             return jsonify({
                 "initial_message": initial_message,
                 "biography_outline": session['biography_outline']
@@ -183,10 +183,15 @@ def transcribe_audio():
     if audio_file.filename == '':
         return jsonify({"error": "No selected audio file"}), 400
 
-    temp_audio_path = os.path.join("temp_audio", secure_filename(audio_file.filename)) # Save to temp directory
+    # Construct temp_audio_dir and temp_audio_path explicitly using os.path.abspath and os.path.join
+    temp_audio_dir = os.path.abspath("temp_audio") # Use absolute path for directory
+    temp_audio_path = os.path.join(temp_audio_dir, secure_filename(audio_file.filename)) # Join directory and filename
+
+    logging.info(f"Temp audio directory: {temp_audio_dir}") # Log directory path
+    logging.info(f"Temp audio file path: {temp_audio_path}") # Log file path
 
     try: # ADDED try...except for makedirs
-        os.makedirs("temp_audio", exist_ok=True) # Ensure temp_audio directory exists
+        os.makedirs(temp_audio_dir, exist_ok=True) # Ensure temp_audio directory exists using absolute path
     except FileExistsError:
         pass # Directory likely already exists due to concurrency - ignore error
 
