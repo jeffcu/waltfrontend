@@ -566,10 +566,12 @@
                     audioChunks = []; // Clear existing chunks
                     mediaRecorder.ondataavailable = event => {
                         audioChunks.push(event.data);
+                        console.log('Audio chunk received'); // <-- ADDED LOG
                     };
                     mediaRecorder.onstop = stopRecording; // Call stopRecording on stop
                     mediaRecorder.start();
                     document.getElementById('recordButton').textContent = 'Stop Recording'; // Change button text
+                    console.log('Recording started'); // <-- ADDED LOG
                 }).catch(error => {
                     console.error("Error accessing microphone:", error);
                     alert("Microphone access denied or not available.");
@@ -580,25 +582,31 @@
             if (mediaRecorder && mediaRecorder.state === 'recording') {
                 mediaRecorder.stop();
                 document.getElementById('recordButton').textContent = 'Speak to WaltX'; // Restore button text
+                console.log('Recording stopped, state:', mediaRecorder.state); // <-- ADDED LOG
+            } else {
+                console.log('stopRecording called, but not recording'); // <-- ADDED LOG
             }
         }
 
 
         function processAudio() {
             if (!mediaRecorder || mediaRecorder.state === 'recording') {
-                stopRecording(); // Ensure recording is stopped before processing starts
+                stopRecording(); // Stop recording if active
                 alert("Please stop recording before processing."); // Inform user to stop recording
                 return; // Exit if still recording
             }
 
              if (audioChunks.length === 0) {
                 alert("No audio recorded.");
+                console.log('audioChunks.length is 0'); // <-- ADDED LOG
                 return;
             }
 
+            console.log('Audio processing started, chunk length:', audioChunks.length); // <-- ADDED LOG
+
             const audioBlob = new Blob(audioChunks, { type: 'audio/webm' }); // Or audio/wav, audio/mp3
             const formData = new FormData();
-            formData.append('audio', audioBlob, 'user_audio.webm'); // Or user_audio.wav, user_audio.mp3
+            formData.append('audio', audioBlob, 'user_audio.webm'); // Or user_audio.mp3
 
             let chatOutput = document.getElementById("chatOutput");
             chatOutput.textContent = "Transcribing audio..."; // Indicate transcription start
