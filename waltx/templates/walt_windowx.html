@@ -561,11 +561,12 @@
                         audioChunks.push(event.data);
                         console.log('ondataavailable - audioChunks.length after push:', audioChunks.length);
                     };
-                    mediaRecorder.onstop = function() {
-                        console.log('mediaRecorder.onstop - calling stopRecording() and processAudio()');
-                        stopRecording();
-                        // Move processAudio() call here, after logging
-                        processAudio();
+                    mediaRecorder.onstop = async function() { // Make onstop async
+                        console.log('mediaRecorder.onstop - STARTING - waiting for recording to fully stop');
+                        stopRecording(); // Call stopRecording to ensure state is updated
+                        await new Promise(resolve => setTimeout(resolve, 100)); // Small delay to ensure all data is processed
+                        console.log('mediaRecorder.onstop - AFTER DELAY - calling processAudio()');
+                        processAudio(); // Now call processAudio after delay
                     };
                     mediaRecorder.start();
                     document.getElementById('recordButton').textContent = 'Stop Recording';
@@ -579,24 +580,31 @@
 
         function stopRecording() {
             console.log('stopRecording() START - mediaRecorder:', mediaRecorder);
-            if (mediaRecorder && mediaRecorder.state === 'recording') {
-                console.log('stopRecording() - mediaRecorder.stop() called');
-                mediaRecorder.stop();
-                document.getElementById('recordButton').textContent = 'Speak to WaltX';
-                console.log('Recording stopped - mediaRecorder.state:', mediaRecorder.state);
-            } else {
-                console.log('stopRecording() - mediaRecorder not recording or not initialized');
-            }
+            return new Promise(resolve => { // Return a Promise
+                if (mediaRecorder && mediaRecorder.state === 'recording') {
+                    console.log('stopRecording() - mediaRecorder.stop() called');
+                    mediaRecorder.onstop = function() { // Re-define onstop to resolve promise
+                        console.log('mediaRecorder.onstop - INSIDE stopRecording() - recording actually stopped');
+                        document.getElementById('recordButton').textContent = 'Speak to WaltX';
+                        console.log('Recording stopped - mediaRecorder.state:', mediaRecorder.state);
+                        resolve(); // Resolve promise when really stopped
+                    };
+                    mediaRecorder.stop();
+                } else {
+                    console.log('stopRecording() - mediaRecorder not recording or not initialized');
+                    resolve(); // Resolve immediately if not recording
+                }
+            });
         }
 
 
-        function processAudio() {
+        async function processAudio() { // Make processAudio async
             console.log('processAudio() START - audioChunks.length:', audioChunks.length);
 
             if (!mediaRecorder || mediaRecorder.state === 'recording') {
-                stopRecording();
+                await stopRecording(); // Await stopRecording promise
                 alert("Please stop recording before processing.");
-                console.log('processAudio() - mediaRecorder still recording or not initialized');
+                console.log('processAudio() - mediaRecorder still recording or not initialized - STOPPED IT');
                 return;
             }
 
@@ -652,8 +660,7 @@
 
         function toggleRecord() {
             if (mediaRecorder && mediaRecorder.state === 'recording') {
-                stopRecording();
-                processAudio();
+                stopRecording().then(processAudio); // Call processAudio after stop promise resolves
             } else {
                 startRecording();
             }
