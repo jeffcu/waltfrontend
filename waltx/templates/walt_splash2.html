@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to Walt Biographer</title>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #1E2A38;
+            color: #E5E5E5;
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex; /* Enable flexbox for body */
+            justify-content: center;
+            align-items: center;
+        }
+
+        .splash-container {
+            display: flex; /* Flex container for image/title and buttons */
+            width: 80%; /* Adjust as needed, max width of splash screen */
+            max-width: 1200px;
+            height: 70%; /* Adjust as needed, max height of splash screen */
+            max-height: 800px;
+            border-radius: 12px;
+            background: #2A3D55;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+            overflow: hidden; /* Clip any overflowing content */
+        }
+
+        .splash-left {
+            flex: 1; /* Take 50% of the container width */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .splash-right {
+            flex: 1; /* Take 50% of the container width */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            background-color: #1E2A38; /* Slightly darker background for buttons side */
+        }
+
+
+        .splash-image {
+            max-width: 80%; /* Control image size within its container */
+            max-height: 60%;
+            height: auto;
+            margin-bottom: 20px; /* Space below image */
+        }
+
+        h1 {
+            color: #2D9CDB;
+            font-size: 2.5em; /* Slightly smaller than before, adjust as needed */
+            margin: 0; /* Remove default margins */
+        }
+
+        .splash-tagline {
+            font-style: italic;
+            color: #D9E1EC;
+            font-size: 1.4em; /* Adjust font size as needed */
+            margin-bottom: 15px; /* Space below tagline */
+        }
+
+        .splash-get-started {
+            color: #AEBCCF;
+            font-size: 1em; /* Smaller font size for "Get Started" */
+            margin-bottom: 10px; /* Space below "Get Started" */
+        }
+
+
+        .splash-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            width: 80%; /* Buttons width relative to right container */
+            max-width: 400px; /* Max width for buttons */
+            margin-top: 10px; /* Space above buttons - reduced slightly */
+        }
+
+        .splash-button {
+            padding: 15px 20px;
+            font-size: 1.2em;
+            cursor: pointer;
+            background-color: #27AE60;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            transition: background-color 0.3s ease;
+            white-space: nowrap; /* Prevent button text wrapping */
+        }
+
+        .splash-button:hover {
+            background-color: #1F8A4C;
+        }
+
+        #story_upload {
+            display: none; /* Hide the file input initially */
+        }
+
+        /* Responsive adjustments for smaller screens */
+        @media (max-width: 768px) {
+            .splash-container {
+                flex-direction: column; /* Stack image/title and buttons vertically */
+                width: 95%; /* Take up more width on smaller screens */
+                height: auto; /* Adjust height to content */
+                text-align: center; /* Center text on smaller screens */
+            }
+            .splash-left, .splash-right {
+                flex: none; /* No flex for stacked layout */
+                width: 100%; /* Full width when stacked */
+            }
+             .splash-image {
+                max-width: 50%; /* Smaller image on mobile */
+                max-height: 40%;
+             }
+            h1 {
+                font-size: 2em; /* Smaller title on mobile */
+            }
+            .splash-tagline {
+                font-size: 1.2em; /* Smaller tagline on mobile */
+            }
+             .splash-buttons {
+                width: 95%; /* Wider buttons on mobile */
+            }
+        }
+    </style>
+    <script>
+        function beginNewBiography() {
+            console.log("beginNewBiography function called!"); // ADDED LOG
+            // Changed to fetch API call
+            fetch("/walt2/new_bio_start", {
+                method: "GET",
+                headers: {
+                    'Content-Type': 'application/json' // Expecting JSON response
+                },
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert("Error starting new biography: " + data.error);
+                } else {
+                    console.log("Redirecting to /walt2/app"); // ADDED LOGGING BEFORE REDIRECT
+                    sessionStorage.setItem('initial_message', data.initial_message); // Store initial message
+                    window.location.href = "/walt2/app"; // Redirect to /walt2/app, the main app route  <--- CHANGED LINE
+                }
+            })
+            .catch(error => {
+                alert("Error starting new biography.");
+                console.error("Fetch error:", error);
+            });
+        }
+
+        function loadCheckpointFile() {
+            console.log("loadCheckpointFile function called!"); // ADDED LOG
+            document.getElementById('story_upload').click(); // Trigger file input
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const storyUpload = document.getElementById("story_upload");
+            if (storyUpload) {
+                storyUpload.addEventListener("change", function(event) {
+                    if (this.files && this.files[0]) {
+                        const file = this.files[0];
+                        const reader = new FileReader();
+
+                        reader.onload = function(event) {
+                            const fileContent = event.target.result;
+                            sendCheckpointData(fileContent); // Call existing function to load checkpoint
+                        };
+                        reader.onerror = function(event) {
+                            alert("Error reading file: " + event.target.error);
+                            console.error("Error reading file:", event.target.error);
+                        };
+                        reader.readAsText(file);
+                    }
+                });
+            }
+        });
+
+        function sendCheckpointData(fileContent) {
+            // Get CSRF token from cookie
+            function getCookie(name) {
+                const value = `; ${document.cookie}`;
+                const parts = value.split(`; ${name}=`);
+                if (parts.length === 2) return parts.pop().split(';').shift();
+            }
+
+            const csrfToken = getCookie('csrf_token');
+
+            fetch("/walt2/continue_bio_start", { // Corrected path to "/walt2/continue_bio_start"
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    "X-CSRFToken": csrfToken
+                },
+                body: "checkpoint_data=" + encodeURIComponent(fileContent)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert("Error loading checkpoint: " + data.error);
+                } else {
+                     console.log("Redirecting to /walt2/app"); // ADDED LOGGING BEFORE REDIRECT
+                     sessionStorage.setItem('initial_message', data.initial_message); // Store initial message
+                    window.location.href = "/walt2/app"; // Redirect to  /walt2/app, the main app route  <--- CHANGED LINE
+                }
+            })
+            .catch(error => {
+                alert("Error loading checkpoint.");
+                console.error("Fetch error:", error);
+            });
+        }
+
+
+    </script>
+</head>
+<body>
+    <div class="splash-container">
+        <div class="splash-left">
+            <img src="{{ url_for('static', filename='images/walt.png') }}" alt="Walt Biographer" class="splash-image">
+            <h1>Walt, the AI Biographer</h1>
+        </div>
+        <div class="splash-right">
+            <p class="splash-tagline">I want to write your unique story!</p> <p class="splash-get-started">Get Started</p>
+            <div class="splash-buttons">
+                <button class="splash-button" onclick="beginNewBiography()">Begin New Bio</button>
+                <button class="splash-button" onclick="loadCheckpointFile()">Load Your Checkpoint file</button>
+            </div>
+        </div>
+    </div>
+    <input type="file" id="story_upload" name="story_upload" accept=".txt, .walt">
+</body>
+</html>

@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Walt the Biographer</title>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #1E2A38;
+            color: #E5E5E5;
+            padding: 20px; /* Keep body padding */
+            text-align: center;
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            box-sizing: border-box;
+        }
+
+        h1 {
+            color: #2D9CDB;
+            margin-bottom: 5px;
+        }
+
+        p.tagline {
+            font-style: italic;
+            color: #AEBCCF;
+            margin-bottom: 20px;
+        }
+
+        #uploadButtonContainer {
+            margin-bottom: 20px;
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            width: 100%;
+            box-sizing: border-box;
+            /* padding-left: 10px;  REMOVED padding-left from container*/
+            /* padding-right: 10px; REMOVED padding-right from container */
+            padding-left: 0px; /* Set container padding-left to 0 */
+            padding-right: 0px; /* Set container padding-right to 0 */
+        }
+
+        #uploadButton {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #27AE60;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            height: auto;
+            width: auto;
+            white-space: nowrap;
+            margin-left: auto;
+            text-align: right;
+            margin-right: 20px; /* ADDED margin-right to button */
+        }
+
+        #waltImage {
+            height: 80px;
+            margin-right: 15px;
+            align-self: flex-start;
+            margin-left: 20px; /* ADDED margin-left to image */
+        }
+
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .chat-container {
+            display: flex;
+            max-width: 1200px;
+            margin: 0 auto;
+            flex: 1;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .chat-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            box-sizing: border-box;
+            padding: 10px;
+        }
+
+        .chat-title {
+            text-align: left;
+            margin-bottom: 10px;
+            color: #2D9CDB;
+        }
+
+        .chat-output {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #4C657E;
+            border-radius: 6px;
+            background-color: #2A3D55;
+            color: #D9E1EC;
+            min-height: 400px;
+            height: 450px;
+            text-align: left;
+            white-space: pre-wrap;
+            overflow-y: auto;
+            box-sizing: border-box;
+            font-size: 16pt;
+            align-items: flex-start;
+        }
+
+        .chat-input {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            box-sizing: border-box;
+            padding: 10px;
+        }
+
+        .prompt-area {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        textarea {
+            width: 100%;
+            margin-bottom: 10px;
+            padding: 8px;
+            border: 1px solid #4C657E;
+            border-radius: 6px;
+            resize: vertical;
+            flex: 1;
+            box-sizing: border-box;
+            font-size: 16pt;
+            background-color: #3d597a;
+            overflow-y: auto;
+            color: #D9E1EC;
+        }
+
+        #submitButton {
+           padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: gold;
+            color: dimgrey;
+            border: none;
+            border-radius: 6px;
+            width: 100%;
+            box-sizing: border-box;
+            height: auto;
+            align-self: flex-end;
+}
+
+        h3.dataNote {
+            text-align: center;
+            font-size: 1.2em;
+            margin-bottom: 10px;
+            color: #AEBCCF;
+        }
+
+        #saveButton {
+            text-align: center;
+            align-self: center;
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #27AE60;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            height: auto;
+            width: auto;
+            white-space: nowrap;
+        }
+
+
+        #sessionSummary {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #4C657E;
+            border-radius: 6px;
+            background-color: #2A3D55;
+            white-space: pre-wrap;
+            overflow-y: auto;
+            min-height: 0;
+            text-align: left;
+            box-sizing: border-box;
+            font-size: 1.2em;
+            display:none;
+        }
+
+        #checkpointOutput {
+            width: 90%;
+            margin: 10px auto;
+            padding: 10px;
+            border: 1px solid #4C657E;
+            border-radius: 6px;
+            background-color: #4C657E;
+            color: #D9E1EC;
+            text-align: left;
+            white-space: pre-wrap;
+            overflow-y: auto;
+            max-height: 250px;
+            box-sizing: border-box;
+            font-size: 1.2em;
+        }
+
+        .biography-outline {
+            text-align: left;
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #4C657E;
+            border-radius: 6px;
+            background-color: #2A3D55;
+            color: #D9E1EC;
+        }
+
+        .biography-outline h2 {
+            color: #2D9CDB;
+            font-size: 20px;
+            margin-bottom: 10px;
+        }
+
+        .biography-outline ul {
+            list-style: none;
+            padding-left: 20px;
+        }
+
+        .biography-outline li {
+            margin-bottom: 5px;
+        }
+
+        .chapter-title {
+            font-weight: bold;
+        }
+
+        .chapter-status-tbd {
+            color: #AEBCCF;
+            font-style: italic;
+        }
+        .chapter-status-complete {
+            color: #27AE60;
+            font-weight: bold;
+        }
+
+        .checkpoint-area {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            margin-top: 20px;
+            gap: 20px;
+        }
+
+        .tone-and-craft-group {
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            gap: 20px;
+            width: 80%;
+            max-width: 600px;
+            min-width: 500px;
+            padding: 20px;
+            background: #2A3D55;
+            border-radius: 12px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+            text-align: left;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .craft-area-container {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            margin-top: 20px;
+            gap: 20px;
+             width: 80%;
+            max-width: 900px;
+            min-width: 600px;
+             padding: 20px;
+            background: #2A3D55;
+            border-radius: 12px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+            text-align: left;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .tone-selector-area {
+            text-align: left;
+            flex-grow: 1;
+            display: flex;
+            align-items: baseline;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        .tone-selector-area label {
+            margin-bottom: 0;
+        }
+
+
+        #craftBiographyButton {
+            padding: 15px 30px;
+            font-size: 20px;
+            cursor: pointer;
+            background-color: #FFA500;
+            color: black;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            box-shadow: 0 4px 8px rgba(255, 165, 0, 0.5);
+            transition: background-color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
+            white-space: nowrap;
+            width: 100%;
+        }
+
+        #craftBiographyButton:hover {
+            background-color: #FF8C00;
+            transform: scale(1.05);
+            box-shadow: 0 6px 12px rgba(255, 165, 0, 0.7);
+        }
+
+
+        .save-checkpoint-area {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+
+    </style>
+    <script>
+        let uploaded_content = "";
+        let storyUpload;
+        let biographyOutline;
+
+        function submitPrompt() {
+            let userInput = document.getElementById("userPrompt").value;
+            let chatOutput = document.getElementById("chatOutput");
+
+            chatOutput.textContent = "Loading...";
+            sendToOpenAI(userInput, chatOutput, uploaded_content);
+            document.getElementById("userPrompt").value = "";
+        }
+
+         function sendToOpenAI(userInput, chatOutput, fileContent) {
+            function getCookie(name) {
+                const value = `; ${document.cookie}`;
+                const parts = value.split(`; ${name}=`);
+                if (parts.length === 2) return parts.pop().split(';').shift();
+            }
+
+            const csrfToken = getCookie('csrf_token');
+
+            fetch("/walt2/walt_analyze", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    "X-CSRFToken": csrfToken
+                },
+                 body: "user_query=" + encodeURIComponent(userInput) + "&uploaded_content=" + encodeURIComponent(fileContent)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    chatOutput.textContent = "Error: " + data.error;
+                } else {
+                    chatOutput.textContent = data.response;
+                    if (data.biography_outline) {
+                        biographyOutline = data.biography_outline;
+                        updateBiographyOutlineDisplay();
+                    }
+                }
+            })
+            .catch(error => {
+                chatOutput.textContent = "Error: " + error.message;
+            });
+        }
+
+
+         function getStoryBoard(){
+            let chatOutput = document.getElementById("chatOutput").textContent;
+            return chatOutput
+         }
+
+       function saveTextAsFile() {
+            function getCookie(name) {
+                const value = `; ${document.cookie}`;
+                const parts = value.split(`; ${name}=`);
+                if (parts.length === 2) return parts.pop().split(';').shift();
+            }
+
+            const csrfToken = getCookie('csrf_token');
+             let chatOutput = document.getElementById("chatOutput");
+
+            chatOutput.textContent = "Processing Checkpoint and Creating File... Please wait.";
+
+            fetch("/walt2/create_checkpoint", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    "X-CSRFToken": csrfToken
+                },
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert("Error creating checkpoint: " + data.error);
+                    chatOutput.textContent = "API Error: " + data.error;
+                } else {
+                    const fileContent = data["checkpoint_data"];
+
+                    chatOutput.textContent += "\n\nCheckpoint file created and download started.";
+
+                    console.log("fileContent from server", fileContent)
+
+                    const textFileAsBlob = new Blob([fileContent], { type: 'text/plain' });
+                    const fileNameToSaveAs = "sessionStory.txt";
+
+                    const downloadLink = document.createElement("a");
+                    downloadLink.download = fileNameToSaveAs;
+                    downloadLink.innerHTML = "Download File";
+                    downloadLink.href = window.URL.createObjectURL(textFileAsBlob);
+                    downloadLink.style.display = "none";
+
+                    document.body.appendChild(downloadLink);
+                    downloadLink.click();
+                    document.body.removeChild(downloadLink);
+                 }
+            })
+            .catch(error => {
+                chatOutput.textContent = "Fetch Error: " + error.message;
+            });
+        }
+
+        function craftBiography() {
+             function getCookie(name) {
+                const value = `; ${document.cookie}`;
+                const parts = value.split(`; ${name}=`);
+                if (parts.length === 2) return parts.pop().split(';').shift();
+            }
+
+            const csrfToken = getCookie('csrf_token');
+            let chatOutput = document.getElementById("chatOutput");
+            chatOutput.textContent = "Crafting Biography... Please wait.  This may take a minute.";
+
+            fetch("/walt2/craft_biography", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    "X-CSRFToken": csrfToken
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert("Error crafting biography: " + data.error);
+                    chatOutput.textContent = "Error crafting biography: " + data.error;
+                } else {
+                    chatOutput.innerHTML = data.api_response;
+
+                    const fileContent = data.api_response.replace(/<br>/g, '\n');
+                    const textFileAsBlob = new Blob([fileContent], { type: 'text/plain' });
+                    const fileNameToSaveAs = data.file_download_name || "Full_biography.txt";
+                    const downloadLink = document.createElement("a");
+                    downloadLink.download = fileNameToSaveAs;
+                    downloadLink.href = window.URL.createObjectURL(textFileAsBlob);
+                    downloadLink.style.display = "none";
+                    document.body.appendChild(downloadLink);
+                    downloadLink.click();
+                    document.body.removeChild(downloadLink);
+                    chatOutput.textContent += "\n\nBiography crafted and download started.";
+                }
+            })
+            .catch(error => chatOutput.textContent = "Error crafting biography: " + error.message);
+        }
+
+
+         function sendCheckpointData(fileContent) {
+              try {
+                function getCookie(name) {
+                    const value = `; ${document.cookie}`;
+                    const parts = value.split(`; ${name}=`);
+                    if (parts.length === 2) return parts.pop().split(';').shift();
+                }
+
+                const csrfToken = getCookie('csrf_token');
+
+                fetch("/walt2/continue_bio_start", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/x-www-form-urlencoded",
+                        "X-CSRFToken": csrfToken
+                    },
+                    body: "checkpoint_data=" + encodeURIComponent(fileContent)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        document.getElementById("chatOutput").textContent = "Error: " + data.error;
+                    } else {
+                        document.getElementById("chatOutput").textContent = data.initial_message;
+                        if (data.biography_outline) {
+                            biographyOutline = data.biography_outline;
+                            updateBiographyOutlineDisplay();
+                        }
+                        sendLoadMessage();
+                    }
+                })
+                .catch(error => {
+                    document.getElementById("chatOutput").textContent = "Error loading checkpoint.";
+                });
+            } catch (error) {
+                console.error("Error in sendCheckpointData:", error);
+                document.getElementById("chatOutput").textContent = "Error loading checkpoint.";
+            }
+        }
+
+        function sendLoadMessage() {
+            let chatOutput = document.getElementById("chatOutput");
+            chatOutput.textContent ="Oh I see! I'd forgotten what we already did. Wonderful";
+         }
+
+         function uploadStory() {
+              console.log("Firing Upload Story Trigger");
+              if (storyUpload) {
+                  storyUpload.click();
+               } else {
+                 console.error("storyUpload element not found");
+               }
+           }
+
+        function displayInitialMessageOnLoad() {
+            const initialMessage = sessionStorage.getItem('initial_message');
+            if (initialMessage) {
+                document.getElementById("chatOutput").textContent = initialMessage;
+                sessionStorage.removeItem('initial_message');
+            }
+        }
+
+
+        function updateBiographyOutlineDisplay() {
+            const outlineDiv = document.getElementById('biographyOutline');
+            if (!biographyOutline || !outlineDiv) return;
+
+            let outlineHTML = '<h2>Biography Outline</h2><ul>';
+            biographyOutline.forEach(chapter => {
+                const statusClass = chapter.status === 'Complete' ? 'chapter-status-complete' : 'chapter-status-tbd';
+                outlineHTML += `<li><span class="chapter-title">Chapter ${chapter.chapter}: ${chapter.title}</span> - <span class="${statusClass}">${chapter.status}</span></li>`;
+            });
+            outlineHTML += '</ul>';
+            outlineDiv.innerHTML = outlineHTML;
+        }
+
+
+        document.addEventListener('DOMContentLoaded', function() {
+            storyUpload = document.getElementById("story_upload");
+            biographyOutline = {{ biography_outline|tojson }};
+            updateBiographyOutlineDisplay();
+            const chatOutput = document.getElementById("chatOutput");
+            const initialMessage = "{{ initial_message|default('') | safe }}";
+
+            displayInitialMessageOnLoad();
+
+
+             console.log("Story Upload: Document is loaded");
+            if (storyUpload) {
+               storyUpload.addEventListener("change", function(event) {
+                    console.log("Event Listener Triggered");
+                    if (this.files && this.files[0]) {
+                      const fileInput = document.getElementById("story_upload");
+                      const chatOutput = document.getElementById("chatOutput");
+
+                      const file = fileInput.files[0];
+
+                       const reader = new FileReader();
+                         reader.onload = function(event) {
+                               try{
+                                    console.log ("Story Uploaded to the Chat Output", event.target.result);
+                                    uploaded_content = event.target.result;
+                                    chatOutput.textContent = "Loading Checkpoint...";
+                                     sendCheckpointData(event.target.result);
+                                }
+                                catch (error){
+                                    chatOutput.textContent = "Error loading file: " + event.target.error;
+                                }
+                          };
+
+                          reader.onerror = function(event) {
+                             chatOutput.textContent = "Error reading file: " + event.target.error;
+                              console.error("Error reading file:", event.target.error);
+                         };
+
+                         reader.readAsText(file);
+                      }
+                   })
+             } else {
+                console.log("Story Upload does not exist")
+             }
+         })
+
+         window.onload = function() {
+         };
+     </script>
+ <body>
+     <h1>Walt the Biographer</h1>
+     <p class="tagline">I want to write your story!</p>
+
+        <div id="uploadButtonContainer">
+            <img id="waltImage" src="{{ url_for('static', filename='images/walt.png') }}" alt="Walt Biographer">
+         <button id="uploadButton" onclick="uploadStory()">Start at last Checkpoint</button>
+     </div>
+     <input type="file" id="story_upload" name="story_upload" accept=".txt, .walt">
+
+     <div class="chat-container">
+          <div class="chat-area">
+             <h2 class="chat-title">Walt</h2>
+             <div class="chat-output" id="chatOutput"></div>
+         </div>
+         <div class="chat-area">
+             <h2 class="chat-title">Your Response</h2>  <!-- Changed text here -->
+             <div class="prompt-area">
+                 <textarea id="userPrompt" placeholder="Enter your prompt" rows="13"></textarea>
+                 <button id="submitButton" onclick="submitPrompt()">Submit</button>
+             </div>
+         </div>
+     </div>
+
+     <h3 class="dataNote">Note: No data is saved by this application, the only memory is through this file alone.</h3>
+
+     <div class="save-checkpoint-area">
+         <button id="saveButton" onclick="saveTextAsFile()">Create Checkpoint File</button>
+     </div>
+
+     <div class="craft-area-container">
+         <div class="tone-and-craft-group">
+             <div class="tone-selector-area">
+                 <label for="toneSelector">Biography Tone:</label>
+                 <select id="toneSelector">
+                     <option value="default">Default</option>
+                     <option value="humorous">Humor</option>
+                     <option value="reflective">Reflective</option>
+                     <option value="dramatic">Dramatic</option>
+                     <option value="inspirational">Inspirational</option>
+                 </select>
+             </div>
+         </div>
+          <div class="checkpoint-area">
+             <div>
+                 <button id="craftBiographyButton" onclick="craftBiography()">Craft Biography</button>
+             </div>
+         </div>
+     </div>
+
+
+     <div id="sessionSummary"></div>
+ </body>
+ </html>
