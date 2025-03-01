@@ -1,3 +1,4 @@
+<!-- file: walt/templates/walt_splash.html -->
 <!DOCTYPE html>
 <html>
 <head>
@@ -7,14 +8,16 @@
     <style>
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #1E2A38;
-            color: #E5E5E5;
+            background-color: #f7f7f7; /* Very light grey background */
+            color: #333; /* Dark grey text for readability */
             margin: 0;
             padding: 0;
             height: 100vh;
             display: flex; /* Enable flexbox for body */
             justify-content: center;
             align-items: center;
+             -webkit-font-smoothing: antialiased; /* For smoother fonts on macOS/iOS */
+            -moz-osx-font-smoothing: grayscale;
         }
 
         .splash-container {
@@ -23,9 +26,9 @@
             max-width: 1200px;
             height: 70%; /* Adjust as needed, max height of splash screen */
             max-height: 800px;
-            border-radius: 12px;
-            background: #2A3D55;
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+            border-radius: 15px; /* More rounded corners */
+            background: #fff; /* White splash container */
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08); /* Lighter shadow */
             overflow: hidden; /* Clip any overflowing content */
         }
 
@@ -35,7 +38,7 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            padding: 20px;
+            padding: 30px; /* Increased padding */
             text-align: center;
         }
 
@@ -45,8 +48,8 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            padding: 20px;
-            background-color: #1E2A38; /* Slightly darker background for buttons side */
+            padding: 30px; /* Increased padding */
+            background-color: #f0f0f0; /* Very light grey right side */
         }
 
 
@@ -54,52 +57,57 @@
             max-width: 80%; /* Control image size within its container */
             max-height: 60%;
             height: auto;
-            margin-bottom: 20px; /* Space below image */
+            margin-bottom: 25px; /* Increased margin */
         }
 
         h1 {
-            color: #2D9CDB;
-            font-size: 2.5em; /* Slightly smaller than before, adjust as needed */
+            color: #007AFF; /* Apple Blue */
+            font-size: 2.8em; /* Slightly larger title */
             margin: 0; /* Remove default margins */
+            font-weight: 600;
         }
 
         .splash-tagline {
             font-style: italic;
-            color: #D9E1EC;
-            font-size: 1.4em; /* Adjust font size as needed */
-            margin-bottom: 15px; /* Space below tagline */
+            color: #555; /* Medium grey tagline */
+            font-size: 1.5em; /* Adjust font size as needed */
+            margin-bottom: 20px; /* Space below tagline */
         }
 
         .splash-get-started {
-            color: #AEBCCF;
-            font-size: 1em; /* Smaller font size for "Get Started" */
-            margin-bottom: 10px; /* Space below "Get Started" */
+            color: #777; /* Lighter grey "Get Started" */
+            font-size: 1.1em; /* Slightly larger "Get Started" */
+            margin-bottom: 15px; /* Space below "Get Started" */
         }
 
 
         .splash-buttons {
             display: flex;
             flex-direction: column;
-            gap: 15px;
-            width: 80%; /* Buttons width relative to right container */
-            max-width: 400px; /* Max width for buttons */
-            margin-top: 10px; /* Space above buttons - reduced slightly */
+            gap: 20px; /* Increased gap */
+            width: 85%; /* Buttons width relative to right container */
+            max-width: 450px; /* Max width for buttons */
+            margin-top: 15px; /* Space above buttons - reduced slightly */
         }
 
         .splash-button {
-            padding: 15px 20px;
-            font-size: 1.2em;
+            padding: 16px 24px; /* Larger buttons */
+            font-size: 1.3em;
             cursor: pointer;
-            background-color: #27AE60;
+            background-color: #007AFF; /* Apple Blue buttons */
             color: white;
             border: none;
-            border-radius: 8px;
-            transition: background-color 0.3s ease;
+            border-radius: 10px; /* More rounded corners */
+            transition: background-color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
             white-space: nowrap; /* Prevent button text wrapping */
+            box-shadow: 0 3px 6px rgba(0, 122, 255, 0.3); /* Apple Blue shadow */
+            font-weight: 500;
         }
 
         .splash-button:hover {
-            background-color: #1F8A4C;
+            background-color: #0059b3; /* Darker Apple Blue on hover */
+            transform: scale(1.03); /* Slight scale up on hover */
+            box-shadow: 0 4px 8px rgba(0, 122, 255, 0.5); /* Enhanced shadow on hover */
         }
 
         #story_upload {
@@ -119,17 +127,20 @@
                 width: 100%; /* Full width when stacked */
             }
              .splash-image {
-                max-width: 50%; /* Smaller image on mobile */
-                max-height: 40%;
+                max-width: 60%; /* Smaller image on mobile */
+                max-height: 50%;
              }
             h1 {
-                font-size: 2em; /* Smaller title on mobile */
+                font-size: 2.3em; /* Smaller title on mobile */
             }
             .splash-tagline {
-                font-size: 1.2em; /* Smaller tagline on mobile */
+                font-size: 1.3em; /* Smaller tagline on mobile */
             }
              .splash-buttons {
-                width: 95%; /* Wider buttons on mobile */
+                width: 90%; /* Wider buttons on mobile */
+            }
+             .splash-left, .splash-right {
+                padding: 20px; /* Reduce padding on smaller screens */
             }
         }
     </style>
@@ -137,7 +148,7 @@
         function beginNewBiography() {
             console.log("beginNewBiography function called!"); // ADDED LOG
             // Changed to fetch API call
-            fetch("/walt2/new_bio_start", {
+            fetch("/waltx/new_bio_start", {
                 method: "GET",
                 headers: {
                     'Content-Type': 'application/json' // Expecting JSON response
@@ -148,9 +159,8 @@
                 if (data.error) {
                     alert("Error starting new biography: " + data.error);
                 } else {
-                    console.log("Redirecting to /walt2/app"); // ADDED LOGGING BEFORE REDIRECT
-                    sessionStorage.setItem('initial_message', data.initial_message); // Store initial message
-                    window.location.href = "/walt2/app"; // Redirect to /walt2/app, the main app route  <--- CHANGED LINE
+                    console.log("Redirecting to /waltx/app"); // ADDED LOGGING BEFORE REDIRECT
+                    window.location.href = "/waltx/app"; // Redirect to /waltx/app, the main app route  <--- CHANGED LINE
                 }
             })
             .catch(error => {
@@ -196,7 +206,7 @@
 
             const csrfToken = getCookie('csrf_token');
 
-            fetch("/walt2/continue_bio_start", { // Corrected path to "/walt2/continue_bio_start"
+            fetch("/waltx/continue_bio_start", { // Corrected path to "/waltx/continue_bio_start"
                 method: "POST",
                 headers: {
                     "Content-Type": "application/x-www-form-urlencoded",
@@ -209,9 +219,8 @@
                 if (data.error) {
                     alert("Error loading checkpoint: " + data.error);
                 } else {
-                     console.log("Redirecting to /walt2/app"); // ADDED LOGGING BEFORE REDIRECT
-                     sessionStorage.setItem('initial_message', data.initial_message); // Store initial message
-                    window.location.href = "/walt2/app"; // Redirect to  /walt2/app, the main app route  <--- CHANGED LINE
+                     console.log("Redirecting to /waltx/app"); // ADDED LOGGING BEFORE REDIRECT
+                    window.location.href = "/waltx/app"; // Redirect to  /waltx/app, the main app route  <--- CHANGED LINE
                 }
             })
             .catch(error => {

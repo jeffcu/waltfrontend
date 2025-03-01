@@ -7,64 +7,53 @@
     <style>
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #1E2A38;
-            color: #E5E5E5;
-            padding: 20px; /* Keep body padding */
+            background-color: #f7f7f7; /* Very light grey background */
+            color: #333; /* Dark grey text for readability */
+            padding: 20px;
             text-align: center;
             margin: 0;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
             box-sizing: border-box;
+            -webkit-font-smoothing: antialiased; /* For smoother fonts on macOS/iOS */
+            -moz-osx-font-smoothing: grayscale;
         }
 
         h1 {
-            color: #2D9CDB;
+            color: #007AFF; /* Apple Blue */
             margin-bottom: 5px;
+            font-weight: 600; /* Slightly bolder */
         }
 
         p.tagline {
             font-style: italic;
-            color: #AEBCCF;
+            color: #777; /* Medium grey for tagline */
             margin-bottom: 20px;
         }
 
         #uploadButtonContainer {
+            text-align: center;
             margin-bottom: 20px;
-            display: flex;
-            align-items: flex-end;
-            justify-content: space-between;
-            width: 100%;
-            box-sizing: border-box;
-            /* padding-left: 10px;  REMOVED padding-left from container*/
-            /* padding-right: 10px; REMOVED padding-right from container */
-            padding-left: 0px; /* Set container padding-left to 0 */
-            padding-right: 0px; /* Set container padding-right to 0 */
         }
 
         #uploadButton {
-            padding: 10px 20px;
+            padding: 12px 24px; /* Slightly larger button */
             font-size: 16px;
             cursor: pointer;
-            background-color: #27AE60;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            height: auto;
-            width: auto;
+            background-color: #fff; /* White button */
+            color: #007AFF; /* Apple Blue text */
+            border: 1px solid #ddd; /* Light grey border */
+            border-radius: 8px; /* More rounded corners */
+            transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
             white-space: nowrap;
-            margin-left: auto;
-            text-align: right;
-            margin-right: 20px; /* ADDED margin-right to button */
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05); /* Subtle shadow */
         }
 
-        #waltImage {
-            height: 80px;
-            margin-right: 15px;
-            align-self: flex-start;
-            margin-left: 20px; /* ADDED margin-left to image */
+        #uploadButton:hover {
+            background-color: #f0f0f0; /* Lighter grey on hover */
+            border-color: #bbb;
         }
-
 
         input[type="file"] {
             display: none;
@@ -84,22 +73,24 @@
             display: flex;
             flex-direction: column;
             box-sizing: border-box;
-            padding: 10px;
+            padding: 20px; /* Increased padding */
         }
 
         .chat-title {
             text-align: left;
-            margin-bottom: 10px;
-            color: #2D9CDB;
+            margin-bottom: 15px; /* Increased margin */
+            color: #007AFF; /* Apple Blue */
+            font-weight: 500;
+            font-size: 1.3em;
         }
 
         .chat-output {
             flex: 1;
-            padding: 10px;
-            border: 1px solid #4C657E;
-            border-radius: 6px;
-            background-color: #2A3D55;
-            color: #D9E1EC;
+            padding: 20px; /* Increased padding */
+            border: 1px solid #eee; /* Very light grey border */
+            border-radius: 12px; /* More rounded corners */
+            background-color: #fff; /* White chat output */
+            color: #333;
             min-height: 400px;
             height: 450px;
             text-align: left;
@@ -108,6 +99,7 @@
             box-sizing: border-box;
             font-size: 16pt;
             align-items: flex-start;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.05); /* Subtle inner shadow */
         }
 
         .chat-input {
@@ -115,7 +107,7 @@
             display: flex;
             flex-direction: column;
             box-sizing: border-box;
-            padding: 10px;
+            padding: 20px; /* Increased padding */
         }
 
         .prompt-area {
@@ -126,56 +118,67 @@
 
         textarea {
             width: 100%;
-            margin-bottom: 10px;
-            padding: 8px;
-            border: 1px solid #4C657E;
-            border-radius: 6px;
+            margin-bottom: 15px; /* Increased margin */
+            padding: 15px; /* Increased padding */
+            border: 1px solid #eee; /* Very light grey border */
+            border-radius: 12px; /* More rounded corners */
             resize: vertical;
             flex: 1;
             box-sizing: border-box;
             font-size: 16pt;
-            background-color: #3d597a;
+            background-color: #fff; /* White input */
             overflow-y: auto;
-            color: #D9E1EC;
+            color: #333;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.05); /* Subtle inner shadow */
         }
 
         #submitButton {
-           padding: 10px 20px;
+            padding: 12px 24px; /* Slightly larger button */
             font-size: 16px;
             cursor: pointer;
-            background-color: gold;
-            color: dimgrey;
+            background-color: gold; /* Gold submit button - keeping for playfulness */
+            color: #333; /* Dark text on gold */
             border: none;
-            border-radius: 6px;
+            border-radius: 8px; /* Rounded corners */
             width: 100%;
             box-sizing: border-box;
             height: auto;
             align-self: flex-end;
-}
+            transition: background-color 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1); /* Subtle shadow */
+        }
+
+        #submitButton:hover {
+            background-color: #e6af00; /* Darker gold on hover */
+        }
 
         h3.dataNote {
             text-align: center;
-            font-size: 1.2em;
-            margin-bottom: 10px;
-            color: #AEBCCF;
+            font-size: 1.1em;
+            margin-bottom: 15px; /* Increased margin */
+            color: #777;
         }
 
         #saveButton {
             text-align: center;
             align-self: center;
-            margin-top: 20px;
-            padding: 10px 20px;
+            margin-top: 25px; /* Increased margin */
+            padding: 12px 24px; /* Slightly larger button */
             font-size: 16px;
             cursor: pointer;
-            background-color: #27AE60;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            height: auto;
-            width: auto;
+            background-color: #fff; /* White button */
+            color: #007AFF; /* Apple Blue text */
+            border: 1px solid #ddd; /* Light grey border */
+            border-radius: 8px; /* Rounded corners */
             white-space: nowrap;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05); /* Subtle shadow */
+            transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
         }
 
+        #saveButton:hover {
+            background-color: #f0f0f0; /* Lighter grey on hover */
+            border-color: #bbb;
+        }
 
         #sessionSummary {
             margin-top: 20px;
@@ -194,34 +197,38 @@
 
         #checkpointOutput {
             width: 90%;
-            margin: 10px auto;
-            padding: 10px;
-            border: 1px solid #4C657E;
-            border-radius: 6px;
-            background-color: #4C657E;
-            color: #D9E1EC;
+            margin: 15px auto; /* Increased margin */
+            padding: 15px; /* Increased padding */
+            border: 1px solid #eee; /* Very light grey border */
+            border-radius: 12px; /* Rounded corners */
+            background-color: #f0f0f0; /* Lighter grey output area */
+            color: #555; /* Slightly lighter text color */
             text-align: left;
             white-space: pre-wrap;
             overflow-y: auto;
             max-height: 250px;
             box-sizing: border-box;
-            font-size: 1.2em;
+            font-size: 1.1em;
+            box-shadow: inset 0 1px 2px rgba(0,0,0,0.03); /* Even more subtle shadow */
         }
 
+        /* Biography Outline Styles */
         .biography-outline {
             text-align: left;
-            margin-top: 20px;
-            padding: 10px;
-            border: 1px solid #4C657E;
-            border-radius: 6px;
-            background-color: #2A3D55;
-            color: #D9E1EC;
+            margin-top: 25px; /* Increased margin */
+            padding: 20px; /* Increased padding */
+            border: 1px solid #eee; /* Very light grey border */
+            border-radius: 12px; /* Rounded corners */
+            background-color: #fff; /* White outline area */
+            color: #333;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05); /* Subtle shadow */
         }
 
         .biography-outline h2 {
-            color: #2D9CDB;
-            font-size: 20px;
-            margin-bottom: 10px;
+            color: #007AFF; /* Apple Blue */
+            font-size: 1.5em;
+            margin-bottom: 12px; /* Increased margin */
+            font-weight: 500;
         }
 
         .biography-outline ul {
@@ -230,67 +237,40 @@
         }
 
         .biography-outline li {
-            margin-bottom: 5px;
+            margin-bottom: 8px; /* Increased margin */
         }
 
         .chapter-title {
-            font-weight: bold;
+            font-weight: 500; /* Slightly bolder chapter titles */
+            color: #444;
         }
 
         .chapter-status-tbd {
-            color: #AEBCCF;
+            color: #999; /* Lighter grey for TBD */
             font-style: italic;
         }
         .chapter-status-complete {
-            color: #27AE60;
-            font-weight: bold;
+            color: #28a745; /* Green for completed */
+            font-weight: 600; /* Bolder completed status */
         }
 
+        /* New Styles for layout and "Craft Biography" Button */
         .checkpoint-area {
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            margin-top: 20px;
-            gap: 20px;
+            margin-top: 30px; /* Increased margin */
+            gap: 25px; /* Increased gap */
         }
 
         .tone-and-craft-group {
             display: flex;
             justify-content: center;
             align-items: flex-end;
-            gap: 20px;
-            width: 80%;
-            max-width: 600px;
-            min-width: 500px;
-            padding: 20px;
-            background: #2A3D55;
-            border-radius: 12px;
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
-            transition: all 0.3s ease;
-            text-align: left;
-            margin-left: auto;
-            margin-right: auto;
-        }
-
-        .craft-area-container {
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            margin-top: 20px;
-            gap: 20px;
-             width: 80%;
-            max-width: 900px;
-            min-width: 600px;
-             padding: 20px;
-            background: #2A3D55;
-            border-radius: 12px;
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
-            transition: all 0.3s ease;
-            text-align: left;
-            margin-left: auto;
-            margin-right: auto;
+            gap: 25px; /* Increased gap */
+            width: auto;
+            margin: 0 auto;
         }
 
         .tone-selector-area {
@@ -298,48 +278,100 @@
             flex-grow: 1;
             display: flex;
             align-items: baseline;
-            gap: 10px;
+            gap: 12px; /* Increased gap */
             justify-content: flex-end;
         }
 
         .tone-selector-area label {
             margin-bottom: 0;
+            font-weight: 500;
+            color: #555; /* Slightly darker label */
         }
 
+        #toneSelector {
+            padding: 10px;
+            border: 1px solid #ddd; /* Light grey border */
+            border-radius: 8px; /* Rounded corners */
+            background-color: #fff; /* White select */
+            color: #333;
+            font-size: 16px;
+            -webkit-appearance: none; /* Remove default styling on iOS */
+            -moz-appearance: none; /* Remove default styling on Firefox */
+            appearance: none; /* Remove default styling */
+            padding-right: 30px; /* Make space for arrow icon */
+            background-image: url('data:image/svg+xml;utf8,<svg fill="black" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/><path d="M0 0h24v24H0z" fill="none"/></svg>'); /* Custom dropdown arrow */
+            background-repeat: no-repeat;
+            background-position-x: 100%;
+            background-position-y: 5px;
+        }
 
         #craftBiographyButton {
-            padding: 15px 30px;
+            padding: 16px 32px; /* Even larger button */
             font-size: 20px;
             cursor: pointer;
-            background-color: #FFA500;
-            color: black;
+            background-color: #007AFF; /* Apple Blue Craft Button */
+            color: white;
             border: none;
-            border-radius: 8px;
-            font-weight: bold;
-            box-shadow: 0 4px 8px rgba(255, 165, 0, 0.5);
+            border-radius: 10px; /* More rounded */
+            font-weight: 600; /* Bolder text */
+            box-shadow: 0 3px 6px rgba(0, 122, 255, 0.3); /* Apple Blue shadow */
             transition: background-color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
             white-space: nowrap;
-            width: 100%;
         }
 
         #craftBiographyButton:hover {
-            background-color: #FF8C00;
-            transform: scale(1.05);
-            box-shadow: 0 6px 12px rgba(255, 165, 0, 0.7);
+            background-color: #0059b3; /* Darker Apple Blue on hover */
+            transform: scale(1.03); /* Slight scale up */
+            box-shadow: 0 4px 8px rgba(0, 122, 255, 0.5); /* Enhanced shadow */
         }
-
 
         .save-checkpoint-area {
             text-align: center;
+            margin-top: 25px; /* Increased margin */
+        }
+         /* Adjustments for craft-area-container and tone-and-craft-group for cleaner look */
+        .craft-area-container {
+            display: flex;
+            flex-direction: column;
+            align-items: stretch; /* Stretch items to container width */
             margin-top: 20px;
+            gap: 15px; /* Reduced gap */
+            width: 80%;
+            max-width: 900px;
+            min-width: 500px;
+            padding: 25px; /* Increased padding */
+            background-color: #fff; /* White container */
+            border-radius: 15px; /* More rounded corners */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08); /* Lighter shadow */
+            transition: all 0.3s ease;
+            text-align: left;
+            margin-left: auto;
+            margin-right: auto;
         }
 
+        .tone-and-craft-group {
+            flex-direction: column; /* Stack tone selector and button */
+            align-items: stretch; /* Stretch items to full width */
+            gap: 15px; /* Reduced gap */
+            padding: 0; /* Remove padding from group */
+            background: none; /* Remove background */
+            box-shadow: none; /* Remove shadow */
+            border-radius: 0; /* Remove border-radius */
+            min-width: auto; /* Auto width */
+            width: 100%; /* Full width inside container */
+        }
+
+        .tone-selector-area {
+            justify-content: space-between; /* Align label to left, select to right */
+            margin-bottom: 10px; /* Add margin below selector */
+        }
 
     </style>
     <script>
-        let uploaded_content = "";
-        let storyUpload;
-        let biographyOutline;
+        // All the code here is to ensure it is loaded at the top level scope.
+        let uploaded_content = ""; //Global variable to store uploaded content
+        let storyUpload; // Declare storyUpload outside the event listener
+        let biographyOutline; // For storing biography outline (Improvement #5)
 
         function submitPrompt() {
             let userInput = document.getElementById("userPrompt").value;
@@ -351,6 +383,7 @@
         }
 
          function sendToOpenAI(userInput, chatOutput, fileContent) {
+            // Get CSRF token from cookie
             function getCookie(name) {
                 const value = `; ${document.cookie}`;
                 const parts = value.split(`; ${name}=`);
@@ -359,7 +392,7 @@
 
             const csrfToken = getCookie('csrf_token');
 
-            fetch("/walt2/walt_analyze", {
+            fetch("/waltx/walt_analyze", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/x-www-form-urlencoded",
@@ -391,6 +424,7 @@
          }
 
        function saveTextAsFile() {
+            // Get CSRF token from cookie
             function getCookie(name) {
                 const value = `; ${document.cookie}`;
                 const parts = value.split(`; ${name}=`);
@@ -402,7 +436,7 @@
 
             chatOutput.textContent = "Processing Checkpoint and Creating File... Please wait.";
 
-            fetch("/walt2/create_checkpoint", {
+            fetch("/waltx/create_checkpoint", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/x-www-form-urlencoded",
@@ -441,7 +475,8 @@
         }
 
         function craftBiography() {
-             function getCookie(name) {
+             // Get CSRF token from cookie
+            function getCookie(name) {
                 const value = `; ${document.cookie}`;
                 const parts = value.split(`; ${name}=`);
                 if (parts.length === 2) return parts.pop().split(';').shift();
@@ -451,7 +486,7 @@
             let chatOutput = document.getElementById("chatOutput");
             chatOutput.textContent = "Crafting Biography... Please wait.  This may take a minute.";
 
-            fetch("/walt2/craft_biography", {
+            fetch("/waltx/craft_biography", { // Call new route for crafting biography
                 method: "POST",
                 headers: {
                     "Content-Type": "application/x-www-form-urlencoded",
@@ -464,11 +499,12 @@
                     alert("Error crafting biography: " + data.error);
                     chatOutput.textContent = "Error crafting biography: " + data.error;
                 } else {
-                    chatOutput.innerHTML = data.api_response;
+                    chatOutput.innerHTML = data.api_response; // Display formatted biography
 
-                    const fileContent = data.api_response.replace(/<br>/g, '\n');
+                    // Trigger file download
+                    const fileContent = data.api_response.replace(/<br>/g, '\n'); //Revert <br> to line breaks for download
                     const textFileAsBlob = new Blob([fileContent], { type: 'text/plain' });
-                    const fileNameToSaveAs = data.file_download_name || "Full_biography.txt";
+                    const fileNameToSaveAs = data.file_download_name || "Full_biography.txt"; // Use filename from response or default
                     const downloadLink = document.createElement("a");
                     downloadLink.download = fileNameToSaveAs;
                     downloadLink.href = window.URL.createObjectURL(textFileAsBlob);
@@ -485,6 +521,7 @@
 
          function sendCheckpointData(fileContent) {
               try {
+                // Get CSRF token from cookie
                 function getCookie(name) {
                     const value = `; ${document.cookie}`;
                     const parts = value.split(`; ${name}=`);
@@ -493,7 +530,7 @@
 
                 const csrfToken = getCookie('csrf_token');
 
-                fetch("/walt2/continue_bio_start", {
+                fetch("/waltx/continue_bio_start", { // <-- CORRECTED ROUTE: continue_bio_start
                     method: "POST",
                     headers: {
                         "Content-Type": "application/x-www-form-urlencoded",
@@ -506,7 +543,7 @@
                     if (data.error) {
                         document.getElementById("chatOutput").textContent = "Error: " + data.error;
                     } else {
-                        document.getElementById("chatOutput").textContent = data.initial_message;
+                        document.getElementById("chatOutput").textContent = data.response;
                         if (data.biography_outline) {
                             biographyOutline = data.biography_outline;
                             updateBiographyOutlineDisplay();
@@ -527,25 +564,19 @@
             let chatOutput = document.getElementById("chatOutput");
             chatOutput.textContent ="Oh I see! I'd forgotten what we already did. Wonderful";
          }
-
+         // This function is triggered when the "Start at last Checkpoint" is pressed
          function uploadStory() {
               console.log("Firing Upload Story Trigger");
               if (storyUpload) {
-                  storyUpload.click();
+                  storyUpload.click(); //Programitcally fire "load a checkpoint file."
                } else {
                  console.error("storyUpload element not found");
                }
+
            }
 
-        function displayInitialMessageOnLoad() {
-            const initialMessage = sessionStorage.getItem('initial_message');
-            if (initialMessage) {
-                document.getElementById("chatOutput").textContent = initialMessage;
-                sessionStorage.removeItem('initial_message');
-            }
-        }
 
-
+        // Function to update biography outline display (Improvement #5)
         function updateBiographyOutlineDisplay() {
             const outlineDiv = document.getElementById('biographyOutline');
             if (!biographyOutline || !outlineDiv) return;
@@ -560,6 +591,7 @@
         }
 
 
+        //Event Handling
         document.addEventListener('DOMContentLoaded', function() {
             storyUpload = document.getElementById("story_upload");
             biographyOutline = {{ biography_outline|tojson }};
@@ -567,12 +599,15 @@
             const chatOutput = document.getElementById("chatOutput");
             const initialMessage = "{{ initial_message|default('') | safe }}";
 
-            displayInitialMessageOnLoad();
+            if (initialMessage) {
+                chatOutput.textContent = initialMessage;
+            }
 
 
              console.log("Story Upload: Document is loaded");
             if (storyUpload) {
-               storyUpload.addEventListener("change", function(event) {
+               //Event
+               storyUpload.addEventListener("change", function(event) { //Make sure event is captured
                     console.log("Event Listener Triggered");
                     if (this.files && this.files[0]) {
                       const fileInput = document.getElementById("story_upload");
@@ -581,13 +616,20 @@
                       const file = fileInput.files[0];
 
                        const reader = new FileReader();
+                          //Set value for upload
                          reader.onload = function(event) {
                                try{
-                                    console.log ("Story Uploaded to the Chat Output", event.target.result);
+                                    console.log ("Story Uploaded to the Chat Output", event.target.result); //Check log before
+                                    //Capture the file upload
                                     uploaded_content = event.target.result;
+
+                                    //Display Load
                                     chatOutput.textContent = "Loading Checkpoint...";
+
+                                    //Load the checkpoint
                                      sendCheckpointData(event.target.result);
                                 }
+
                                 catch (error){
                                     chatOutput.textContent = "Error loading file: " + event.target.error;
                                 }
@@ -607,6 +649,7 @@
          })
 
          window.onload = function() {
+             // document.getElementById("chatOutput").textContent = "";  // COMMENTED OUT: Prevent clearing initial message
          };
      </script>
  <body>
@@ -614,7 +657,6 @@
      <p class="tagline">I want to write your story!</p>
 
         <div id="uploadButtonContainer">
-            <img id="waltImage" src="{{ url_for('static', filename='images/walt.png') }}" alt="Walt Biographer">
          <button id="uploadButton" onclick="uploadStory()">Start at last Checkpoint</button>
      </div>
      <input type="file" id="story_upload" name="story_upload" accept=".txt, .walt">
@@ -625,7 +667,7 @@
              <div class="chat-output" id="chatOutput"></div>
          </div>
          <div class="chat-area">
-             <h2 class="chat-title">Your Response</h2>  <!-- Changed text here -->
+             <h2 class="chat-title">Your Prompts</h2>
              <div class="prompt-area">
                  <textarea id="userPrompt" placeholder="Enter your prompt" rows="13"></textarea>
                  <button id="submitButton" onclick="submitPrompt()">Submit</button>
@@ -640,7 +682,7 @@
      </div>
 
      <div class="craft-area-container">
-         <div class="tone-and-craft-group">
+         <div class="tone-and-craft-group">  <!-- NEW GROUPING DIV -->
              <div class="tone-selector-area">
                  <label for="toneSelector">Biography Tone:</label>
                  <select id="toneSelector">
