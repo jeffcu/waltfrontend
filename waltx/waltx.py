@@ -6,11 +6,33 @@ import json
 from werkzeug.utils import secure_filename
 from io import StringIO
 
+from .voice.config import voice_config  # Import VoiceConfig
+from .voice.openai_voice import OpenAI_VoiceAPI  # Import OpenAI_VoiceAPI
+
 waltx_bp = Blueprint('waltx', __name__, template_folder='templates')
 
 def format_openai_text(text):
     formatted_text = text.replace("\n", "<br>")
     return formatted_text
+
+# Initialize Voice API (based on config)
+voice_api = None
+if voice_config.voice_enabled: # Check if voice is enabled
+    if voice_config.default_voice_api == "openai":
+        try:
+            voice_api = OpenAI_VoiceAPI(openai_api_key=voice_config.openai_api_key)
+            logging.info("OpenAI Voice API initialized.")
+        except ValueError as e:
+            logging.warning(f"OpenAI Voice API initialization error: {e}. Voice features disabled.")
+            voice_api = None # Set to None if initialization fails
+    # ... (add other voice API initializations here if needed: elif voice_config.default_voice_api == "google": ...)
+    else:
+        logging.warning(f"Unknown voice API '{voice_config.default_voice_api}' configured. Voice features disabled.")
+        voice_api = None
+else:
+    logging.info("Voice features are disabled via configuration.")
+    voice_api = None
+
 
 @waltx_bp.route('/')
 def walt_window_splash(): # Renamed to walt_window_splash to be more descriptive
@@ -153,6 +175,59 @@ def get_walt_prompt_content():
     except FileNotFoundError:
         return "Error: walt_prompt.txt not found!"
 
+@waltx_bp.route('/transcribe_audio', methods=['POST']) # <-- ADDED ROUTE
+def transcribe_audio():
+    if not voice_api:
+        return jsonify({"error": "Voice API not enabled."}), 501
+
+    if 'audio' not in request.files:
+        return jsonify({"error": "No audio file provided"}), 400
+
+    audio_file = request.files['audio']
+    if audio_file.filename == '':
+        return jsonify({"error": "No selected audio file"}), 400
+
+    temp_audio_path = os.path.join("temp_audio", secure_filename(audio_file.filename)) # Save to temp directory
+    os.makedirs("temp_audio", exist_ok=True) # Ensure temp_audio directory exists
+    audio_file.save(temp_audio_path)
+
+    try:
+        transcription_text = voice_api.transcribe_audio(temp_audio_path)
+        os.remove(temp_audio_path) # Delete temp audio file after transcription
+        return jsonify({"transcription": transcription_text})
+    except ValueError as e:
+        os.remove(temp_audio_path) # Delete temp audio file even on error
+        return jsonify({"error": str(e)}), 500
+
+
+@waltx_bp.route('/synthesize_speech', methods=['POST']) # <-- ADDED ROUTE
+def synthesize_speech():
+    if not voice_api:
+        return jsonify({"error": "Voice API not enabled."}), 501
+
+    text_data = request.get_json()
+    if not text_data or 'text' not in text_data:
+        return jsonify({"error": "No text provided for speech synthesis"}), 400
+
+    text_to_synthesize = text_data['text']
+    voice_id = voice_config.tts_voice_id # Get configured voice ID
+
+    temp_audio_output_path = os.path.join("temp_audio", f"waltx_speech_{session.sid}.mp3") # Unique filename
+    os.makedirs("temp_audio", exist_ok=True) # Ensure temp_audio directory exists
+
+    try:
+        audio_file_path = voice_api.synthesize_speech(text_to_synthesize, temp_audio_output_path, voice_id=voice_id)
+        audio_url = f"/temp_audio_url/{os.path.basename(audio_file_path)}" # Create URL for frontend access
+        return jsonify({"audio_url": audio_url}) # Return audio URL
+    except ValueError as e:
+        os.remove(temp_audio_output_path) # Delete temp audio file even on error
+        return jsonify({"error": str(e)}), 500
+
+
+@waltx_bp.route('/temp_audio_url/<filename>') # <-- ADDED ROUTE to serve temp audio files
+def temp_audio_url(filename):
+    return send_file(os.path.join("temp_audio", filename))
+
 
 @waltx_bp.route('/walt_analyze', methods=['POST'])
 def walt_analyze():
@@ -185,11 +260,26 @@ def walt_analyze():
             max_tokens=256,
             top_p=1
         )
-        api_response = response.choices[0].message.content.strip()
-        session['conversation'].append({"role": "assistant", "content": api_response})
+        api_response_text = response.choices[0].message.content.strip()
+        session['conversation'].append({"role": "assistant", "content": api_response_text})
         session.modified = True
 
-        return jsonify({"response": api_response, "biography_outline": session['biography_outline']})
+        response_data = {"response": api_response_text, "biography_outline": session['biography_outline']}
+
+        if voice_api and voice_config.voice_enabled: # Synthesize speech if voice is enabled
+            try:
+                speech_data = {"text": api_response_text}
+                speech_response = synthesize_speech() # Call synthesize_speech function directly
+                if speech_response.status_code == 200:
+                    speech_json = speech_response.get_json()
+                    response_data["audio_url"] = speech_json.get("audio_url") # Add audio URL to response
+                else:
+                    logging.warning(f"Text-to-speech API failed: {speech_response.get_json()}") # Log TTS failure, but don't block main response
+            except Exception as tts_e:
+                logging.error(f"Error during text-to-speech synthesis: {tts_e}", exc_info=True) # Log TTS errors
+
+        return jsonify(response_data) # Return response with or without audio URL
+
 
     except Exception as e:
         logging.error(f"OpenAI API Error: {e}", exc_info=True)
