@@ -15,22 +15,18 @@ def format_openai_text(text):
     formatted_text = text.replace("\n", "<br>")
     return formatted_text
 
-# Initialize Voice API (based on config)
+# Initialize Voice API (based on config) - UNCONDITIONAL INITIALIZATION NOW
 voice_api = None
-if voice_config.voice_enabled: # Check if voice is enabled
-    if voice_config.default_voice_api == "openai":
-        try:
-            voice_api = OpenAI_VoiceAPI(openai_api_key=voice_config.openai_api_key)
-            logging.info("OpenAI Voice API initialized.")
-        except ValueError as e:
-            logging.warning(f"OpenAI Voice API initialization error: {e}. Voice features disabled.")
-            voice_api = None # Set to None if initialization fails
-    # ... (add other voice API initializations here if needed: elif voice_config.default_voice_api == "google": ...)
-    else:
-        logging.warning(f"Unknown voice API '{voice_config.default_voice_api}' configured. Voice features disabled.")
-        voice_api = None
+if voice_config.default_voice_api == "openai":
+    try:
+        voice_api = OpenAI_VoiceAPI(openai_api_key=voice_config.openai_api_key)
+        logging.info("OpenAI Voice API initialized.")
+    except ValueError as e:
+        logging.warning(f"OpenAI Voice API initialization error: {e}. Voice features may be partially disabled if API key is missing.") # Adjusted log message
+        voice_api = None # Set to None if initialization fails
+# ... (you can keep other voice API initializations here if you add them later)
 else:
-    logging.info("Voice features are disabled via configuration.")
+    logging.warning(f"Unknown voice API '{voice_config.default_voice_api}' configured. Voice features may be partially disabled.") # Adjusted log message
     voice_api = None
 
 
@@ -177,8 +173,8 @@ def get_walt_prompt_content():
 
 @waltx_bp.route('/transcribe_audio', methods=['POST']) # <-- ADDED ROUTE
 def transcribe_audio():
-    if not voice_api:
-        return jsonify({"error": "Voice API not enabled."}), 501
+    if not voice_api: # Keep this check for robustness, even though voice_api should always be initialized now
+        return jsonify({"error": "Voice API not initialized. Please check server logs."}), 501 # More informative error
 
     if 'audio' not in request.files:
         return jsonify({"error": "No audio file provided"}), 400
@@ -202,8 +198,8 @@ def transcribe_audio():
 
 @waltx_bp.route('/synthesize_speech', methods=['POST']) # <-- ADDED ROUTE
 def synthesize_speech():
-    if not voice_api:
-        return jsonify({"error": "Voice API not enabled."}), 501
+    if not voice_api: # Keep this check for robustness
+        return jsonify({"error": "Voice API not initialized. Please check server logs."}), 501 # More informative error
 
     text_data = request.get_json()
     if not text_data or 'text' not in text_data:
@@ -266,7 +262,7 @@ def walt_analyze():
 
         response_data = {"response": api_response_text, "biography_outline": session['biography_outline']}
 
-        if voice_api and voice_config.voice_enabled: # Synthesize speech if voice is enabled
+        if voice_api: # No more voice_config.voice_enabled check here - assume voice_api is intended to be used if initialized
             try:
                 speech_data = {"text": api_response_text}
                 speech_response = synthesize_speech() # Call synthesize_speech function directly
@@ -295,7 +291,7 @@ def create_checkpoint():
             with open('waltx/walt_prompts/bio_creator_prompt.txt', 'r', encoding='utf-8') as f:
                 bio_prompt_content = f.read()
         except Exception as e:
-            logging.error(f"Error reading bio_creator_prompt.txt: {e}")
+            logging.error(f"Error reading bio_prompt.txt: {e}")
             bio_prompt_content = "Error loading bio creator prompt."
 
         conversation_text = ""
