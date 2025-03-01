@@ -6,24 +6,24 @@ import json
 from werkzeug.utils import secure_filename
 from io import StringIO
 
-walt2_bp = Blueprint('walt2', __name__, template_folder='templates')
+waltx_bp = Blueprint('waltx', __name__, template_folder='templates')
 
 def format_openai_text(text):
     formatted_text = text.replace("\n", "<br>")
     return formatted_text
 
-@walt2_bp.route('/')
+@waltx_bp.route('/')
 def walt_window_splash(): # Renamed to walt_window_splash to be more descriptive
     return render_template('walt_splash2.html')
 
-@walt2_bp.route('/new_bio_start', methods=['GET'])
+@waltx_bp.route('/new_bio_start', methods=['GET'])
 def new_bio_start():
     session.pop('conversation', None)
     session.pop('biography_outline', None)
     session.pop('file_content', None)
 
     try:
-        with open('walt2/walt_prompts/welcome.txt', 'r', encoding='utf-8') as f:
+        with open('waltx/walt_prompts/welcome.txt', 'r', encoding='utf-8') as f:
             welcome_prompt = f.read()
     except FileNotFoundError:
         return jsonify({"error": "welcome.txt prompt not found!"}), 500
@@ -57,11 +57,11 @@ def new_bio_start():
         })
 
 
-@walt2_bp.route('/app') # NEW route for /walt2/app - serves main app window
-def walt_window(): # Original walt_window function - now for /walt2/app
+@waltx_bp.route('/app') # NEW route for /waltx/app - serves main app window
+def walt_window(): # Original walt_window function - now for /waltx/app
     return render_template('walt_window2.html', biography_outline=session.get('biography_outline'), initial_message=None)
 
-@walt2_bp.route('/continue_bio_start', methods=['POST'])
+@waltx_bp.route('/continue_bio_start', methods=['POST'])
 def continue_bio_start():
     checkpoint_data = request.form.get('checkpoint_data')
     if not checkpoint_data:
@@ -76,7 +76,7 @@ def continue_bio_start():
 
     try: # ADDED try...except BLOCK
         try:
-            with open('walt2/walt_prompts/continue.txt', 'r', encoding='utf-8') as f:
+            with open('waltx/walt_prompts/continue.txt', 'r', encoding='utf-8') as f:
                 continue_prompt_base = f.read()
         except FileNotFoundError:
             return jsonify({"error": "continue.txt prompt not found!"}), 500
@@ -108,17 +108,12 @@ def continue_bio_start():
             if conversation_history_text:
                 logging.debug(f"Conversation history text found:\n{conversation_history_text[:200]}...") # Log conversation history text
                 conversation_messages = []
-                valid_roles = ['system', 'user', 'assistant'] # Define valid roles
                 for line in conversation_history_text.strip().split('\n'):
                     if line.strip():
                         try: # Add try-except for line parsing
                             role, content = line.split(':', 1)
-                            role = role.strip() # Strip whitespace from role
-                            if role in valid_roles: # Check if role is valid
-                                conversation_messages.append({"role": role, "content": content.strip()})
-                                logging.debug(f"Parsed line - Role: {role}, Content: {content.strip()[:100]}...") # Log parsed line
-                            else:
-                                logging.warning(f"Skipping line with invalid role: {role}. Line: {line}") # Log skipped lines
+                            conversation_messages.append({"role": role.strip(), "content": content.strip()})
+                            logging.debug(f"Parsed line - Role: {role.strip()}, Content: {content.strip()[:100]}...") # Log parsed line
                         except ValueError as ve:
                             logging.warning(f"Error parsing conversation history line: {line}. Error: {ve}") # Log parsing errors
                 session['conversation'].extend(conversation_messages)
@@ -153,13 +148,13 @@ def continue_bio_start():
 
 def get_walt_prompt_content():
     try:
-        with open('walt2/walt_prompts/walt_prompt.txt', 'r', encoding='utf-8') as f:
+        with open('waltx/walt_prompts/walt_prompt.txt', 'r', encoding='utf-8') as f:
             return f.read()
     except FileNotFoundError:
         return "Error: walt_prompt.txt not found!"
 
 
-@walt2_bp.route('/walt_analyze', methods=['POST'])
+@waltx_bp.route('/walt_analyze', methods=['POST'])
 def walt_analyze():
     user_input = request.form.get('user_query')
 
@@ -201,13 +196,13 @@ def walt_analyze():
         return jsonify({"error": str(e)}), 500
 
 
-@walt2_bp.route('/create_checkpoint', methods=['POST'])
+@waltx_bp.route('/create_checkpoint', methods=['POST'])
 def create_checkpoint():
     try:
         checkpoint_data_text = session.get('file_content', '')
         bio_prompt_content = ""
         try:
-            with open('walt2/walt_prompts/bio_creator_prompt.txt', 'r', encoding='utf-8') as f:
+            with open('waltx/walt_prompts/bio_creator_prompt.txt', 'r', encoding='utf-8') as f:
                 bio_prompt_content = f.read()
         except Exception as e:
             logging.error(f"Error reading bio_creator_prompt.txt: {e}")
@@ -229,7 +224,7 @@ def create_checkpoint():
         logging.error(f"Error creating checkpoint: {e}", exc_info=True)
         return jsonify({"error": str(e)}), 500
 
-@walt2_bp.route('/craft_biography', methods=['POST'])
+@waltx_bp.route('/craft_biography', methods=['POST'])
 def craft_biography():
     checkpoint_data_text = session.get('file_content', '')
     conversation_text = ""
@@ -239,7 +234,7 @@ def craft_biography():
             conversation_text += f"{message['role']}: {message['content']}\n"
 
     try:
-        with open('walt2/walt_prompts/write_bio.txt', 'r', encoding='utf-8') as f:
+        with open('waltx/walt_prompts/write_bio.txt', 'r', encoding='utf-8') as f:
             write_bio_prompt = f.read()
     except FileNotFoundError:
         return jsonify({"error": "write_bio.txt prompt not found!"}), 500
@@ -274,7 +269,7 @@ def craft_biography():
         return jsonify({"error": error_message, "api_response": formatted_error}), 500
 
 
-@walt2_bp.route('/saveTextAsFileDownload', methods=['POST'])
+@waltx_bp.route('/saveTextAsFileDownload', methods=['POST'])
 def saveTextAsFileDownload():
     try:
         data = request.get_json()
