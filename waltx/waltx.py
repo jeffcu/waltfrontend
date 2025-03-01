@@ -14,7 +14,7 @@ def format_openai_text(text):
 
 @waltx_bp.route('/')
 def walt_window_splash(): # Renamed to walt_window_splash to be more descriptive
-    return render_template('walt_splash2.html')
+    return render_template('walt_splashx.html') # <-- RENAMED TEMPLATE FILE
 
 @waltx_bp.route('/new_bio_start', methods=['GET'])
 def new_bio_start():
@@ -59,7 +59,7 @@ def new_bio_start():
 
 @waltx_bp.route('/app') # NEW route for /waltx/app - serves main app window
 def walt_window(): # Original walt_window function - now for /waltx/app
-    return render_template('walt_window2.html', biography_outline=session.get('biography_outline'), initial_message=None)
+    return render_template('walt_windowx.html', biography_outline=session.get('biography_outline'), initial_message=None) # <-- RENAMED TEMPLATE FILE
 
 @waltx_bp.route('/continue_bio_start', methods=['POST'])
 def continue_bio_start():

@@ -148,7 +148,7 @@
         function beginNewBiography() {
             console.log("beginNewBiography function called!"); // ADDED LOG
             // Changed to fetch API call
-            fetch("/waltx/new_bio_start", {
+            fetch("/waltx/new_bio_start", { // <-- CORRECTED URL to /waltx/new_bio_start
                 method: "GET",
                 headers: {
                     'Content-Type': 'application/json' // Expecting JSON response
@@ -160,7 +160,7 @@
                     alert("Error starting new biography: " + data.error);
                 } else {
                     console.log("Redirecting to /waltx/app"); // ADDED LOGGING BEFORE REDIRECT
-                    window.location.href = "/waltx/app"; // Redirect to /waltx/app, the main app route  <--- CHANGED LINE
+                    window.location.href = "/waltx/app"; // Redirect to /waltx/app, the main app route  <--- CHANGED LINE to /waltx/app
                 }
             })
             .catch(error => {
@@ -206,7 +206,7 @@
 
             const csrfToken = getCookie('csrf_token');
 
-            fetch("/waltx/continue_bio_start", { // Corrected path to "/waltx/continue_bio_start"
+            fetch("/waltx/continue_bio_start", { // Corrected path to "/waltx/continue_bio_start"  <-- CORRECTED URL to /waltx/continue_bio_start
                 method: "POST",
                 headers: {
                     "Content-Type": "application/x-www-form-urlencoded",
@@ -220,7 +220,7 @@
                     alert("Error loading checkpoint: " + data.error);
                 } else {
                      console.log("Redirecting to /waltx/app"); // ADDED LOGGING BEFORE REDIRECT
-                    window.location.href = "/waltx/app"; // Redirect to  /waltx/app, the main app route  <--- CHANGED LINE
+                    window.location.href = "/waltx/app"; // Redirect to  /waltx/app, the main app route  <--- CHANGED LINE to /waltx/app
                 }
             })
             .catch(error => {

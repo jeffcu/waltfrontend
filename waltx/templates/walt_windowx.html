@@ -392,7 +392,7 @@
 
             const csrfToken = getCookie('csrf_token');
 
-            fetch("/waltx/walt_analyze", {
+            fetch("/waltx/walt_analyze", { // <-- CORRECTED URL to /waltx/walt_analyze
                 method: "POST",
                 headers: {
                     "Content-Type": "application/x-www-form-urlencoded",
@@ -436,7 +436,7 @@
 
             chatOutput.textContent = "Processing Checkpoint and Creating File... Please wait.";
 
-            fetch("/waltx/create_checkpoint", {
+            fetch("/waltx/create_checkpoint", { // <-- CORRECTED URL to /waltx/create_checkpoint
                 method: "POST",
                 headers: {
                     "Content-Type": "application/x-www-form-urlencoded",
@@ -486,7 +486,7 @@
             let chatOutput = document.getElementById("chatOutput");
             chatOutput.textContent = "Crafting Biography... Please wait.  This may take a minute.";
 
-            fetch("/waltx/craft_biography", { // Call new route for crafting biography
+            fetch("/waltx/craft_biography", { // Call new route for crafting biography  <-- CORRECTED URL to /waltx/craft_biography
                 method: "POST",
                 headers: {
                     "Content-Type": "application/x-www-form-urlencoded",
@@ -530,7 +530,7 @@
 
                 const csrfToken = getCookie('csrf_token');
 
-                fetch("/waltx/continue_bio_start", { // <-- CORRECTED ROUTE: continue_bio_start
+                fetch("/waltx/continue_bio_start", { // <-- CORRECTED ROUTE: continue_bio_start  <-- CORRECTED URL to /waltx/continue_bio_start
                     method: "POST",
                     headers: {
                         "Content-Type": "application/x-www-form-urlencoded",
