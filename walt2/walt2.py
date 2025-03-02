@@ -122,7 +122,7 @@ def continue_bio_start():
                             role = role.strip() # Strip whitespace from role
                             if role in valid_roles: # Check if role is valid
                                 conversation_messages.append({"role": role, "content": content.strip()})
-                                logging.debug(f"Parsed line - Role: {role}, Content: {content.strip()[:100]}...") # Log parsed line
+                                logging.debug(f"Parsed line - Role: {role}, Content: {msg['content'][:80]}...") # Truncate content for logs
                             else:
                                 logging.warning(f"Skipping line with invalid role: {role}. Line: {line}") # Log skipped lines
                         except ValueError as ve:
@@ -169,7 +169,8 @@ def continue_bio_start():
 
     except Exception as e: # CATCH ALL OTHER EXCEPTIONS IN THE ROUTE
         logging.error(f"General error in continue_bio_start: {e}", exc_info=True) # LOG GENERAL ERROR WITH TRACEBACK
-        return jsonify({"error": f"Error processing checkpoint: {str(e)}"
+        return jsonify({
+            "error": f"Error processing checkpoint: {str(e)}"
         }) # RETURN JSON ERROR FOR AJAX CALL
 
 
