@@ -21,7 +21,8 @@ def new_bio_start():
     session.pop('conversation', None)
     session.pop('biography_outline', None)
     session.pop('file_content', None)
-    session.pop('loaded_checkpoint_conversation', None) # Clear loaded checkpoint history
+    session.pop('loaded_checkpoint_conversation', None)
+    session.pop('previous_checkpoint_history_text', None) # Clear previous history
 
     try:
         with open('walt2/walt_prompts/welcome.txt', 'r', encoding='utf-8') as f:
@@ -43,8 +44,7 @@ def new_bio_start():
         initial_message = response.choices[0].message.content.strip()
         session['conversation'] = [{"role": "system", "content": get_walt_prompt_content()}, {"role": "assistant", "content": initial_message}]
         session['biography_outline'] = get_biography_outline()
-        session.modified = True # Ensure session is marked as modified
-        # Return JSON instead of rendering template for new_bio_start as well, for consistency.
+        session.modified = True
         return jsonify({
             "initial_message": initial_message,
             "biography_outline": session['biography_outline']
@@ -54,29 +54,30 @@ def new_bio_start():
         logging.error(f"OpenAI API error on new bio start: {e}")
         return jsonify({
             "error": f"Error starting new bio: {str(e)}",
-            "biography_outline": session.get('biography_outline') # Still return outline if available
+            "biography_outline": session.get('biography_outline')
         })
 
 
-@walt2_bp.route('/app') # NEW route for /walt2/app - serves main app window
-def walt_window(): # Original walt_window function - now for /walt2/app
+@walt2_bp.route('/app')
+def walt_window():
     return render_template('walt_window2.html', biography_outline=session.get('biography_outline'), initial_message=None)
 
 @walt2_bp.route('/continue_bio_start', methods=['POST'])
 def continue_bio_start():
     checkpoint_data = request.form.get('checkpoint_data')
     if not checkpoint_data:
-        logging.warning("No checkpoint data received in continue_bio_start request.") # Enhanced logging
+        logging.warning("No checkpoint data received in continue_bio_start request.")
         return jsonify({"error": "No checkpoint data received"}), 400
 
     session.pop('conversation', None)
     session.pop('biography_outline', None)
     session.pop('file_content', None)
-    session.pop('loaded_checkpoint_conversation', None) # Clear any old loaded history
+    session.pop('loaded_checkpoint_conversation', None)
+    session.pop('previous_checkpoint_history_text', None) # Clear previous history
 
-    logging.debug(f"Checkpoint data received:\n{checkpoint_data[:200]}...") # Log the beginning of checkpoint data
+    logging.debug(f"Checkpoint data received:\n{checkpoint_data[:200]}...")
 
-    try: # ADDED try...except BLOCK
+    try:
         try:
             with open('walt2/walt_prompts/continue.txt', 'r', encoding='utf-8') as f:
                 continue_prompt_base = f.read()
@@ -85,90 +86,68 @@ def continue_bio_start():
 
         continue_prompt = continue_prompt_base + "\n\nCHECKPOINT FILE CONTENT:\n" + checkpoint_data
 
-        try:
-            client = openai.Client()
-            response = client.chat.completions.create(
-                model="gpt-4o",
-                messages=[
-                    {"role": "system", "content": "You are Walt, the biographer, continuing a biography from a checkpoint."},
-                    {"role": "user", "content": continue_prompt}
-                ],
-                temperature=0.7,
-                max_tokens=200
-            )
-            initial_message = response.choices[0].message.content.strip()
-            logging.debug(f"Initial message from OpenAI API: {initial_message}") # Log initial message
+        previous_history_content = "" # Initialize variable for previous history - NEW
+        loaded_conversation_history = []
 
-            parts = checkpoint_data.split("--- CONVERSATION HISTORY ---\n\n")
-            file_content_part = parts[0].strip()
-            conversation_history_text = parts[1].strip() if len(parts) > 1 else ""
+        parts = checkpoint_data.split("--- PREVIOUS CHECKPOINT CONVERSATION HISTORY ---\n\n") # Split for previous history FIRST
+        main_part = parts[0] # Main part now excludes previous history
+        if len(parts) > 1:
+            previous_history_content = parts[1].strip() # Extract previous history - NEW
+            session['previous_checkpoint_history_text'] = previous_history_content # Store previous history in session - NEW
+        else:
+            session['previous_checkpoint_history_text'] = "" # No previous history found - NEW
 
-            session['file_content'] = file_content_part
-            logging.debug(f"File content part extracted:\n{file_content_part[:200]}...") # Log file content part
 
-            loaded_conversation_history = [] # Initialize loaded conversation history
-            # --- ADDED LOGGING in continue_bio_start ---
-            logging.info("--- continue_bio_start: conversation_history_text (raw from checkpoint) ---")
-            logging.info(f"{conversation_history_text}") # Log raw conversation_history_text
+        conversation_parts = main_part.split("--- EXTENDED CONVERSATION HISTORY ---\n\n") # Split main part for current history
+        file_content_part = conversation_parts[0].strip()
+        conversation_history_text = conversation_parts[1].strip() if len(conversation_parts) > 1 else ""
 
-            if conversation_history_text:
-                logging.debug(f"Conversation history text found:\n{conversation_history_text[:200]}...") # Log conversation history text
-                conversation_messages = []
-                valid_roles = ['system', 'user', 'assistant'] # Define valid roles
-                for line in conversation_history_text.strip().split('\n'):
-                    if line.strip():
-                        try: # Add try-except for line parsing
-                            role, content = line.split(':', 1)
-                            role = role.strip() # Strip whitespace from role
-                            if role in valid_roles: # Check if role is valid
-                                conversation_messages.append({"role": role, "content": content.strip()})
-                                logging.debug(f"Parsed line - Role: {role}, Content: {msg['content'][:80]}...") # Truncate content for logs
-                            else:
-                                logging.warning(f"Skipping line with invalid role: {role}. Line: {line}") # Log skipped lines
-                        except ValueError as ve:
-                            logging.warning(f"Error parsing conversation history line: {line}. Error: {ve}") # Log parsing errors
-                loaded_conversation_history = conversation_messages # Store loaded conversation history
-            else:
-                logging.debug("No conversation history text found in checkpoint data.") # Log if no history
 
-            session['loaded_checkpoint_conversation'] = loaded_conversation_history # STORE LOADED HISTORY IN SESSION VARIABLE
-             # --- ADDED LOGGING in continue_bio_start ---
-            logging.info("--- continue_bio_start: loaded_conversation_history (parsed messages) - first 2 messages ---")
-            for msg in loaded_conversation_history[:2]: # Log first 2 messages for brevity
-                logging.info(f"Role: {msg['role']}, Content: {msg['content'][:80]}...") # Truncate content for logs
-            logging.info(f"Total messages in loaded_conversation_history: {len(loaded_conversation_history)}")
-            # --- REMOVED session.save() call ---
-            # session.save()  # <-- REMOVED LINE:  Let Flask handle session saving
+        session['file_content'] = file_content_part
 
-            session['conversation'] = [{"role": "system", "content": get_walt_prompt_content()}] # Start with system prompt and ONLY SYSTEM PROMPT INITIALLY
-            session['conversation'].extend(loaded_conversation_history) # STORE LOADED CONVERSATION HISTORY IN SESSION - BUT DO NOT DISPLAY IT YET
-            session['loaded_checkpoint_conversation'] = loaded_conversation_history # <--- ADD THIS LINE
 
-            # session['conversation'].append({"role": "assistant", "content": initial_message}) # DO NOT APPEND WELCOME MESSAGE HERE - SEND IT SEPARATELY to DISPLAY
+        if conversation_history_text:
+            conversation_messages = []
+            valid_roles = ['system', 'user', 'assistant']
+            for line in conversation_history_text.strip().split('\n'):
+                if line.strip():
+                    try:
+                        role, content = line.split(':', 1)
+                        role = role.strip()
+                        if role in valid_roles:
+                            conversation_messages.append({"role": role, "content": content.strip()})
+                        else:
+                            logging.warning(f"Skipping line with invalid role: {role}. Line: {line}")
+                    except ValueError as ve:
+                        logging.warning(f"Error parsing conversation history line: {line}. Error: {ve}")
+                loaded_conversation_history = conversation_messages
+        session['loaded_checkpoint_conversation'] = loaded_conversation_history
 
-            session['biography_outline'] = get_biography_outline()
-            session.modified = True # Ensure session is marked as modified - IMPORTANT
 
-            logging.debug(f"Session variables after checkpoint load: \nConversation (first 2 messages): {session.get('conversation')[:2]}\nBiography Outline: {session.get('biography_outline')}\nFile Content (start): {session.get('file_content', '')[:200]}...\nLoaded Conversation History (messages count): {len(session.get('loaded_checkpoint_conversation'))} messages") # Log session variables
+        session['conversation'] = [{"role": "system", "content": get_walt_prompt_content()}]
+        session['conversation'].extend(loaded_conversation_history)
 
-            # Return JSON response with initial message and biography outline
-            return jsonify({
-                "initial_message": initial_message, # SEND INITIAL MESSAGE FOR DISPLAY ONLY
-                "biography_outline": session['biography_outline']
-            })
 
-        except Exception as openai_e: # SPECIFICALLY CATCH OPENAI EXCEPTIONS
-            logging.error(f"OpenAI API error in continue_bio_start: {openai_e}", exc_info=True) # LOG OPENAI ERROR WITH TRACEBACK
-            return jsonify({
-                "error": f"Error continuing bio (OpenAI API): {str(openai_e)}",
-                "biography_outline": session.get('biography_outline') # Still return outline if available
-            })
+        session['biography_outline'] = get_biography_outline()
+        session.modified = True
 
-    except Exception as e: # CATCH ALL OTHER EXCEPTIONS IN THE ROUTE
-        logging.error(f"General error in continue_bio_start: {e}", exc_info=True) # LOG GENERAL ERROR WITH TRACEBACK
+        return jsonify({
+            "initial_message": initial_message,
+            "biography_outline": session['biography_outline']
+        })
+
+    except Exception as openai_e:
+        logging.error(f"OpenAI API error in continue_bio_start: {openai_e}", exc_info=True)
+        return jsonify({
+            "error": f"Error continuing bio (OpenAI API): {str(openai_e)}",
+            "biography_outline": session.get('biography_outline')
+        })
+
+    except Exception as e:
+        logging.error(f"General error in continue_bio_start: {e}", exc_info=True)
         return jsonify({
             "error": f"Error processing checkpoint: {str(e)}"
-        }) # RETURN JSON ERROR FOR AJAX CALL
+        })
 
 
 def get_walt_prompt_content():
@@ -196,13 +175,6 @@ def walt_analyze():
                                      {"role": "assistant", "content": initial_greeting}]
         session['biography_outline'] = get_biography_outline()
 
-    # --- ADDED LOGGING in walt_analyze ---
-    logging.info("--- walt_analyze: session['loaded_checkpoint_conversation'] at start of walt_analyze - first 2 messages ---")
-    loaded_hist_in_session_walt_analyze = session.get('loaded_checkpoint_conversation', [])
-    for msg in loaded_hist_in_session_walt_analyze[:2]: # Log first 2 messages for brevity
-        logging.info(f"Role: {msg['role']}, Content: {msg['content'][:80]}...") # Truncate content for logs
-    logging.info(f"Total messages in session['loaded_checkpoint_conversation'] at start walt_analyze: {len(loaded_hist_in_session_walt_analyze)}")
-
 
     session['conversation'].append({"role": "user", "content": user_input + ".  Continue to help me build my biography."})
 
@@ -219,7 +191,7 @@ def walt_analyze():
         )
         api_response = response.choices[0].message.content.strip()
         session['conversation'].append({"role": "assistant", "content": api_response})
-        session.modified = True # Ensure session is marked as modified - IMPORTANT
+        session.modified = True
 
         return jsonify({"response": api_response, "biography_outline": session['biography_outline']})
 
@@ -229,7 +201,7 @@ def walt_analyze():
 
 
 @walt2_bp.route('/create_checkpoint', methods=['POST'])
-def create_checkpoint(): # MODIFIED FUNCTION
+def create_checkpoint():
     try:
         checkpoint_data_text = session.get('file_content', '')
         bio_prompt_content = ""
@@ -243,36 +215,25 @@ def create_checkpoint(): # MODIFIED FUNCTION
         conversation_text = ""
         current_conversation = session.get('conversation', [])
 
-        # EXTEND CONVERSATION HISTORY WITH LOADED CHECKPOINT HISTORY
-        extended_conversation = list(session.get('loaded_checkpoint_conversation', [])) # Start with loaded history
-        extended_conversation.extend(current_conversation) # Append current history
+        extended_conversation = list(session.get('loaded_checkpoint_conversation', []))
+        extended_conversation.extend(current_conversation)
 
-        extended_conversation_text = "" # Reconstruct extended history text
+        extended_conversation_text = ""
         for message in extended_conversation:
-            if message['role'] in ['user', 'assistant']: # Include user and assistant roles in history
-                extended_conversation_text += f"{message['role']}: {message['content']}\n"
+            if message['role'] in ['user', 'assistant']:
+                conversation_text += f"{message['role']}: {message['content']}\n"
+                extended_conversation_text += f"{message['role']}: {message['content']}\n" # Current extended conv text - for CURRENT HISTORY SECTION
 
-        api_input_text = bio_prompt_content + "\n\n" + checkpoint_data_text + "\n\n--- CONVERSATION ---\n\n" + extended_conversation_text # USE EXTENDED HISTORY FOR API
+        previous_checkpoint_history_text = session.get('previous_checkpoint_history_text', "") # Retrieve previous history - NEW
 
-        client = openai.Client() # CALL OPENAI API
-        response = client.chat.completions.create(
-            model="gpt-4o",
-            messages=[{"role": "user", "content": api_input_text}],
-            temperature=0.7,
-            max_tokens=700, # Adjust max_tokens as needed
-        )
-        api_response_text = response.choices[0].message.content.strip() # GET API RESPONSE
+        file_content_for_download = bio_prompt_content + "\n\n" + checkpoint_data_text + "\n\n--- CURRENT CONVERSATION HISTORY ---\n\n" + extended_conversation_text + "\n\n--- PREVIOUS CHECKPOINT CONVERSATION HISTORY ---\n\n" + previous_checkpoint_history_text # Include both histories - NEW
 
-        api_response_text_safe = api_response_text.replace("<", "<").replace(">", ">") # Escape HTML if needed
+        session['file_content'] = file_content_for_download
+        session.modified = True
 
-        file_content_for_download = api_response_text_safe + "\n\n--- EXTENDED CONVERSATION HISTORY ---\n\n" + extended_conversation_text # CHECKPOINT FILE CONTAINS API RESPONSE + EXTENDED HISTORY
+        logging.info(f"Checkpoint data being created (Current and Previous History): {file_content_for_download[:100]}...")
 
-        session['file_content'] = file_content_for_download # Optionally update session file_content with API response (or combined content if you prefer)
-        session.modified = True # Ensure session is marked as modified - IMPORTANT
-
-        logging.info(f"Checkpoint data being created (API Response + Extended History): {file_content_for_download[:100]}...") # Log combined content
-
-        return jsonify({"checkpoint_data": file_content_for_download}) # Return COMBINED CONTENT as checkpoint data
+        return jsonify({"checkpoint_data": file_content_for_download})
 
     except Exception as e:
         logging.error(f"Error processing checkpoint and calling API: {e}", exc_info=True)
