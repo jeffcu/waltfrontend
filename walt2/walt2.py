@@ -107,6 +107,10 @@ def continue_bio_start():
             logging.debug(f"File content part extracted:\n{file_content_part[:200]}...") # Log file content part
 
             loaded_conversation_history = [] # Initialize loaded conversation history
+            # --- ADDED LOGGING ---
+            logging.info("--- continue_bio_start: conversation_history_text (raw from checkpoint) ---")
+            logging.info(f"{conversation_history_text}") # Log raw conversation_history_text
+
             if conversation_history_text:
                 logging.debug(f"Conversation history text found:\n{conversation_history_text[:200]}...") # Log conversation history text
                 conversation_messages = []
@@ -128,6 +132,12 @@ def continue_bio_start():
                 logging.debug("No conversation history text found in checkpoint data.") # Log if no history
 
             session['loaded_checkpoint_conversation'] = loaded_conversation_history # STORE LOADED HISTORY IN SESSION VARIABLE
+             # --- ADDED LOGGING ---
+            logging.info("--- continue_bio_start: loaded_conversation_history (parsed messages) - first 2 messages ---")
+            for msg in loaded_conversation_history[:2]: # Log first 2 messages for brevity
+                logging.info(f"Role: {msg['role']}, Content: {msg['content'][:80]}...") # Truncate content for logs
+            logging.info(f"Total messages in loaded_conversation_history: {len(loaded_conversation_history)}")
+
 
             session['conversation'] = [{"role": "system", "content": get_walt_prompt_content()}] # Start with system prompt and ONLY SYSTEM PROMPT INITIALLY
             session['conversation'].extend(loaded_conversation_history) # EXTEND CURRENT CONVERSATION WITH LOADED HISTORY - THIS IS CORRECT NOW
@@ -136,7 +146,7 @@ def continue_bio_start():
             session['biography_outline'] = get_biography_outline()
             session.modified = True
 
-            logging.debug(f"Session variables after checkpoint load: \nConversation (first 2 messages): {session.get('conversation')[:2]}\nBiography Outline: {session.get('biography_outline')}\nFile Content (start): {session.get('file_content', '')[:200]}...\nLoaded Conversation History (messages count): {len(session.get('loaded_checkpoint_conversation'))} messages") # Log session variables - CONVERSATION SHOULD INCLUDE HISTORY NOW
+            logging.debug(f"Session variables after checkpoint load: \nConversation (first 2 messages): {session.get('conversation')[:2]}\nBiography Outline: {session.get('biography_outline')}\nFile Content (start): {session.get('file_content', '')[:200]}...\nLoaded Conversation History (messages count): {len(session.get('loaded_checkpoint_conversation'))} messages") # Log session variables
 
             # Return JSON response with initial message and biography outline
             return jsonify({
