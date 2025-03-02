@@ -1,4 +1,4 @@
-
+--- FILE: templates/gallery.html ---
 <!-- Filename: gallery.html -->
 <!-- Location: templates/gallery.html -->
 <!DOCTYPE html>
@@ -135,6 +135,10 @@
             }
         }
 
+        function openWalt2Window() {
+            window.location.href = "/walt2";
+        }
+
         function openWaltXWindow() {
             window.location.href = "/waltx";
         }
@@ -148,15 +152,23 @@
         <h1>Jeff Virtual Lab</h1>
         <div class="gallery">
 
-            <!-- WaltX Button (Second Icon - NEW) -->
+            <!-- Walt2 Button (First Position, Green Button) -->
             <div class="project-tile">
-                <img src="static/icons/amber-button.jpeg" alt="WaltX App">  <!-- You can use amber-button or create a yellow-button.jpeg -->
-                <h3>WaltX</h3>
-                <p>WaltX wants to write your story! (New Version)</p>
-                <a href="#" onclick="openWaltXWindow()">Open App</a>  <!-- Link to WaltX -->
+                <img src="static/icons/green-button.jpeg" alt="Walt2 App">
+                <h3>Walt2</h3>
+                <p>Walt wants to write your story! (New Version)</p>
+                <a href="#" onclick="openWalt2Window()">Open App</a>
             </div>
 
-            <!-- Jeff's Art Button -->
+            <!-- WaltX Button (Second Position) -->
+            <div class="project-tile">
+                <img src="static/icons/amber-button.jpeg" alt="WaltX App">
+                <h3>WaltX</h3>
+                <p>WaltX wants to write your story! (New Version)</p>
+                <a href="#" onclick="openWaltXWindow()">Open App</a>
+            </div>
+
+            <!-- Jeff's Art Button (Third Position) -->
             <div class="project-tile">
                 <img src="static/icons/green-button.jpeg" alt="Jeff's Art">
                 <h3>Jeff's Art</h3>
@@ -164,7 +176,7 @@
                 <a href="#" onclick="openJeffsArt('racecars.jpeg')">View Art</a>
             </div>
 
-            <!-- Dynamic Graph Button -->
+            <!-- Dynamic Graph Button (Fourth Position) -->
             <div class="project-tile">
                 <img src="static/icons/green-button.jpeg" alt="Dynamic Graph">
                 <h3>Dynamic Graphing</h3>
@@ -172,7 +184,7 @@
                 <a href="#" onclick="openDynamicGraph()">Open App</a>
             </div>
 
-           <!-- GPT Prototype Button -->
+           <!-- GPT Prototype Button (Fifth Position) -->
             <div class="project-tile">
                 <img src="static/icons/amber-button.jpeg" alt="GPT Prototype">
                 <h3>GPT Prototype</h3>
@@ -180,7 +192,7 @@
                 <a href="/angel_investment_analysis">Launch Project</a>
             </div>
 
-            <!-- API Test Button -->
+            <!-- API Test Button (Sixth Position) -->
             <div class="project-tile">
                 <img src="static/icons/green-button.jpeg" alt="API Test">
                 <h3>API Test</h3>
@@ -188,7 +200,7 @@
                 <a href="#" onclick="openTestWindow()">API Test</a>
             </div>
 
-            <!-- Word Counter Button -->
+            <!-- Word Counter Button (Seventh Position) -->
             <div class="project-tile">
                 <img src="static/icons/amber-button.jpeg" alt="Word Counter App">
                 <h3>Word Counter</h3>
