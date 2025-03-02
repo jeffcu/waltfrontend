@@ -130,7 +130,7 @@ def continue_bio_start():
 
             session['conversation'] = [{"role": "system", "content": get_walt_prompt_content()}] # Start with system prompt and ONLY SYSTEM PROMPT INITIALLY
             session['conversation'].extend(loaded_conversation_history) # STORE LOADED CONVERSATION HISTORY IN SESSION - BUT DO NOT DISPLAY IT YET
-            session['loaded_checkpoint_conversation'] = loaded_conversation_history # <--- ADD THIS LINE - **THIS IS THE FIX**
+            session['loaded_checkpoint_conversation'] = loaded_conversation_history # <--- ADD THIS LINE
 
             # session['conversation'].append({"role": "assistant", "content": initial_message}) # DO NOT APPEND WELCOME MESSAGE HERE - SEND IT SEPARATELY to DISPLAY
 
@@ -249,6 +249,7 @@ def create_checkpoint(): # MODIFIED FUNCTION
         file_content_for_download = api_response_text_safe + "\n\n--- EXTENDED CONVERSATION HISTORY ---\n\n" + extended_conversation_text # CHECKPOINT FILE CONTAINS API RESPONSE + EXTENDED HISTORY
 
         session['file_content'] = file_content_for_download # Optionally update session file_content with API response (or combined content if you prefer)
+        session['loaded_checkpoint_conversation'] = extended_conversation # <---- **ADD THIS LINE - UPDATE LOADED CONVERSATION**
         session.modified = True
 
         logging.info(f"Checkpoint data being created (API Response + Extended History): {file_content_for_download[:100]}...") # Log combined content
