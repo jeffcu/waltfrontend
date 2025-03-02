@@ -5,6 +5,7 @@ import logging
 import json
 from werkzeug.utils import secure_filename
 from io import StringIO
+import shutil # Import shutil for directory removal
 
 from .voice.config import voice_config  # Import VoiceConfig
 from .voice.openai_voice import OpenAI_VoiceAPI  # Import OpenAI_VoiceAPI
@@ -183,16 +184,34 @@ def transcribe_audio():
     if audio_file.filename == '':
         return jsonify({"error": "No selected audio file"}), 400
 
-    temp_audio_dir = os.path.join('/app', 'temp_audio') # ABSOLUTE PATH for directory
-    temp_audio_path = os.path.join(temp_audio_dir, secure_filename(audio_file.filename)) # ABSOLUTE PATH for file
+    temp_audio_dir = os.path.join('/tmp', 'temp_audio') # Use /tmp for temporary files - RELATIVE PATH for directory
+    temp_audio_path = os.path.join(temp_audio_dir, secure_filename(audio_file.filename)) # RELATIVE PATH for file
 
-    try: # ADDED try...except for makedirs
-        os.makedirs(temp_audio_dir, exist_ok=True) # Ensure temp_audio directory exists - ABSOLUTE PATH
-    except FileExistsError:
-        pass # Directory likely already exists due to concurrency - ignore error
-    except OSError as e: # Catch other OS errors during directory creation
-        logging.error(f"Error creating temp_audio directory: {e}", exc_info=True)
-        return jsonify({"error": f"Could not create temp audio directory: {str(e)}"}), 500
+    logging.info(f"Temp audio directory: {temp_audio_dir}") # Log directory path
+    logging.info(f"Temp audio file path: {temp_audio_path}") # Log file path
+
+    # Check if temp_audio_dir exists and is a directory
+    if os.path.exists(temp_audio_dir):
+        if not os.path.isdir(temp_audio_dir):
+            logging.error(f"Path '{temp_audio_dir}' exists but is not a directory. Attempting to remove...")
+            try:
+                os.remove(temp_audio_dir) # Try to remove if it's a file
+                os.makedirs(temp_audio_dir, exist_ok=True) # Then recreate as directory
+                logging.info(f"Successfully removed file and recreated directory '{temp_audio_dir}'.")
+            except Exception as remove_e:
+                logging.error(f"Error removing conflicting file at '{temp_audio_dir}': {remove_e}", exc_info=True)
+                return jsonify({"error": f"Could not create temp audio directory: Conflict at '{temp_audio_dir}' and unable to resolve."}), 500
+        else:
+            logging.info(f"Temp audio directory '{temp_audio_dir}' already exists and is a directory.")
+    else:
+        try: # ADDED try...except for makedirs
+            os.makedirs(temp_audio_dir, exist_ok=True) # Ensure temp_audio directory exists - RELATIVE PATH
+            logging.info(f"Temp audio directory '{temp_audio_dir}' created successfully.")
+        except FileExistsError:
+            pass # Directory likely already exists due to concurrency - ignore error
+        except OSError as e: # Catch other OS errors during directory creation
+            logging.error(f"Error creating temp_audio directory: {e}", exc_info=True)
+            return jsonify({"error": f"Could not create temp audio directory: {str(e)}"}), 500
 
 
     try:
@@ -230,7 +249,7 @@ def synthesize_speech():
 
     try:
         audio_file_path = voice_api.synthesize_speech(text_to_synthesize, temp_audio_output_path, voice_id=voice_id)
-        audio_url = f"/temp_audio_url/<filename>" # Corrected line: use <filename> for URL construction
+        audio_url = f"/temp_audio_url/{os.path.basename(temp_audio_output_path)}" # Corrected line: use <filename> for URL construction - use basename
         return jsonify({"audio_url": audio_url}) # Return audio URL
     except ValueError as e:
         os.remove(temp_audio_output_path) # Delete temp audio file even on error

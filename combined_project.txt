@@ -4918,22 +4918,18 @@ def format_openai_text(text):
     formatted_text = text.replace("\n", "<br>")
     return formatted_text
 
-# Initialize Voice API (based on config)
+# Initialize Voice API (based on config) - UNCONDITIONAL INITIALIZATION NOW
 voice_api = None
-if voice_config.voice_enabled: # Check if voice is enabled
-    if voice_config.default_voice_api == "openai":
-        try:
-            voice_api = OpenAI_VoiceAPI(openai_api_key=voice_config.openai_api_key)
-            logging.info("OpenAI Voice API initialized.")
-        except ValueError as e:
-            logging.warning(f"OpenAI Voice API initialization error: {e}. Voice features disabled.")
-            voice_api = None # Set to None if initialization fails
-    # ... (add other voice API initializations here if needed: elif voice_config.default_voice_api == "google": ...)
-    else:
-        logging.warning(f"Unknown voice API '{voice_config.default_voice_api}' configured. Voice features disabled.")
-        voice_api = None
+if voice_config.default_voice_api == "openai":
+    try:
+        voice_api = OpenAI_VoiceAPI(openai_api_key=voice_config.openai_api_key)
+        logging.info("OpenAI Voice API initialized.")
+    except ValueError as e:
+        logging.warning(f"OpenAI Voice API initialization error: {e}. Voice features may be partially disabled if API key is missing.") # Adjusted log message
+        voice_api = None # Set to None if initialization fails
+# ... (you can keep other voice API initializations here if you add them later)
 else:
-    logging.info("Voice features are disabled via configuration.")
+    logging.warning(f"Unknown voice API '{voice_config.default_voice_api}' configured. Voice features may be partially disabled.") # Adjusted log message
     voice_api = None
 
 
@@ -5051,7 +5047,7 @@ def continue_bio_start():
 
             logging.debug(f"Session variables after checkpoint load: \nConversation: {session.get('conversation')}\nBiography Outline: {session.get('biography_outline')}\nFile Content (start): {session.get('file_content', '')[:200]}...") # Log session variables
 
-            # Return JSON response with initial message and biography outline
+            # Return JSON response with initial message and biography_outline
             return jsonify({
                 "initial_message": initial_message,
                 "biography_outline": session['biography_outline']
@@ -5080,8 +5076,8 @@ def get_walt_prompt_content():
 
 @waltx_bp.route('/transcribe_audio', methods=['POST']) # <-- ADDED ROUTE
 def transcribe_audio():
-    if not voice_api:
-        return jsonify({"error": "Voice API not enabled."}), 501
+    if not voice_api: # Keep this check for robustness
+        return jsonify({"error": "Voice API not initialized. Please check server logs."}), 501 # More informative error
 
     if 'audio' not in request.files:
         return jsonify({"error": "No audio file provided"}), 400
@@ -5090,23 +5086,40 @@ def transcribe_audio():
     if audio_file.filename == '':
         return jsonify({"error": "No selected audio file"}), 400
 
-    temp_audio_path = os.path.join("temp_audio", secure_filename(audio_file.filename)) # Save to temp directory
-    os.makedirs("temp_audio", exist_ok=True) # Ensure temp_audio directory exists
-    audio_file.save(temp_audio_path)
+    temp_audio_dir = os.path.join('/app', 'temp_audio') # ABSOLUTE PATH for directory
+    temp_audio_path = os.path.join(temp_audio_dir, secure_filename(audio_file.filename)) # ABSOLUTE PATH for file
+
+    try: # ADDED try...except for makedirs
+        os.makedirs(temp_audio_dir, exist_ok=True) # Ensure temp_audio directory exists - ABSOLUTE PATH
+    except FileExistsError:
+        pass # Directory likely already exists due to concurrency - ignore error
+    except OSError as e: # Catch other OS errors during directory creation
+        logging.error(f"Error creating temp_audio directory: {e}", exc_info=True)
+        return jsonify({"error": f"Could not create temp audio directory: {str(e)}"}), 500
+
 
     try:
-        transcription_text = voice_api.transcribe_audio(temp_audio_path)
-        os.remove(temp_audio_path) # Delete temp audio file after transcription
-        return jsonify({"transcription": transcription_text})
-    except ValueError as e:
-        os.remove(temp_audio_path) # Delete temp audio file even on error
-        return jsonify({"error": str(e)}), 500
+        audio_file.save(temp_audio_path) # Save audio file FIRST - move here
+        logging.info(f"Audio file saved to: {temp_audio_path}") # Log file path
+
+        try: # Inner try-except for OpenAI transcription specifically
+            transcription_text = voice_api.transcribe_audio(temp_audio_path)
+            os.remove(temp_audio_path) # Delete temp audio file after transcription
+            return jsonify({"transcription": transcription_text})
+        except ValueError as openai_err: # Catch OpenAI specific errors
+            os.remove(temp_audio_path) # Delete temp audio file even on OpenAI error
+            logging.error(f"OpenAI Transcription API error: {openai_err}", exc_info=True) # Log OpenAI error with traceback
+            return jsonify({"error": f"OpenAI Transcription error: {str(openai_err)}"}), 500 # Return JSON error to client
+
+    except Exception as e: # Catch any other errors (file saving, etc.)
+        logging.error(f"General error during audio transcription: {e}", exc_info=True) # Log general error with traceback
+        return jsonify({"error": f"Error processing audio file: {str(e)}"}), 500 # Return JSON error
 
 
 @waltx_bp.route('/synthesize_speech', methods=['POST']) # <-- ADDED ROUTE
 def synthesize_speech():
-    if not voice_api:
-        return jsonify({"error": "Voice API not enabled."}), 501
+    if not voice_api: # Keep this check for robustness
+        return jsonify({"error": "Voice API not initialized. Please check server logs."}), 501 # More informative error
 
     text_data = request.get_json()
     if not text_data or 'text' not in text_data:
@@ -5120,7 +5133,7 @@ def synthesize_speech():
 
     try:
         audio_file_path = voice_api.synthesize_speech(text_to_synthesize, temp_audio_output_path, voice_id=voice_id)
-        audio_url = f"/temp_audio_url/{os.path.basename(audio_file_path)}" # Create URL for frontend access
+        audio_url = f"/temp_audio_url/<filename>" # Corrected line: use <filename> for URL construction
         return jsonify({"audio_url": audio_url}) # Return audio URL
     except ValueError as e:
         os.remove(temp_audio_output_path) # Delete temp audio file even on error
@@ -5169,7 +5182,7 @@ def walt_analyze():
 
         response_data = {"response": api_response_text, "biography_outline": session['biography_outline']}
 
-        if voice_api and voice_config.voice_enabled: # Synthesize speech if voice is enabled
+        if voice_api: # No more voice_config.voice_enabled check here - assume voice_api is intended to be used if initialized
             try:
                 speech_data = {"text": api_response_text}
                 speech_response = synthesize_speech() # Call synthesize_speech function directly
@@ -5198,7 +5211,7 @@ def create_checkpoint():
             with open('waltx/walt_prompts/bio_creator_prompt.txt', 'r', encoding='utf-8') as f:
                 bio_prompt_content = f.read()
         except Exception as e:
-            logging.error(f"Error reading bio_creator_prompt.txt: {e}")
+            logging.error(f"Error reading bio_prompt.txt: {e}")
             bio_prompt_content = "Error loading bio creator prompt."
 
         conversation_text = ""
@@ -5382,7 +5395,7 @@ class VoiceAPIInterface(ABC):
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Walt the Biographer</title>
     <style>
-        body {
+       body {
             font-family: 'Inter', sans-serif;
             background-color: #f7f7f7;
             color: #333;
@@ -5880,7 +5893,7 @@ class VoiceAPIInterface(ABC):
                     if (data.error) {
                         document.getElementById("chatOutput").textContent = "Error: " + data.error;
                     } else {
-                        document.getElementById("chatOutput").textContent = data.response;
+                        document.getElementById("chatOutput").textContent = data.initial_message;
                         if (data.biography_outline) {
                             biographyOutline = data.biography_outline;
                             updateBiographyOutlineDisplay();
@@ -5926,52 +5939,68 @@ class VoiceAPIInterface(ABC):
         }
 
         function startRecording() {
+            console.log('startRecording() START');
             navigator.mediaDevices.getUserMedia({ audio: true })
                 .then(stream => {
+                    console.log('getUserMedia() success - stream obtained', stream);
                     mediaRecorder = new MediaRecorder(stream);
                     audioChunks = [];
                     mediaRecorder.ondataavailable = event => {
-                        console.log('Audio chunk received:', event.data);
-                        console.log('Audio chunk size:', event.data.size);
+                        console.log('ondataavailable - event.data:', event.data);
+                        console.log('ondataavailable - event.data.size:', event.data.size);
                         audioChunks.push(event.data);
-                        console.log('audioChunks array length after push:', audioChunks.length);
+                        console.log('ondataavailable - audioChunks.length after push:', audioChunks.length);
                     };
-                    mediaRecorder.onstop = function() {
-                        stopRecording();
-                        processAudio();
+                    mediaRecorder.onstop = async function() { // Make onstop async
+                        console.log('mediaRecorder.onstop - STARTING - waiting for recording to fully stop');
+                        stopRecording(); // Call stopRecording to ensure state is updated
+                        await new Promise(resolve => setTimeout(resolve, 100)); // Small delay to ensure all data is processed
+                        console.log('mediaRecorder.onstop - AFTER DELAY - calling processAudio()');
+                        processAudio(); // Now call processAudio after delay
                     };
                     mediaRecorder.start();
                     document.getElementById('recordButton').textContent = 'Stop Recording';
-                    console.log('Recording started');
+                    console.log('Recording started - mediaRecorder.state:', mediaRecorder.state);
                 }).catch(error => {
                     console.error("Error accessing microphone:", error);
                     alert("Microphone access denied or not available.");
+                    console.log('startRecording() - getUserMedia ERROR', error);
                 });
         }
 
         function stopRecording() {
-            if (mediaRecorder && mediaRecorder.state === 'recording') {
-                mediaRecorder.stop();
-                document.getElementById('recordButton').textContent = 'Speak to WaltX';
-                console.log('Recording stopped, state:', mediaRecorder.state);
-            } else {
-                console.log('stopRecording called, but not recording');
-            }
+            console.log('stopRecording() START - mediaRecorder:', mediaRecorder);
+            return new Promise(resolve => { // Return a Promise
+                if (mediaRecorder && mediaRecorder.state === 'recording') {
+                    console.log('stopRecording() - mediaRecorder.stop() called');
+                    mediaRecorder.onstop = function() { // Re-define onstop to resolve promise
+                        console.log('mediaRecorder.onstop - INSIDE stopRecording() - recording actually stopped');
+                        document.getElementById('recordButton').textContent = 'Speak to WaltX';
+                        console.log('Recording stopped - mediaRecorder.state:', mediaRecorder.state);
+                        resolve(); // Resolve promise when really stopped
+                    };
+                    mediaRecorder.stop();
+                } else {
+                    console.log('stopRecording() - mediaRecorder not recording or not initialized');
+                    resolve(); // Resolve immediately if not recording
+                }
+            });
         }
 
 
-        function processAudio() {
+        async function processAudio() { // Make processAudio async
             console.log('processAudio() START - audioChunks.length:', audioChunks.length);
 
             if (!mediaRecorder || mediaRecorder.state === 'recording') {
-                stopRecording();
+                await stopRecording(); // Await stopRecording promise
                 alert("Please stop recording before processing.");
+                console.log('processAudio() - mediaRecorder still recording or not initialized - STOPPED IT');
                 return;
             }
 
              if (audioChunks.length === 0) {
                 alert("No audio recorded.");
-                console.log('audioChunks.length is 0');
+                console.log('processAudio() - audioChunks.length is 0');
                 return;
             }
 
@@ -6004,13 +6033,16 @@ class VoiceAPIInterface(ABC):
             .then(data => {
                 if (data.error) {
                     chatOutput.textContent = "Transcription Error: " + data.error;
+                    console.log('processAudio() - transcription API error:', data.error);
                 } else {
                     document.getElementById('userPrompt').value = data.transcription;
                     chatOutput.textContent = "Audio transcribed. Please submit your prompt.";
+                    console.log('processAudio() - transcription success, transcription:', data.transcription);
                 }
             })
             .catch(error => {
                 chatOutput.textContent = "Fetch error during transcription: " + error.message;
+                 console.error('processAudio() - fetch error during transcription:', error);
             });
              audioChunks = [];
         }
@@ -6018,8 +6050,7 @@ class VoiceAPIInterface(ABC):
 
         function toggleRecord() {
             if (mediaRecorder && mediaRecorder.state === 'recording') {
-                stopRecording();
-                processAudio();
+                stopRecording().then(processAudio); // Call processAudio after stop promise resolves
             } else {
                 startRecording();
             }
