@@ -1,3 +1,4 @@
+--- FILE: virtual-lab.py ---
 import os
 from flask import Flask, request, render_template, send_file, jsonify
 from dotenv import load_dotenv
@@ -10,7 +11,7 @@ from investment_analysis.services import InvestmentAnalysisService
 from PyPDF2 import PdfReader
 from werkzeug.utils import secure_filename
 from flask_wtf.csrf import CSRFProtect, generate_csrf
-from walt.walt import walt_bp
+# from walt.walt import walt_bp  <-- REMOVED walt_bp import
 from walt2.walt2 import walt2_bp # Import the new walt2 blueprint
 from waltx.waltx import waltx_bp # Import the new waltx blueprint  <-- ADDED
 from flask_session import Session # Import Flask-Session
@@ -273,7 +274,7 @@ def jeffsart_image(filename):
         abort(404)
 
 # Register the walt blueprint
-app.register_blueprint(walt_bp, url_prefix='/walt')
+# app.register_blueprint(walt_bp, url_prefix='/walt')  <-- REMOVED walt_bp registration
 
 # Register the walt2 blueprint (new Walt2)  <-- ADDED
 app.register_blueprint(walt2_bp, url_prefix='/walt2')
