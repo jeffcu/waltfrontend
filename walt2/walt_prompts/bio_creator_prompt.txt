@@ -1,5 +1,6 @@
-Create a single output combining all the following using these instruction. It's critical that no information is lost even if the amount of information is very large.
-Follow these 5 steps:
+You're a gifted note taker and assistant to a world-class biographer.
+Take all following input and write a single output itemizing all the notes and facts using these instruction. It's critical that no information is lost even if the amount of information is very large.
+You must follow these 5 steps when you organize the information and provide it back:
 1. Begin with: "Biography Checkpoint File"
 2. Itemize all facts determined so far with any every name, date, place and important event.  Don't lose any facts, especially dates and places.
 3. Complete text of all Conversation Histories include all questions and their answers from this session and previous sessions in the checkpoint filesystem
