@@ -152,6 +152,8 @@ def continue_bio_start():
             session['biography_outline'] = get_biography_outline()
             session.modified = True
 
+            session.save() # <-- ADDED LINE: Force session to save synchronously
+
             logging.debug(f"Session variables after checkpoint load: \nConversation (first 2 messages): {session.get('conversation')[:2]}\nBiography Outline: {session.get('biography_outline')}\nFile Content (start): {session.get('file_content', '')[:200]}...\nLoaded Conversation History (messages count): {len(session.get('loaded_checkpoint_conversation'))} messages") # Log session variables
 
             # Return JSON response with initial message and biography outline
@@ -246,7 +248,7 @@ def create_checkpoint(): # MODIFIED FUNCTION
         conversation_text = ""
         current_conversation = session.get('conversation', [])
 
-        # EXTEND CONVERSATION HISTORY WITH LOADED CHECKPOINT HISTORY
+        # EXTEND CONVERSATION HISTORY WITH LOADED CHECKpoint HISTORY
         extended_conversation = list(session.get('loaded_checkpoint_conversation', [])) # Start with loaded history
         extended_conversation.extend(current_conversation) # Append current history
 
