@@ -127,15 +127,16 @@ def continue_bio_start():
             else:
                 logging.debug("No conversation history text found in checkpoint data.") # Log if no history
 
+            session['loaded_checkpoint_conversation'] = loaded_conversation_history # STORE LOADED HISTORY IN SESSION VARIABLE
 
             session['conversation'] = [{"role": "system", "content": get_walt_prompt_content()}] # Start with system prompt and ONLY SYSTEM PROMPT INITIALLY
-            session['conversation'].extend(loaded_conversation_history) # STORE LOADED CONVERSATION HISTORY IN SESSION - BUT DO NOT DISPLAY IT YET
-            # session['conversation'].append({"role": "assistant", "content": initial_message}) # DO NOT APPEND WELCOME MESSAGE HERE - SEND IT SEPARATELY to DISPLAY
+            session['conversation'].extend(loaded_conversation_history) # EXTEND CURRENT CONVERSATION WITH LOADED HISTORY - THIS IS CORRECT NOW
+            # session['conversation'].append({"role": "assistant", "content": initial_message}) #  NO LONGER APPENDING WELCOME MESSAGE TO CONVERSATION
 
             session['biography_outline'] = get_biography_outline()
             session.modified = True
 
-            logging.debug(f"Session variables after checkpoint load: \nConversation: {session.get('conversation')}\nBiography Outline: {session.get('biography_outline')}\nFile Content (start): {session.get('file_content', '')[:200]}...\nLoaded Conversation History (start): {session.get('conversation')[:1]} -- SHOULD INCLUDE HISTORY IN SESSION BUT NOT DISPLAYED YET") # Log session variables
+            logging.debug(f"Session variables after checkpoint load: \nConversation (first 2 messages): {session.get('conversation')[:2]}\nBiography Outline: {session.get('biography_outline')}\nFile Content (start): {session.get('file_content', '')[:200]}...\nLoaded Conversation History (messages count): {len(session.get('loaded_checkpoint_conversation'))} messages") # Log session variables - CONVERSATION SHOULD INCLUDE HISTORY NOW
 
             # Return JSON response with initial message and biography outline
             return jsonify({
