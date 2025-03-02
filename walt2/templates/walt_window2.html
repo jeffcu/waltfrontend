@@ -169,7 +169,7 @@
         #saveButton {
             text-align: center;
             align-self: center;
-            margin-top: 20px;
+            margin-top: 10px; /* Reduced top margin for stacked buttons */
             padding: 10px 20px;
             font-size: 16px;
             cursor: pointer;
@@ -180,7 +180,8 @@
             height: auto;
             width: auto;
             white-space: nowrap;
-            margin-right: 10px; /* Spacing between buttons */
+            margin-right: 0; /* Removed right margin */
+            margin-bottom: 10px; /* Added bottom margin to separate buttons */
         }
 
 
@@ -234,7 +235,7 @@
         .biography-outline ul {
             list-style: none;
             padding-left: 20px;
-        }
+            }
 
         .biography-outline li {
             margin-bottom: 5px;
@@ -341,6 +342,7 @@
             transition: background-color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
             white-space: nowrap;
             width: 100%;
+             margin-top: 10px; /* Added top margin to separate buttons vertically */
         }
 
         #craftBiographyButton:hover {
@@ -354,8 +356,10 @@
             text-align: center;
             margin-top: 20px;
             display: flex; /* Flex container for buttons */
-            justify-content: center; /* Center buttons horizontally */
-            gap: 20px; /* Space between buttons */
+            flex-direction: column; /* Stack buttons vertically */
+            align-items: center; /* Center buttons horizontally */
+            justify-content: center; /* Center vertically in save-checkpoint-area if needed */
+            gap: 10px; /* Reduced gap between stacked buttons */
         }
 
 
