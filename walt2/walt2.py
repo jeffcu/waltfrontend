@@ -202,7 +202,7 @@ def walt_analyze():
 
 
 @walt2_bp.route('/create_checkpoint', methods=['POST'])
-def create_checkpoint():
+def create_checkpoint(): # MODIFIED FUNCTION
     try:
         checkpoint_data_text = session.get('file_content', '')
         bio_prompt_content = ""
@@ -216,18 +216,35 @@ def create_checkpoint():
         conversation_text = ""
         current_conversation = session.get('conversation', [])
         for message in current_conversation:
-            if message['role'] in ['system', 'user', 'assistant']:
+            if message['role'] in ['user', 'assistant']:
                 conversation_text += f"{message['role']}: {message['content']}\n"
 
-        combined_checkpoint_content = bio_prompt_content + "\n\n" + checkpoint_data_text + "\n\n--- CONVERSATION HISTORY ---\n\n" + conversation_text
+        api_input_text = bio_prompt_content + "\n\n" + checkpoint_data_text + "\n\n--- CONVERSATION ---\n\n" + conversation_text # COMBINE FOR API CALL
 
-        logging.info(f"Checkpoint data being created (with conversation): {combined_checkpoint_content[:100]}...")
+        client = openai.Client() # CALL OPENAI API
+        response = client.chat.completions.create(
+            model="gpt-4o",
+            messages=[{"role": "user", "content": api_input_text}],
+            temperature=0.7,
+            max_tokens=700, # Adjust max_tokens as needed
+        )
+        api_response_text = response.choices[0].message.content.strip() # GET API RESPONSE
 
-        return jsonify({"checkpoint_data": combined_checkpoint_content})
+        api_response_text_safe = api_response_text.replace("<", "<").replace(">", ">") # Escape HTML if needed
+
+        file_content_for_download = api_response_text_safe # CHECKPOINT FILE IS NOW API RESPONSE
+
+        session['file_content'] = file_content_for_download # Optionally update session file_content with API response
+        session.modified = True
+
+        logging.info(f"Checkpoint data being created (API Response): {file_content_for_download[:100]}...") # Log API response
+
+        return jsonify({"checkpoint_data": file_content_for_download}) # Return API RESPONSE as checkpoint data
 
     except Exception as e:
-        logging.error(f"Error creating checkpoint: {e}", exc_info=True)
+        logging.error(f"Error processing checkpoint and calling API: {e}", exc_info=True)
         return jsonify({"error": str(e)}), 500
+
 
 @walt2_bp.route('/craft_biography', methods=['POST'])
 def craft_biography():
