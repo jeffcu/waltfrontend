@@ -173,13 +173,14 @@
             padding: 10px 20px;
             font-size: 16px;
             cursor: pointer;
-            background-color: #27AE60;
+            background-color: #27AE60; /* Green for Checkpoint File */
             color: white;
             border: none;
-            border-radius: 6px;
+            border-radius: 8px;
             height: auto;
             width: auto;
             white-space: nowrap;
+            margin-right: 10px; /* Spacing between buttons */
         }
 
 
@@ -331,7 +332,7 @@
             padding: 15px 30px;
             font-size: 20px;
             cursor: pointer;
-            background-color: #FFA500;
+            background-color: #FFA500; /* Gold/Orange for Craft Biography */
             color: black;
             border: none;
             border-radius: 8px;
@@ -352,6 +353,9 @@
         .save-checkpoint-area {
             text-align: center;
             margin-top: 20px;
+            display: flex; /* Flex container for buttons */
+            justify-content: center; /* Center buttons horizontally */
+            gap: 20px; /* Space between buttons */
         }
 
 
@@ -461,7 +465,7 @@
         }
 
         function craftBiography() {
-             function getCookie(name) {
+            function getCookie(name) {
                 const value = `; ${document.cookie}`;
                 const parts = value.split(`; ${name}=`);
                 if (parts.length === 2) return parts.pop().split(';').shift();
@@ -657,7 +661,8 @@
      <h3 class="dataNote">Note: No data is saved by this application, the only memory is through this file alone.</h3>
 
      <div class="save-checkpoint-area">
-         <button id="craftBiographyButton" onclick="saveTextAsFile()">Create Checkpoint File</button>  <!-- Craft Biography button is now SAVE CHECKPOINT -->
+        <button id="saveButton" onclick="saveTextAsFile()">Create Checkpoint File</button>
+        <button id="craftBiographyButton" onclick="craftBiography()">Craft Biography</button>
      </div>
 
      <div class="craft-area-container"  style="display:none">  <!-- HIDDEN -->
