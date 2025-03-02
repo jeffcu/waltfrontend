@@ -54,7 +54,7 @@ def new_bio_start():
         logging.error(f"OpenAI API error on new bio start: {e}")
         return jsonify({
             "error": f"Error starting new bio: {str(e)}",
-            "biography_outline": session.get('biography_outline')
+            "biography_outline": session.get('biography_outline') # Still return outline if available
         })
 
 
@@ -86,68 +86,82 @@ def continue_bio_start():
 
         continue_prompt = continue_prompt_base + "\n\nCHECKPOINT FILE CONTENT:\n" + checkpoint_data
 
-        previous_history_content = "" # Initialize variable for previous history - NEW
-        loaded_conversation_history = []
+        initial_message = "Error: Could not get initial message from OpenAI." # <---- ADD DEFAULT VALUE HERE
 
-        parts = checkpoint_data.split("--- PREVIOUS CHECKPOINT CONVERSATION HISTORY ---\n\n") # Split for previous history FIRST
-        main_part = parts[0] # Main part now excludes previous history
-        if len(parts) > 1:
-            previous_history_content = parts[1].strip() # Extract previous history - NEW
-            session['previous_checkpoint_history_text'] = previous_history_content # Store previous history in session - NEW
-        else:
-            session['previous_checkpoint_history_text'] = "" # No previous history found - NEW
+        try: # OpenAI API call try block
+            client = openai.Client()
+            response = client.chat.completions.create(
+                model="gpt-4o",
+                messages=[
+                    {"role": "system", "content": "You are Walt, the biographer, continuing a biography from a checkpoint."},
+                    {"role": "user", "content": continue_prompt}
+                ],
+                temperature=0.7,
+                max_tokens=200
+            )
+            initial_message = response.choices[0].message.content.strip()  # <-- API response, overwrites default
+            logging.debug(f"Initial message from OpenAI API: {initial_message}") # Log initial message
+
+            parts = checkpoint_data.split("--- PREVIOUS CHECKPOINT CONVERSATION HISTORY ---\n\n") # Split for previous history FIRST
+            main_part = parts[0] # Main part now excludes previous history
+            if len(parts) > 1:
+                previous_history_content = parts[1].strip() # Extract previous history - NEW
+                session['previous_checkpoint_history_text'] = previous_history_content # Store previous history in session - NEW
+            else:
+                session['previous_checkpoint_history_text'] = "" # No previous history found - NEW
 
 
-        conversation_parts = main_part.split("--- EXTENDED CONVERSATION HISTORY ---\n\n") # Split main part for current history
-        file_content_part = conversation_parts[0].strip()
-        conversation_history_text = conversation_parts[1].strip() if len(conversation_parts) > 1 else ""
+            conversation_parts = main_part.split("--- CURRENT CONVERSATION HISTORY ---\n\n") # Split main part for current history
+            file_content_part = conversation_parts[0].strip()
+            conversation_history_text = conversation_parts[1].strip() if len(conversation_parts) > 1 else ""
 
 
-        session['file_content'] = file_content_part
+            session['file_content'] = file_content_part
 
 
-        if conversation_history_text:
-            conversation_messages = []
-            valid_roles = ['system', 'user', 'assistant']
-            for line in conversation_history_text.strip().split('\n'):
-                if line.strip():
-                    try:
-                        role, content = line.split(':', 1)
-                        role = role.strip()
-                        if role in valid_roles:
-                            conversation_messages.append({"role": role, "content": content.strip()})
-                        else:
-                            logging.warning(f"Skipping line with invalid role: {role}. Line: {line}")
-                    except ValueError as ve:
-                        logging.warning(f"Error parsing conversation history line: {line}. Error: {ve}")
+            loaded_conversation_history = []
+            if conversation_history_text:
+                conversation_messages = []
+                valid_roles = ['system', 'user', 'assistant']
+                for line in conversation_history_text.strip().split('\n'):
+                    if line.strip():
+                        try:
+                            role, content = line.split(':', 1)
+                            role = role.strip()
+                            if role in valid_roles:
+                                conversation_messages.append({"role": role, "content": content.strip()})
+                            else:
+                                logging.warning(f"Skipping line with invalid role: {role}. Line: {line}")
+                        except ValueError as ve:
+                            logging.warning(f"Error parsing conversation history line: {line}. Error: {ve}")
                 loaded_conversation_history = conversation_messages
-        session['loaded_checkpoint_conversation'] = loaded_conversation_history
+            session['loaded_checkpoint_conversation'] = loaded_conversation_history
 
 
-        session['conversation'] = [{"role": "system", "content": get_walt_prompt_content()}]
-        session['conversation'].extend(loaded_conversation_history)
+            session['conversation'] = [{"role": "system", "content": get_walt_prompt_content()}]
+            session['conversation'].extend(loaded_conversation_history)
 
 
-        session['biography_outline'] = get_biography_outline()
-        session.modified = True
+            session['biography_outline'] = get_biography_outline()
+            session.modified = True
 
-        return jsonify({
-            "initial_message": initial_message,
-            "biography_outline": session['biography_outline']
-        })
+            return jsonify({
+                "initial_message": initial_message, # SEND INITIAL MESSAGE FOR DISPLAY
+                "biography_outline": session['biography_outline']
+            })
 
-    except Exception as openai_e:
-        logging.error(f"OpenAI API error in continue_bio_start: {openai_e}", exc_info=True)
-        return jsonify({
-            "error": f"Error continuing bio (OpenAI API): {str(openai_e)}",
-            "biography_outline": session.get('biography_outline')
-        })
+        except Exception as openai_e: # SPECIFICALLY CATCH OPENAI EXCEPTIONS
+            logging.error(f"OpenAI API error in continue_bio_start: {openai_e}", exc_info=True) # LOG OPENAI ERROR WITH TRACEBACK
+            return jsonify({
+                "error": f"Error continuing bio (OpenAI API): {str(openai_e)}",
+                "biography_outline": session.get('biography_outline') # Still return outline if available
+            })
 
-    except Exception as e:
-        logging.error(f"General error in continue_bio_start: {e}", exc_info=True)
+    except Exception as e: # CATCH ALL OTHER EXCEPTIONS IN THE ROUTE
+        logging.error(f"General error in continue_bio_start: {e}", exc_info=True) # LOG GENERAL ERROR WITH TRACEBACK
         return jsonify({
             "error": f"Error processing checkpoint: {str(e)}"
-        })
+        }) # RETURN JSON ERROR FOR AJAX CALL
 
 
 def get_walt_prompt_content():
