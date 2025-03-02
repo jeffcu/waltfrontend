@@ -5,44 +5,26 @@ import logging
 import json
 from werkzeug.utils import secure_filename
 from io import StringIO
-import shutil # Import shutil for directory removal
 
-from .voice.config import voice_config  # Import VoiceConfig
-from .voice.openai_voice import OpenAI_VoiceAPI  # Import OpenAI_VoiceAPI
-
-waltx_bp = Blueprint('waltx', __name__, template_folder='templates')
+walt2_bp = Blueprint('walt2', __name__, template_folder='templates')
 
 def format_openai_text(text):
     formatted_text = text.replace("\n", "<br>")
     return formatted_text
 
-# Initialize Voice API (based on config) - UNCONDITIONAL INITIALIZATION NOW
-voice_api = None
-if voice_config.default_voice_api == "openai":
-    try:
-        voice_api = OpenAI_VoiceAPI(openai_api_key=voice_config.openai_api_key)
-        logging.info("OpenAI Voice API initialized.")
-    except ValueError as e:
-        logging.warning(f"OpenAI Voice API initialization error: {e}. Voice features may be partially disabled if API key is missing.") # Adjusted log message
-        voice_api = None # Set to None if initialization fails
-# ... (you can keep other voice API initializations here if you add them later)
-else:
-    logging.warning(f"Unknown voice API '{voice_config.default_voice_api}' configured. Voice features may be partially disabled.") # Adjusted log message
-    voice_api = None
-
-
-@waltx_bp.route('/')
+@walt2_bp.route('/')
 def walt_window_splash(): # Renamed to walt_window_splash to be more descriptive
-    return render_template('walt_splashx.html') # <-- RENAMED TEMPLATE FILE
+    return render_template('walt_splash2.html')
 
-@waltx_bp.route('/new_bio_start', methods=['GET'])
+@walt2_bp.route('/new_bio_start', methods=['GET'])
 def new_bio_start():
     session.pop('conversation', None)
     session.pop('biography_outline', None)
     session.pop('file_content', None)
+    session.pop('loaded_checkpoint_conversation', None) # Clear loaded checkpoint history
 
     try:
-        with open('waltx/walt_prompts/welcome.txt', 'r', encoding='utf-8') as f:
+        with open('walt2/walt_prompts/welcome.txt', 'r', encoding='utf-8') as f:
             welcome_prompt = f.read()
     except FileNotFoundError:
         return jsonify({"error": "welcome.txt prompt not found!"}), 500
@@ -76,11 +58,11 @@ def new_bio_start():
         })
 
 
-@waltx_bp.route('/app') # NEW route for /waltx/app - serves main app window
-def walt_window(): # Original walt_window function - now for /waltx/app
-    return render_template('walt_windowx.html', biography_outline=session.get('biography_outline'), initial_message=None) # <-- RENAMED TEMPLATE FILE
+@walt2_bp.route('/app') # NEW route for /walt2/app - serves main app window
+def walt_window(): # Original walt_window function - now for /walt2/app
+    return render_template('walt_window2.html', biography_outline=session.get('biography_outline'), initial_message=None)
 
-@waltx_bp.route('/continue_bio_start', methods=['POST'])
+@walt2_bp.route('/continue_bio_start', methods=['POST'])
 def continue_bio_start():
     checkpoint_data = request.form.get('checkpoint_data')
     if not checkpoint_data:
@@ -90,12 +72,13 @@ def continue_bio_start():
     session.pop('conversation', None)
     session.pop('biography_outline', None)
     session.pop('file_content', None)
+    session.pop('loaded_checkpoint_conversation', None) # Clear any old loaded history
 
     logging.debug(f"Checkpoint data received:\n{checkpoint_data[:200]}...") # Log the beginning of checkpoint data
 
     try: # ADDED try...except BLOCK
         try:
-            with open('waltx/walt_prompts/continue.txt', 'r', encoding='utf-8') as f:
+            with open('walt2/walt_prompts/continue.txt', 'r', encoding='utf-8') as f:
                 continue_prompt_base = f.read()
         except FileNotFoundError:
             return jsonify({"error": "continue.txt prompt not found!"}), 500
@@ -147,7 +130,7 @@ def continue_bio_start():
 
             session['conversation'] = [{"role": "system", "content": get_walt_prompt_content()}] # Start with system prompt and ONLY SYSTEM PROMPT INITIALLY
             session['conversation'].extend(loaded_conversation_history) # STORE LOADED CONVERSATION HISTORY IN SESSION - BUT DO NOT DISPLAY IT YET
-            session['loaded_checkpoint_conversation'] = loaded_conversation_history # <--- ADD THIS LINE
+            session['loaded_checkpoint_conversation'] = loaded_conversation_history # <--- ADD THIS LINE - **THIS IS THE FIX**
 
             # session['conversation'].append({"role": "assistant", "content": initial_message}) # DO NOT APPEND WELCOME MESSAGE HERE - SEND IT SEPARATELY to DISPLAY
 
@@ -178,101 +161,13 @@ def continue_bio_start():
 
 def get_walt_prompt_content():
     try:
-        with open('waltx/walt_prompts/walt_prompt.txt', 'r', encoding='utf-8') as f:
+        with open('walt2/walt_prompts/walt_prompt.txt', 'r', encoding='utf-8') as f:
             return f.read()
     except FileNotFoundError:
         return "Error: walt_prompt.txt not found!"
 
-@waltx_bp.route('/transcribe_audio', methods=['POST']) # <-- ADDED ROUTE
-def transcribe_audio():
-    if not voice_api: # Keep this check for robustness
-        return jsonify({"error": "Voice API not initialized. Please check server logs."}), 501 # More informative error
 
-    if 'audio' not in request.files:
-        return jsonify({"error": "No audio file provided"}), 400
-
-    audio_file = request.files['audio']
-    if audio_file.filename == '':
-        return jsonify({"error": "No selected audio file"}), 400
-
-    temp_audio_dir = os.path.join('/tmp', 'temp_audio') # Use /tmp for temporary files - RELATIVE PATH for directory
-    temp_audio_path = os.path.join(temp_audio_dir, secure_filename(audio_file.filename)) # RELATIVE PATH for file
-
-    logging.info(f"Temp audio directory: {temp_audio_dir}") # Log directory path
-    logging.info(f"Temp audio file path: {temp_audio_path}") # Log file path
-
-    # Check if temp_audio_dir exists and is a directory
-    if os.path.exists(temp_audio_dir):
-        if not os.path.isdir(temp_audio_dir):
-            logging.error(f"Path '{temp_audio_dir}' exists but is not a directory. Attempting to remove...")
-            try:
-                os.remove(temp_audio_dir) # Try to remove if it's a file
-                os.makedirs(temp_audio_dir, exist_ok=True) # Then recreate as directory
-                logging.info(f"Successfully removed file and recreated directory '{temp_audio_dir}'.")
-            except Exception as remove_e:
-                logging.error(f"Error removing conflicting file at '{temp_audio_dir}': {remove_e}", exc_info=True)
-                return jsonify({"error": f"Could not create temp audio directory: Conflict at '{temp_audio_dir}' and unable to resolve."}), 500
-        else:
-            logging.info(f"Temp audio directory '{temp_audio_dir}' already exists and is a directory.")
-    else:
-        try: # ADDED try...except for makedirs
-            os.makedirs(temp_audio_dir, exist_ok=True) # Ensure temp_audio directory exists - RELATIVE PATH
-            logging.info(f"Temp audio directory '{temp_audio_dir}' created successfully.")
-        except FileExistsError:
-            pass # Directory likely already exists due to concurrency - ignore error
-        except OSError as e: # Catch other OS errors during directory creation
-            logging.error(f"Error creating temp_audio directory: {e}", exc_info=True)
-            return jsonify({"error": f"Could not create temp audio directory: {str(e)}"}), 500
-
-
-    try:
-        audio_file.save(temp_audio_path) # Save audio file FIRST - move here
-        logging.info(f"Audio file saved to: {temp_audio_path}") # Log file path
-
-        try: # Inner try-except for OpenAI transcription specifically
-            transcription_text = voice_api.transcribe_audio(temp_audio_path)
-            os.remove(temp_audio_path) # Delete temp audio file after transcription
-            return jsonify({"transcription": transcription_text})
-        except ValueError as openai_err: # Catch OpenAI specific errors
-            os.remove(temp_audio_path) # Delete temp audio file even on OpenAI error
-            logging.error(f"OpenAI Transcription API error: {openai_err}", exc_info=True) # Log OpenAI error with traceback
-            return jsonify({"error": f"OpenAI Transcription error: {str(openai_err)}"}), 500 # Return JSON error to client
-
-    except Exception as e: # Catch any other errors (file saving, etc.)
-        logging.error(f"General error during audio transcription: {e}", exc_info=True) # Log general error with traceback
-        return jsonify({"error": f"Error processing audio file: {str(e)}"}), 500 # Return JSON error
-
-
-@waltx_bp.route('/synthesize_speech', methods=['POST']) # <-- ADDED ROUTE
-def synthesize_speech():
-    if not voice_api: # Keep this check for robustness
-        return jsonify({"error": "Voice API not initialized. Please check server logs."}), 501 # More informative error
-
-    text_data = request.get_json()
-    if not text_data or 'text' not in text_data:
-        return jsonify({"error": "No text provided for speech synthesis"}), 400
-
-    text_to_synthesize = text_data['text']
-    voice_id = voice_config.tts_voice_id # Get configured voice ID
-
-    temp_audio_output_path = os.path.join("temp_audio", f"waltx_speech_{session.sid}.mp3") # Unique filename
-    os.makedirs("temp_audio", exist_ok=True) # Ensure temp_audio directory exists
-
-    try:
-        audio_file_path = voice_api.synthesize_speech(text_to_synthesize, temp_audio_output_path, voice_id=voice_id)
-        audio_url = f"/temp_audio_url/{os.path.basename(temp_audio_output_path)}" # Corrected line: use <filename> for URL construction - use basename
-        return jsonify({"audio_url": audio_url}) # Return audio URL
-    except ValueError as e:
-        os.remove(temp_audio_output_path) # Delete temp audio file even on error
-        return jsonify({"error": str(e)}), 500
-
-
-@waltx_bp.route('/temp_audio_url/<filename>') # <-- ADDED ROUTE to serve temp audio files
-def temp_audio_url(filename):
-    return send_file(os.path.join("temp_audio", filename))
-
-
-@waltx_bp.route('/walt_analyze', methods=['POST'])
+@walt2_bp.route('/walt_analyze', methods=['POST'])
 def walt_analyze():
     user_input = request.form.get('user_query')
 
@@ -303,39 +198,24 @@ def walt_analyze():
             max_tokens=256,
             top_p=1
         )
-        api_response_text = response.choices[0].message.content.strip()
-        session['conversation'].append({"role": "assistant", "content": api_response_text})
+        api_response = response.choices[0].message.content.strip()
+        session['conversation'].append({"role": "assistant", "content": api_response})
         session.modified = True
 
-        response_data = {"response": api_response_text, "biography_outline": session['biography_outline']}
-
-        if voice_api: # No more voice_config.voice_enabled check here - assume voice_api is intended to be used if initialized
-            try:
-                speech_data = {"text": api_response_text}
-                speech_response = synthesize_speech() # Call synthesize_speech function directly
-                if speech_response.status_code == 200:
-                    speech_json = speech_response.get_json()
-                    response_data["audio_url"] = speech_json.get("audio_url") # Add audio URL to response
-                else:
-                    logging.warning(f"Text-to-speech API failed: {speech_response.get_json()}") # Log TTS failure, but don't block main response
-            except Exception as tts_e:
-                logging.error(f"Error during text-to-speech synthesis: {tts_e}", exc_info=True) # Log TTS errors
-
-        return jsonify(response_data) # Return response with or without audio URL
-
+        return jsonify({"response": api_response, "biography_outline": session['biography_outline']})
 
     except Exception as e:
         logging.error(f"OpenAI API Error: {e}", exc_info=True)
         return jsonify({"error": str(e)}), 500
 
 
-@waltx_bp.route('/create_checkpoint', methods=['POST'])
-def create_checkpoint():
+@walt2_bp.route('/create_checkpoint', methods=['POST'])
+def create_checkpoint(): # MODIFIED FUNCTION
     try:
         checkpoint_data_text = session.get('file_content', '')
         bio_prompt_content = ""
         try:
-            with open('waltx/walt_prompts/bio_creator_prompt.txt', 'r', encoding='utf-8') as f:
+            with open('walt2/walt_prompts/bio_creator_prompt.txt', 'r', encoding='utf-8') as f:
                 bio_prompt_content = f.read()
         except Exception as e:
             logging.error(f"Error reading bio_prompt.txt: {e}")
@@ -343,21 +223,44 @@ def create_checkpoint():
 
         conversation_text = ""
         current_conversation = session.get('conversation', [])
-        for message in current_conversation:
-            if message['role'] in ['system', 'user', 'assistant']:
-                conversation_text += f"{message['role']}: {message['content']}\n"
 
-        combined_checkpoint_content = bio_prompt_content + "\n\n" + checkpoint_data_text + "\n\n--- CONVERSATION HISTORY ---\n\n" + conversation_text
+        # EXTEND CONVERSATION HISTORY WITH LOADED CHECKPOINT HISTORY
+        extended_conversation = list(session.get('loaded_checkpoint_conversation', [])) # Start with loaded history
+        extended_conversation.extend(current_conversation) # Append current history
 
-        logging.info(f"Checkpoint data being created (with conversation): {combined_checkpoint_content[:100]}...")
+        extended_conversation_text = "" # Reconstruct extended history text
+        for message in extended_conversation:
+            if message['role'] in ['user', 'assistant']: # Include user and assistant roles in history
+                extended_conversation_text += f"{message['role']}: {message['content']}\n"
 
-        return jsonify({"checkpoint_data": combined_checkpoint_content})
+        api_input_text = bio_prompt_content + "\n\n" + checkpoint_data_text + "\n\n--- CONVERSATION ---\n\n" + extended_conversation_text # USE EXTENDED HISTORY FOR API
+
+        client = openai.Client() # CALL OPENAI API
+        response = client.chat.completions.create(
+            model="gpt-4o",
+            messages=[{"role": "user", "content": api_input_text}],
+            temperature=0.7,
+            max_tokens=700, # Adjust max_tokens as needed
+        )
+        api_response_text = response.choices[0].message.content.strip() # GET API RESPONSE
+
+        api_response_text_safe = api_response_text.replace("<", "<").replace(">", ">") # Escape HTML if needed
+
+        file_content_for_download = api_response_text_safe + "\n\n--- EXTENDED CONVERSATION HISTORY ---\n\n" + extended_conversation_text # CHECKPOINT FILE CONTAINS API RESPONSE + EXTENDED HISTORY
+
+        session['file_content'] = file_content_for_download # Optionally update session file_content with API response (or combined content if you prefer)
+        session.modified = True
+
+        logging.info(f"Checkpoint data being created (API Response + Extended History): {file_content_for_download[:100]}...") # Log combined content
+
+        return jsonify({"checkpoint_data": file_content_for_download}) # Return COMBINED CONTENT as checkpoint data
 
     except Exception as e:
-        logging.error(f"Error creating checkpoint: {e}", exc_info=True)
+        logging.error(f"Error processing checkpoint and calling API: {e}", exc_info=True)
         return jsonify({"error": str(e)}), 500
 
-@waltx_bp.route('/craft_biography', methods=['POST'])
+
+@walt2_bp.route('/craft_biography', methods=['POST'])
 def craft_biography():
     checkpoint_data_text = session.get('file_content', '')
     conversation_text = ""
@@ -367,7 +270,7 @@ def craft_biography():
             conversation_text += f"{message['role']}: {message['content']}\n"
 
     try:
-        with open('waltx/walt_prompts/write_bio.txt', 'r', encoding='utf-8') as f:
+        with open('walt2/walt_prompts/write_bio.txt', 'r', encoding='utf-8') as f:
             write_bio_prompt = f.read()
     except FileNotFoundError:
         return jsonify({"error": "write_bio.txt prompt not found!"}), 500
@@ -402,7 +305,7 @@ def craft_biography():
         return jsonify({"error": error_message, "api_response": formatted_error}), 500
 
 
-@waltx_bp.route('/saveTextAsFileDownload', methods=['POST'])
+@walt2_bp.route('/saveTextAsFileDownload', methods=['POST'])
 def saveTextAsFileDownload():
     try:
         data = request.get_json()
