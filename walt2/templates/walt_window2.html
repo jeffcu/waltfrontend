@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -7,8 +8,8 @@
     <style>
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #1E2A38;
-            color: #E5E5E5;
+            background-color: #f7f7f7;
+            color: #333;
             padding: 20px; /* Keep body padding */
             text-align: center;
             margin: 0;
@@ -16,16 +17,19 @@
             display: flex;
             flex-direction: column;
             box-sizing: border-box;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
 
         h1 {
-            color: #2D9CDB;
+            color: #007AFF;
             margin-bottom: 5px;
+            font-weight: 600;
         }
 
         p.tagline {
             font-style: italic;
-            color: #AEBCCF;
+            color: #777;
             margin-bottom: 20px;
         }
 
@@ -90,7 +94,7 @@
         .chat-title {
             text-align: left;
             margin-bottom: 10px;
-            color: #2D9CDB;
+            color: #007AFF;
         }
 
         .chat-output {
@@ -304,6 +308,20 @@
 
         .tone-selector-area label {
             margin-bottom: 0;
+        }
+
+        /* New CSS class for disabled features */
+        .disabled-feature {
+            opacity: 0.6; /* Grey out visually */
+            pointer-events: none; /* Disable interaction */
+            cursor: default; /* Revert cursor to default */
+            color: #777; /* Grey out text color */
+        }
+
+        .disabled-feature select {
+             background-color: #ddd; /* Grey out background of select */
+             color: #777; /* Grey out text in select */
+             border-color: #eee; /* Grey out border */
         }
 
 
@@ -615,7 +633,7 @@
 
         <div id="uploadButtonContainer">
             <img id="waltImage" src="{{ url_for('static', filename='images/walt.png') }}" alt="Walt Biographer">
-         <button id="uploadButton" onclick="uploadStory()">Start at last Checkpoint</button>
+         <button id="uploadButton" onclick="uploadStory()" disabled class="disabled-feature">Start at last Checkpoint</button>  <!-- DISABLED and added class -->
      </div>
      <input type="file" id="story_upload" name="story_upload" accept=".txt, .walt">
 
@@ -640,10 +658,10 @@
      </div>
 
      <div class="craft-area-container">
-         <div class="tone-and-craft-group">
-             <div class="tone-selector-area">
-                 <label for="toneSelector">Biography Tone:</label>
-                 <select id="toneSelector">
+         <div class="tone-and-craft-group disabled-feature">  <!-- Added disabled-feature class to the GROUP -->
+             <div class="tone-selector-area disabled-feature"> <!-- Added disabled-feature class to the LABEL AREA -->
+                 <label for="toneSelector" class="disabled-feature">Biography Tone:</label>  <!-- Added disabled-feature class to LABEL -->
+                 <select id="toneSelector" class="disabled-feature" disabled> <!-- DISABLED and added class to SELECT -->
                      <option value="default">Default</option>
                      <option value="humorous">Humor</option>
                      <option value="reflective">Reflective</option>
