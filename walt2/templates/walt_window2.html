@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -34,15 +35,13 @@
 
         #uploadButtonContainer {
             margin-bottom: 20px;
-            display: flex;
+            display: none; /* HIDE Upload Button Container */
             align-items: flex-end;
             justify-content: space-between;
             width: 100%;
             box-sizing: border-box;
-            /* padding-left: 10px;  REMOVED padding-left from container*/
-            /* padding-right: 10px; REMOVED padding-right from container */
-            padding-left: 0px; /* Set container padding-left to 0 */
-            padding-right: 0px; /* Set container padding-right to 0 */
+            padding-left: 0px;
+            padding-right: 0px;
         }
 
         #uploadButton {
@@ -58,17 +57,18 @@
             white-space: nowrap;
             margin-left: auto;
             text-align: right;
-            margin-right: 20px; /* ADDED margin-right to button */
+            margin-right: 20px;
         }
 
         #waltImage {
+            display: none; /* HIDE Walt Image */
             height: 80px;
             position: absolute; /* Positioned absolutely */
-            top: 20px;       /* Distance from top */
-            right: 20px;      /* Distance from right */
-            margin-right: 0; /* Removed right margin */
-            margin-left: 20px; /* Kept left margin for spacing if needed */
-            align-self: flex-start; /* Kept align-self */
+            top: 20px;
+            right: 20px;
+            margin-right: 0;
+            margin-left: 20px;
+            align-self: flex-start;
         }
 
 
@@ -262,7 +262,7 @@
         }
 
         .tone-and-craft-group {
-            display: flex;
+            display: none; /* HIDE Tone and Craft Group */
             justify-content: center;
             align-items: flex-end;
             gap: 20px;
@@ -507,8 +507,8 @@
               try {
                 function getCookie(name) {
                     const value = `; ${document.cookie}`;
-                    const parts = value.split(`; ${name}=`);
-                    if (parts.length === 2) return parts.pop().split(';').shift();
+                const parts = value.split(`; ${name}=`);
+                if (parts.length === 2) return parts.pop().split(';').shift();
                 }
 
                 const csrfToken = getCookie('csrf_token');
@@ -608,6 +608,7 @@
                                     chatOutput.textContent = "Loading Checkpoint...";
                                      sendCheckpointData(event.target.result);
                                 }
+
                                 catch (error){
                                     chatOutput.textContent = "Error loading file: " + event.target.error;
                                 }
@@ -633,11 +634,11 @@
      <h1>Walt the Biographer</h1>
      <p class="tagline">I want to write your story!</p>
 
-        <div id="uploadButtonContainer">
-            <img id="waltImage" src="{{ url_for('static', filename='images/walt.png') }}" alt="Walt Biographer">
-         <button id="uploadButton" onclick="uploadStory()" disabled class="disabled-feature">Start at last Checkpoint</button>  <!-- DISABLED and added class -->
+        <div id="uploadButtonContainer" style="display:none">  <!-- HIDDEN -->
+            <img id="waltImage" src="{{ url_for('static', filename='images/walt.png') }}" alt="Walt Biographer"  style="display:none"> <!-- HIDDEN -->
+         <button id="uploadButton" onclick="uploadStory()" disabled class="disabled-feature" style="display:none">Start at last Checkpoint</button>
      </div>
-     <input type="file" id="story_upload" name="story_upload" accept=".txt, .walt">
+     <input type="file" id="story_upload" name="story_upload" accept=".txt, .walt" style="display:none">  <!-- HIDDEN -->
 
      <div class="chat-container">
           <div class="chat-area">
@@ -659,11 +660,11 @@
          <button id="saveButton" onclick="saveTextAsFile()">Create Checkpoint File</button>
      </div>
 
-     <div class="craft-area-container">
-         <div class="tone-and-craft-group disabled-feature">  <!-- Added disabled-feature class to the GROUP -->
-             <div class="tone-selector-area disabled-feature"> <!-- Added disabled-feature class to the LABEL AREA -->
-                 <label for="toneSelector" class="disabled-feature">Biography Tone:</label>  <!-- Added disabled-feature class to LABEL -->
-                 <select id="toneSelector" class="disabled-feature" disabled> <!-- DISABLED and added class to SELECT -->
+     <div class="craft-area-container"  style="display:none">  <!-- HIDDEN -->
+         <div class="tone-and-craft-group disabled-feature"  style="display:none">
+             <div class="tone-selector-area disabled-feature"  style="display:none">
+                 <label for="toneSelector" class="disabled-feature"  style="display:none">Biography Tone:</label>
+                 <select id="toneSelector" class="disabled-feature" disabled  style="display:none">
                      <option value="default">Default</option>
                      <option value="humorous">Humor</option>
                      <option value="reflective">Reflective</option>
@@ -672,9 +673,9 @@
                  </select>
              </div>
          </div>
-          <div class="checkpoint-area">
+          <div class="checkpoint-area" style="display:none">
              <div>
-                 <button id="craftBiographyButton" onclick="craftBiography()">Craft Biography</button>
+                 <button id="craftBiographyButton" onclick="craftBiography()"  style="display:none">Craft Biography</button>
              </div>
          </div>
      </div>
