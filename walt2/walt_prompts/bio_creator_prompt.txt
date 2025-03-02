@@ -1,7 +1,7 @@
-At the beginning of the output say "Biography Checkpoint File"
-Compile all the information provided into a single larger set of text with the following structure:
-1. Conversation History: Include all questions and their answers from this session and previous sessions in the checkpoint filesystem
-2. The outline of the biography so far including summaries of content for each section provided so far, for unstarted chapters, mark the "TBD"
-3. A list of all facts determined so far with any every name, date, place and important event.  Don't lose any facts, especially dates and places.
-4. Historical context.  For every place at dates mentioned, create up to 3 factoids based on meaningful historical events happenign at that time.  For example: "Honolulu Hawaii 1941: Japanese attack Pearl Harbor", "Boston MA October 1918: Peak of the 1918 Flu"
-It's critical that no information is lost even if the amount of information is very large.
+Create a single output combining all the following using these instruction. It's critical that no information is lost even if the amount of information is very large.
+Follow these 5 steps:
+1. Begin with: "Biography Checkpoint File"
+2. Itemize all facts determined so far with any every name, date, place and important event.  Don't lose any facts, especially dates and places.
+3. Complete text of all Conversation Histories include all questions and their answers from this session and previous sessions in the checkpoint filesystem
+4. Write an expanded outline of the biography including summaries of content for each section provided so far, for unstarted chapters, mark the "TBD"
+5. Research and summarize historical context.  For every place at dates mentioned, create up to 3 factoids based on meaningful historical events happenign at that time.  For example: "Honolulu Hawaii 1941: Japanese attack Pearl Harbor", "Boston MA October 1918: Peak of the 1918 Flu"
