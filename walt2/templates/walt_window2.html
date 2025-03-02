@@ -1,4 +1,4 @@
-
+--- FILE: walt2/templates/walt_window2.html ---
 <!DOCTYPE html>
 <html>
 <head>
@@ -8,9 +8,9 @@
     <style>
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #f7f7f7;
-            color: #333;
-            padding: 20px; /* Keep body padding */
+            background-color: #1E2A38; /* Changed back to blue background */
+            color: #E5E5E5; /* Changed text color to light for blue background */
+            padding: 20px;
             text-align: center;
             margin: 0;
             min-height: 100vh;
@@ -22,14 +22,14 @@
         }
 
         h1 {
-            color: #007AFF;
+            color: #2D9CDB; /* Changed title color to light blue for blue background */
             margin-bottom: 5px;
             font-weight: 600;
         }
 
         p.tagline {
             font-style: italic;
-            color: #777;
+            color: #AEBCCF; /* Changed tagline color to lighter grey for blue background */
             margin-bottom: 20px;
         }
 
@@ -64,9 +64,12 @@
 
         #waltImage {
             height: 80px;
-            margin-right: 15px;
-            align-self: flex-start;
-            margin-left: 20px; /* ADDED margin-left to image */
+            position: absolute; /* Positioned absolutely */
+            top: 20px;       /* Distance from top */
+            right: 20px;      /* Distance from right */
+            margin-right: 0; /* Removed right margin */
+            margin-left: 20px; /* Kept left margin for spacing if needed */
+            align-self: flex-start; /* Kept align-self */
         }
 
 
@@ -94,7 +97,7 @@
         .chat-title {
             text-align: left;
             margin-bottom: 10px;
-            color: #007AFF;
+            color: #2D9CDB;
         }
 
         .chat-output {
