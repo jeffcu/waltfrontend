@@ -1,6 +1,7 @@
-
-Take all the following input and write a single thoughtful complete biography of the person incorporating everything provided from the current conversation, biography drafts, and previous checkpoint contents provided.
-Do not fill in chapters that have insufficient information to draft. Simply include the chapter in the outline and mark it as "TBD".
-You may rework previous chapters already written if the newest conversation improves them.
-Do not lose any information or facts provided in the content, everything must be preserved in the output.
-After the biography, include a list of each and every facts accumulated so far about the person as attribute value pairs such as "Born On: 25 December 1923:, "Born In: Columbus Ohio".
+At the beginning of the output say "Biography Checkpoint File"
+Compile all the information provided into a single larger set of text with the following structure:
+1. Conversation History: Include all questions and their answers from this session and previous sessions in the checkpoint filesystem
+2. The outline of the biography so far including summaries of content for each section provided so far, for unstarted chapters, mark the "TBD"
+3. A list of all facts determined so far with any every name, date, place and important event.  Don't lose any facts, especially dates and places.
+4. Historical context.  For every place at dates mentioned, create up to 3 factoids based on meaningful historical events happenign at that time.  For example: "Honolulu Hawaii 1941: Japanese attack Pearl Harbor", "Boston MA October 1918: Peak of the 1918 Flu"
+It's critical that no information is lost even if the amount of information is very large.
