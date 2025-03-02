@@ -107,7 +107,7 @@ def continue_bio_start():
             logging.debug(f"File content part extracted:\n{file_content_part[:200]}...") # Log file content part
 
             loaded_conversation_history = [] # Initialize loaded conversation history
-            # --- ADDED LOGGING ---
+            # --- ADDED LOGGING in continue_bio_start ---
             logging.info("--- continue_bio_start: conversation_history_text (raw from checkpoint) ---")
             logging.info(f"{conversation_history_text}") # Log raw conversation_history_text
 
@@ -132,11 +132,17 @@ def continue_bio_start():
                 logging.debug("No conversation history text found in checkpoint data.") # Log if no history
 
             session['loaded_checkpoint_conversation'] = loaded_conversation_history # STORE LOADED HISTORY IN SESSION VARIABLE
-             # --- ADDED LOGGING ---
+             # --- ADDED LOGGING in continue_bio_start ---
             logging.info("--- continue_bio_start: loaded_conversation_history (parsed messages) - first 2 messages ---")
             for msg in loaded_conversation_history[:2]: # Log first 2 messages for brevity
                 logging.info(f"Role: {msg['role']}, Content: {msg['content'][:80]}...") # Truncate content for logs
             logging.info(f"Total messages in loaded_conversation_history: {len(loaded_conversation_history)}")
+            # --- ADDED LOGGING in continue_bio_start - RIGHT BEFORE RETURN ---
+            logging.info("--- continue_bio_start: session['loaded_checkpoint_conversation'] RIGHT BEFORE RETURN - first 2 messages ---")
+            loaded_hist_in_session_before_return = session.get('loaded_checkpoint_conversation', [])
+            for msg in loaded_hist_in_session_before_return[:2]: # Log first 2 messages for brevity
+                logging.info(f"Role: {msg['role']}, Content: {msg['content'][:80]}...") # Truncate content for logs
+            logging.info(f"Total messages in session['loaded_checkpoint_conversation'] before return: {len(loaded_hist_in_session_before_return)}")
 
 
             session['conversation'] = [{"role": "system", "content": get_walt_prompt_content()}] # Start with system prompt and ONLY SYSTEM PROMPT INITIALLY
@@ -163,8 +169,7 @@ def continue_bio_start():
 
     except Exception as e: # CATCH ALL OTHER EXCEPTIONS IN THE ROUTE
         logging.error(f"General error in continue_bio_start: {e}", exc_info=True) # LOG GENERAL ERROR WITH TRACEBACK
-        return jsonify({
-            "error": f"Error processing checkpoint: {str(e)}"
+        return jsonify({"error": f"Error processing checkpoint: {str(e)}"
         }) # RETURN JSON ERROR FOR AJAX CALL
 
 
@@ -192,6 +197,13 @@ def walt_analyze():
         session['conversation'] = [{"role": "system", "content": walt_prompt},
                                      {"role": "assistant", "content": initial_greeting}]
         session['biography_outline'] = get_biography_outline()
+
+    # --- ADDED LOGGING in walt_analyze ---
+    logging.info("--- walt_analyze: session['loaded_checkpoint_conversation'] at start of walt_analyze - first 2 messages ---")
+    loaded_hist_in_session_walt_analyze = session.get('loaded_checkpoint_conversation', [])
+    for msg in loaded_hist_in_session_walt_analyze[:2]: # Log first 2 messages for brevity
+        logging.info(f"Role: {msg['role']}, Content: {msg['content'][:80]}...") # Truncate content for logs
+    logging.info(f"Total messages in session['loaded_checkpoint_conversation'] at start walt_analyze: {len(loaded_hist_in_session_walt_analyze)}")
 
 
     session['conversation'].append({"role": "user", "content": user_input + ".  Continue to help me build my biography."})
