@@ -43,7 +43,7 @@ def new_bio_start():
         initial_message = response.choices[0].message.content.strip()
         session['conversation'] = [{"role": "system", "content": get_walt_prompt_content()}, {"role": "assistant", "content": initial_message}]
         session['biography_outline'] = get_biography_outline()
-        session.modified = True
+        session.modified = True # Ensure session is marked as modified
         # Return JSON instead of rendering template for new_bio_start as well, for consistency.
         return jsonify({
             "initial_message": initial_message,
@@ -137,22 +137,15 @@ def continue_bio_start():
             for msg in loaded_conversation_history[:2]: # Log first 2 messages for brevity
                 logging.info(f"Role: {msg['role']}, Content: {msg['content'][:80]}...") # Truncate content for logs
             logging.info(f"Total messages in loaded_conversation_history: {len(loaded_conversation_history)}")
-            # --- ADDED LOGGING in continue_bio_start - RIGHT BEFORE RETURN ---
-            logging.info("--- continue_bio_start: session['loaded_checkpoint_conversation'] RIGHT BEFORE RETURN - first 2 messages ---")
-            loaded_hist_in_session_before_return = session.get('loaded_checkpoint_conversation', [])
-            for msg in loaded_hist_in_session_before_return[:2]: # Log first 2 messages for brevity
-                logging.info(f"Role: {msg['role']}, Content: {msg['content'][:80]}...") # Truncate content for logs
-            logging.info(f"Total messages in session['loaded_checkpoint_conversation'] before return: {len(loaded_hist_in_session_before_return)}")
-
+            # --- REMOVED session.save() call ---
+            # session.save()  # <-- REMOVED LINE:  Let Flask handle session saving
 
             session['conversation'] = [{"role": "system", "content": get_walt_prompt_content()}] # Start with system prompt and ONLY SYSTEM PROMPT INITIALLY
             session['conversation'].extend(loaded_conversation_history) # EXTEND CURRENT CONVERSATION WITH LOADED HISTORY - THIS IS CORRECT NOW
             # session['conversation'].append({"role": "assistant", "content": initial_message}) #  NO LONGER APPENDING WELCOME MESSAGE TO CONVERSATION
 
             session['biography_outline'] = get_biography_outline()
-            session.modified = True
-
-            session.save() # <-- ADDED LINE: Force session to save synchronously
+            session.modified = True # Ensure session is marked as modified - IMPORTANT
 
             logging.debug(f"Session variables after checkpoint load: \nConversation (first 2 messages): {session.get('conversation')[:2]}\nBiography Outline: {session.get('biography_outline')}\nFile Content (start): {session.get('file_content', '')[:200]}...\nLoaded Conversation History (messages count): {len(session.get('loaded_checkpoint_conversation'))} messages") # Log session variables
 
@@ -224,7 +217,7 @@ def walt_analyze():
         )
         api_response = response.choices[0].message.content.strip()
         session['conversation'].append({"role": "assistant", "content": api_response})
-        session.modified = True
+        session.modified = True # Ensure session is marked as modified - IMPORTANT
 
         return jsonify({"response": api_response, "biography_outline": session['biography_outline']})
 
@@ -248,7 +241,7 @@ def create_checkpoint(): # MODIFIED FUNCTION
         conversation_text = ""
         current_conversation = session.get('conversation', [])
 
-        # EXTEND CONVERSATION HISTORY WITH LOADED CHECKpoint HISTORY
+        # EXTEND CONVERSATION HISTORY WITH LOADED CHECKPOINT HISTORY
         extended_conversation = list(session.get('loaded_checkpoint_conversation', [])) # Start with loaded history
         extended_conversation.extend(current_conversation) # Append current history
 
@@ -273,7 +266,7 @@ def create_checkpoint(): # MODIFIED FUNCTION
         file_content_for_download = api_response_text_safe + "\n\n--- EXTENDED CONVERSATION HISTORY ---\n\n" + extended_conversation_text # CHECKPOINT FILE CONTAINS API RESPONSE + EXTENDED HISTORY
 
         session['file_content'] = file_content_for_download # Optionally update session file_content with API response (or combined content if you prefer)
-        session.modified = True
+        session.modified = True # Ensure session is marked as modified - IMPORTANT
 
         logging.info(f"Checkpoint data being created (API Response + Extended History): {file_content_for_download[:100]}...") # Log combined content
 
