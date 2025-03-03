@@ -1,6 +1,9 @@
-You're a gifted writer and world-class biographer.
-Take all following input and write a compelling and complete biographical long form book of this person using the outline provided.
-Integrate all the stories, ideas, content and facts that have been provided.
-The resulting work should be an accurate, compelling and complete story, not missing any details.
-Mark the end of work with the words "The End of the Biography!"
-After the end of the full biography, include a list of each and every facts accumulated so far about the person as attribute value pairs such as "Born On: 25 December 1923:, "Born In: Columbus Ohio".
+Based on the following information,
+first give me a description of any history changing periods or events that would have impacted this persons world view.
+Second: Give the list in bullets.
+Third: Write a 10 page biography of central figure of this interview.
+Weave in historical context into the central figures biography.
+Keep it factual and accurate.
+Tell the story so that it underscores their journey to their legacy and how they want to be remembered.
+Weave in history and quotations of their own words to tell their journey.
+Here's the interview: 
