@@ -217,7 +217,6 @@ def walt_analyze():
 @walt2_bp.route('/create_checkpoint', methods=['POST'])
 def create_checkpoint():
     try:
-        checkpoint_data_text = session.get('file_content', '')
         bio_prompt_content = ""
         try:
             with open('walt2/walt_prompts/bio_creator_prompt.txt', 'r', encoding='utf-8') as f:
@@ -234,22 +233,40 @@ def create_checkpoint():
 
         extended_conversation_text = ""
         for message in extended_conversation:
-            if message['role'] in ['user', 'assistant']:
+            if message['role'] in ['user', 'assistant']: # Only include user and assistant messages in history
                 conversation_text += f"{message['role']}: {message['content']}\n"
                 extended_conversation_text += f"{message['role']}: {message['content']}\n" # Current extended conv text - for CURRENT HISTORY SECTION
 
+
         previous_checkpoint_history_text = session.get('previous_checkpoint_history_text', "") # Retrieve previous history - NEW
 
-        file_content_for_download = bio_prompt_content + "\n\n" + checkpoint_data_text + "\n\n--- CURRENT CONVERSATION HISTORY ---\n\n" + extended_conversation_text + "\n\n--- PREVIOUS CHECKPOINT CONVERSATION HISTORY ---\n\n" + previous_checkpoint_history_text # Include both histories - NEW
+        api_input_text = bio_prompt_content + "\n\n--- CONVERSATION HISTORY ---\n\n" + conversation_text # Combine prompt and conversation
 
-        session['file_content'] = file_content_for_download
-        session.modified = True
+        try: # Call OpenAI API to process and summarize checkpoint data
+            client = openai.Client()
+            response = client.chat.completions.create(
+                model="gpt-4o", # Or desired model
+                messages=[{"role": "user", "content": api_input_text}],
+                temperature=0.7, # Adjust as needed
+                max_tokens=500, # Adjust as needed
+            )
+            checkpoint_data_text = response.choices[0].message.content.strip() # Get processed summary
+            session['file_content'] = checkpoint_data_text # Store processed summary in session
+        except Exception as openai_error:
+            logging.error(f"OpenAI API error during checkpoint processing: {openai_error}", exc_info=True)
+            checkpoint_data_text = "Error processing checkpoint data. Conversation history saved, but summary generation failed." # Informative error message in checkpoint
+            session['file_content'] = checkpoint_data_text # Still store error in session
 
-        logging.info(f"Checkpoint data being created (Current and Previous History): {file_content_for_download[:100]}...")
 
-        return jsonify({"checkpoint_data": file_content_for_download})
+        file_content_for_download = checkpoint_data_text + "\n\n--- CURRENT CONVERSATION HISTORY ---\n\n" + extended_conversation_text + "\n\n--- PREVIOUS CHECKPOINT CONVERSATION HISTORY ---\n\n" + previous_checkpoint_history_text # Checkpoint file now contains PROCESSED data, then conversation history
 
-    except Exception as e:
+        session.modified = True # Ensure session is saved
+
+        logging.info(f"Checkpoint data being created (Processed Summary and History): {file_content_for_download[:100]}...")
+
+        return jsonify({"checkpoint_data": file_content_for_download}) # Send the complete file content for download
+
+    except Exception as e: # Catch any errors during checkpoint creation
         logging.error(f"Error processing checkpoint and calling API: {e}", exc_info=True)
         return jsonify({"error": str(e)}), 500
 

@@ -130,6 +130,7 @@ python-3.11.2
 
 --- FILE: virtual-lab.py ---
 
+
 import os
 from flask import Flask, request, render_template, send_file, jsonify
 from dotenv import load_dotenv
@@ -142,7 +143,7 @@ from investment_analysis.services import InvestmentAnalysisService
 from PyPDF2 import PdfReader
 from werkzeug.utils import secure_filename
 from flask_wtf.csrf import CSRFProtect, generate_csrf
-from walt.walt import walt_bp
+# from walt.walt import walt_bp  <-- REMOVED walt_bp import
 from walt2.walt2 import walt2_bp # Import the new walt2 blueprint
 from waltx.waltx import waltx_bp # Import the new waltx blueprint  <-- ADDED
 from flask_session import Session # Import Flask-Session
@@ -405,7 +406,7 @@ def jeffsart_image(filename):
         abort(404)
 
 # Register the walt blueprint
-app.register_blueprint(walt_bp, url_prefix='/walt')
+# app.register_blueprint(walt_bp, url_prefix='/walt')  <-- REMOVED walt_bp registration
 
 # Register the walt2 blueprint (new Walt2)  <-- ADDED
 app.register_blueprint(walt2_bp, url_prefix='/walt2')
@@ -1385,1208 +1386,6 @@ def word_counter():
 </body>
 </html>
 
---- FILE: walt/bio_creator_prompt.txt ---
-
-# walt/bio_creator_prompt.txt
-# walt/bio_creator_prompt.txt
-# Improved bio_creator_prompt.txt (Improvement #4: Tone Adjustment)
-Take the following input and write a brilliant and **{{biography_tone}}** biography of the person.
-Do not fill in chapters that have insufficient information to draft. Simply include the chapter in the outline and mark it as "TBD".
-You may rework other chapters already written if the newest conversation improves them.
-After the biography, include a master list of all facts accumulated so far about the person.
-
-
---- FILE: walt/walt.py ---
-
-# file: walt/walt.py
-from flask import Blueprint, render_template, request, jsonify, session
-import os
-import openai
-import logging
-import json
-from werkzeug.utils import secure_filename
-
-walt_bp = Blueprint('walt', __name__, template_folder='templates')
-
-@walt_bp.route('/')  # CORRECT: Route is root '/' within the walt_bp blueprint
-def walt_window():
-    new_bio = request.args.get('new_bio') # Check for new_bio parameter
-
-    if 'conversation' not in session or new_bio == 'true': # Check for session OR new_bio parameter
-        if 'conversation' in session: # Clear old session if starting new bio
-            session.pop('conversation', None)
-            session.pop('biography_outline', None)
-            session.pop('file_content', None)
-
-        # Render splash screen if no session OR new bio requested
-        return render_template('walt_splash.html') # CORRECT: Template in walt/templates
-    else:
-        # Existing session (returning user) - proceed to main app
-        return render_template('walt_window.html', biography_outline=session['biography_outline'], initial_message=None) # CORRECT: Template in walt/templates
-
-
-@walt_bp.route('/get_walt_prompt')
-def get_walt_prompt():
-    try:
-        with open('walt_prompt.txt', 'r', encoding='utf-8') as f:
-            prompt_text = f.read()
-        return prompt_text
-    except FileNotFoundError as e:
-        logging.error(f"Error reading walt_prompt.txt: {str(e)}")
-        return jsonify({"error": "walt_prompt.txt not found!"}), 404
-    except Exception as e:
-        logging.error(f"General error in get_walt_prompt: {str(e)}")
-        return jsonify({"error": f"Error reading walt_prompt.txt: {str(e)}"}), 500
-
-@walt_bp.route('/walt_analyze', methods=['POST'])
-def walt_analyze():
-    user_input = request.form.get('user_query')
-    uploaded_content = request.form.get('uploaded_content', '')
-    desired_tone = request.form.get('tone', 'default')  # Get tone from request
-
-    if not user_input: # Corrected line - using user_input
-        return jsonify({"error": "No user query provided"}), 400
-
-    try:
-        with open('walt_prompt.txt', 'r', encoding='utf-8') as f:
-            walt_prompt_base = f.read()
-
-        # Incorporate tone into prompt (Improvement #4)
-        if desired_tone != 'default':
-            walt_prompt = walt_prompt_base + f"\nThe user prefers a biography with a {desired_tone} tone."
-        else:
-            walt_prompt = walt_prompt_base
-
-
-    except FileNotFoundError:
-        return jsonify({"error": "walt_prompt.txt not found!"}), 500
-    except Exception as e:
-        return jsonify({"error": f"Error reading walt_prompt.txt: {str(e)}"}), 500
-
-    if 'conversation' not in session:
-        initial_greeting = "Hi I'm Walt. What's your name?"
-        session['conversation'] = [{"role": "system", "content": walt_prompt},
-                                     {"role": "assistant", "content": initial_greeting}]
-        session['biography_outline'] = get_biography_outline()  # Initialize outline in session (Improvement #5)
-
-
-    if uploaded_content:
-        session['conversation'].append({"role": "system", "content": f"Here is context from your biography: {uploaded_content}"})
-        print(f"UPLOADED CONTENT TO OPEN API:{uploaded_content}")
-    else:
-        print("NO UPLOADED CONTENT!")
-
-    # Improvement #2: Dynamic Chapter Suggestion - Removed fixed chapter selection in prompt
-    session['conversation'].append({"role": "user", "content": user_input + ".  Continue to help me build my biography."})
-
-
-    try:
-        client = openai.Client()
-        logging.info(f"OpenAI Request Messages: {session['conversation']}")
-
-        # --- FIRST OPENAI CALL: Get Walt's normal response ---
-        response = client.chat.completions.create(
-            model="gpt-4o",
-            messages=session['conversation'],
-            temperature=0.7,
-            max_tokens=256,
-            top_p=1
-        )
-        api_response = response.choices[0].message.content.strip()
-
-        # --- SECOND OPENAI CALL: Get Walt's Fact-Check Question (Improved version) ---
-        verification_prompt_text = f"From our last exchange: '{user_input}' and Walt's response: '{api_response}', suggest 1-2 very natural, brief follow-up questions Walt might ask to clarify details or get more specific information about what the person just said.  Think of questions a friendly biographer would ask in a casual conversation, like 'Where did that happen?' or 'What year was that?' Keep the tone friendly and natural, like Walt."  # More natural tone in fact-check prompt
-        verification_prompt = [{"role": "system", "content": "You are Walt, a friendly biographer focused on getting accurate details. Your goal is to ask natural, short follow-up questions - think 'where', 'when', 'who' - to clarify the user's story."},  # Improved system prompt for natural questions
-                              {"role": "user", "content": verification_prompt_text}]  # Define prompt as list of dicts
-
-        verification_response = client.chat.completions.create(
-            model="gpt-4o",
-            messages=verification_prompt,  # Use the defined verification_prompt
-            temperature=0.5,  # Lower temp for fact-checking
-            max_tokens=100  # Reduced max tokens for brevity
-        )
-        verification_message = verification_response.choices[0].message.content.strip()
-        api_response_with_verification = api_response + "\n\n" + verification_message
-
-
-        session['conversation'].append({"role": "assistant", "content": api_response_with_verification})  # Use combined response
-        session.modified = True
-
-        return jsonify({"response": api_response_with_verification, "biography_outline": session['biography_outline']})  # Include outline in response
-
-    except Exception as e:
-        logging.error(f"OpenAI API Error: {e}", exc_info=True)
-        return jsonify({"error": str(e)}), 500
-
-@walt_bp.route('/walt_session_summary', methods=['POST'])
-def walt_session_summary():
-    session_content = ""
-    try:
-        client = openai.Client()
-        session_info = session.get('conversation', [])
-        session_content = ""
-        if 'file_content' in session:
-            file_content = session['file_content']
-        else:
-            file_content = "No story started"
-
-        session_content = session_info if session_info else "No story started"
-
-        response = client.chat.completions.create(
-            model="gpt-4o",
-            messages=[{"role": "system", "content": "Your job is to deliver the status and summary of the session, the outline of sections written, the conversation history and the prompt.  Do not add anything else."},
-                      {"role": "user", "content": f"Return all known story with with outline, sections written, session prompts, system_info and the conversation for {session_content}."}],
-            temperature=0.7,
-            max_tokens=2000,
-            top_p=1
-        )
-        api_response = response.choices[0].message.content.strip()
-
-    except Exception as e:
-        print(f"Error calling OpenAI: {e}")
-        return jsonify({"error": str(e)}), 500
-
-@walt_bp.route('/load_checkpoint', methods=['POST'])
-def load_checkpoint():
-    checkpoint_data = request.form.get('checkpoint_data')
-    if not checkpoint_data:
-        return jsonify({"error": "No checkpoint data received"}), 400
-
-    try:
-        # Load the Walt Prompt (still needed)
-        try:
-            with open('walt_prompt.txt', 'r', encoding='utf-8') as f:
-                walt_prompt = f.read()
-        except FileNotFoundError as e:
-            logging.error(f"Error reading walt_prompt.txt: {str(e)}")
-            return jsonify({"error": f"Error reading walt_prompt.txt: {str(e)}"}), 500
-        except Exception as e:
-            logging.error(f"General error in get_walt_prompt: {str(e)}")
-            return jsonify({"error": str(e)}), 500
-
-        # Split checkpoint data - NEW SECTION
-        parts = checkpoint_data.split("--- CONVERSATION HISTORY ---\n\n")
-        file_content_part = parts[0].strip() # Biography text part
-        conversation_history_text = parts[1].strip() if len(parts) > 1 else "" # Conversation part, if exists
-
-        session['file_content'] = file_content_part # Restore biography text
-
-        # Reconstruct conversation history - NEW SECTION
-        session['conversation'] = [{"role": "system", "content": walt_prompt}] # Start with system prompt
-        if conversation_history_text:
-            conversation_messages = []
-            for line in conversation_history_text.strip().split('\n'):
-                if line.strip(): # Ignore empty lines
-                    role, content = line.split(':', 1) # Split role: content
-                    conversation_messages.append({"role": role.strip(), "content": content.strip()})
-            session['conversation'].extend(conversation_messages) # Add parsed messages
-
-
-        session['biography_outline'] = get_biography_outline()
-        session.modified = True
-
-        # Try to extract user's name from conversation history (basic approach)
-        user_name = "friend"  # Default if name not found
-        for message in reversed(session['conversation']):  # Check conversation history for name
-            if message['role'] == 'assistant' and "What's your name?" in message['content']:
-                previous_user_message = session['conversation'][session['conversation'].index(message) - 1] if session['conversation'].index(message) > 0 else None  # Get user's message before "What's your name?"
-                if previous_user_message and previous_user_message['role'] == 'user':
-                    user_name_potential = previous_user_message['content'].strip()
-                    if user_name_potential:  # Basic name validation
-                        user_name = user_name_potential
-                        break  # Exit once name found
-
-        # Generate a simple progress summary (basic example - improve later)
-        chapters_discussed = 0
-        for chapter_data in session['biography_outline']:
-            if chapter_data['status'] == 'Complete':  # Assuming you'll have a 'status' field and update it elsewhere
-                chapters_discussed += 1
-        progress_summary = f"So far, we've made progress on {chapters_discussed} chapters of your biography." if chapters_discussed > 0 else "We're ready to pick up where we left off."
-
-        # Welcome them back with personalized message and summary
-        welcome_phrase = f"Welcome back, {user_name}! Hi, I am Walt. It's great to continue your story. {progress_summary} Ready to jump back in?"
-
-        # Update the conversation history with the new state
-        session['conversation'].append({"role": "assistant", "content": welcome_phrase})
-
-        return jsonify({"response": welcome_phrase, "biography_outline": session['biography_outline']})
-
-    except Exception as e:
-        print(f"Error processing checkpoint: {e}")
-        return jsonify({"error": str(e)}), 500
-
-@walt_bp.route('/create_checkpoint', methods=['POST'])
-def create_checkpoint():
-    try:
-        checkpoint_data_text = session.get('file_content', '')  # Get file_content directly as text
-        bio_prompt_content = ""
-        try:
-            with open('walt/bio_creator_prompt.txt', 'r', encoding='utf-8') as f:  # ADDED: Read bio_creator_prompt.txt
-                bio_prompt_content = f.read()
-        except Exception as e:
-            logging.error(f"Error reading bio_prompt.txt: {e}")
-            bio_prompt_content = "Error loading bio creator prompt."  # Fallback if file not read
-
-        conversation_text = "" # NEW: Get conversation history
-        current_conversation = session.get('conversation', [])
-        for message in current_conversation:
-            if message['role'] in ['system', 'user', 'assistant']: # Include system role for full context
-                conversation_text += f"{message['role']}: {message['content']}\n"
-
-        combined_checkpoint_content = bio_prompt_content + "\n\n" + checkpoint_data_text + "\n\n--- CONVERSATION HISTORY ---\n\n" + conversation_text # MODIFIED: Include conversation
-
-        logging.info(f"Checkpoint data being created (with conversation): {combined_checkpoint_content[:100]}...")  # Log start of data
-
-        return jsonify({"checkpoint_data": combined_checkpoint_content})  # Return combined text
-
-    except Exception as e:
-        logging.error(f"Error creating checkpoint: {e}", exc_info=True)
-        return jsonify({"error": str(e)}), 500
-
-@walt_bp.route('/walt_process_checkpoint', methods=['POST'])
-def walt_process_checkpoint():
-    checkpoint_data_text = session.get('file_content', '')  # Get file_content directly as text
-    bio_prompt_content = ""
-    api_response_text_safe = ""  # Initialize to handle cases where API call fails
-
-    try:
-        try:
-            with open('walt/bio_creator_prompt.txt', 'r', encoding='utf-8') as f:  # Read bio_creator_prompt.txt
-                bio_prompt_content = f.read()
-        except Exception as e:
-            logging.error(f"Error reading bio_prompt.txt: {e}")
-            return jsonify({"error": f"Error loading bio creator prompt: {str(e)}"}), 500  # Return JSON error
-
-        conversation_text = ""  # Get conversation text for API call
-        current_conversation = session.get('conversation', [])
-        for message in current_conversation:
-            if message['role'] in ['user', 'assistant']:  # Filter for user and assistant roles
-                conversation_text += f"{message['role']}: {message['content']}\n"
-
-        desired_tone = request.form.get('tone', 'default')
-        tone_instruction = ""
-        if desired_tone != 'default':
-            tone_instruction = f" Write the biography in a {desired_tone} tone."
-
-        api_input_text = bio_prompt_content + tone_instruction + "\n\n" + checkpoint_data_text + "\n\n--- CONVERSATION ---\n\n" + conversation_text  # Combine for API
-
-        client = openai.Client()  # Call OpenAI API
-        response = client.chat.completions.create(
-            model="gpt-4o",
-            messages=[{"role": "user", "content": api_input_text}],  # Send combined text prompt
-            temperature=0.7,
-            max_tokens=700,
-        )
-        api_response_text = response.choices[0].message.content.strip()  # API response
-
-        api_response_text_safe = api_response_text.replace("<", "<").replace(">", ">")  # Escape HTML
-
-        file_content_for_download = checkpoint_data_text + "\n\n" + api_response_text_safe  # Append API response to existing content
-
-        combined_output_content = file_content_for_download  # Display combined content
-
-        session['file_content'] = file_content_for_download
-        session.modified = True  # Ensure session is marked as modified
-
-        return jsonify({  # Return checkpoint data (for file) and api response (for display)
-            "checkpoint_data": file_content_for_download,
-            "api_response": combined_output_content  # Return COMBINED content for display
-        })
-
-    except Exception as e:
-        logging.error(f"Error processing checkpoint and calling API: {e}", exc_info=True)
-        error_message = f"Error processing checkpoint and calling API: {str(e)}"
-        api_response_text_safe = error_message  # Still set a safe error message for display.
-        return jsonify({"error": error_message, "api_response": api_response_text_safe}), 500  # Return JSON error with message and safe response for display
-
-
-@walt_bp.route('/saveTextAsFileDownload', methods=['POST'])  # Keep old route for file download part only
-def saveTextAsFileDownload():  # Keep separate function for actual download - UNCHANGED
-    try:
-        data = request.get_json()
-        checkpoint_data = data.get('checkpoint_data')  # Expect plain text directly
-
-        if not checkpoint_data:
-            return jsonify({"error": "No checkpoint data to save"}), 400
-
-        # Return the checkpoint data directly as text
-        logging.info(f"Checkpoint data being sent for download: {checkpoint_data[:50]}...")  # Debug log start of data
-        return jsonify({"fileContent": checkpoint_data})  # Return text directly for download
-
-    except Exception as e:
-        logging.error(f"Error return and saving checkpoint from saveTextAsFileDownload: {e}", exc_info=True)
-        return jsonify({"error": str(e)}), 500
-
-
-# Helper function to get biography outline (Improvement #5 - Data Driven Outline)
-def get_biography_outline():
-    return [
-        {"chapter": 1, "title": "Hook – A Defining Moment", "status": "TBD"},
-        {"chapter": 2, "title": "Origins – Early Life & Influences", "status": "TBD"},
-        {"chapter": 3, "title": "Call to Action – First Big Decision", "status": "TBD"},
-        {"chapter": 4, "title": "Rising Conflict – Struggles & Growth", "status": "TBD"},
-        {"chapter": 5, "title": "The Climax – Defining Achievements", "status": "TBD"}
-    ]
-
-
---- FILE: walt/templates/walt_window.html ---
-
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Walt the Biographer</title>
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #1E2A38;
-            color: #E5E5E5;
-            padding: 20px;
-            text-align: center;
-            margin: 0;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            box-sizing: border-box;
-        }
-
-        h1 {
-            color: #2D9CDB;
-            margin-bottom: 5px;
-        }
-
-        p.tagline {
-            font-style: italic;
-            color: #AEBCCF;
-            margin-bottom: 20px;
-        }
-
-        #uploadButtonContainer {
-            text-align: center; /* Center the button */
-            margin-bottom: 20px;
-        }
-
-        #uploadButton {
-            padding: 10px 20px;
-            font-size: 16px;
-            cursor: pointer;
-            background-color: #27AE60;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            /* Make height one line and width auto adjust */
-            height: auto;
-            width: auto;
-            white-space: nowrap; /* Prevent text wrapping */
-        }
-
-        input[type="file"] {
-            display: none;
-        }
-
-        .chat-container {
-            display: flex;
-            max-width: 1200px;
-            margin: 0 auto;
-            flex: 1;
-            width: 100%;
-            box-sizing: border-box;
-        }
-
-        .chat-area {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            box-sizing: border-box;
-            padding: 10px;
-        }
-
-        .chat-title {
-            text-align: left;
-            margin-bottom: 10px;
-            color: #2D9CDB;
-        }
-
-        .chat-output {
-            flex: 1;
-            padding: 10px;
-            border: 1px solid #4C657E;
-            border-radius: 6px;
-            background-color: #2A3D55;
-            color: #D9E1EC;
-            min-height: 400px; /* Min height of 400px */
-            height: 450px; /* Adjusted height to fit 18 lines, approximately */
-            text-align: left;
-            white-space: pre-wrap;
-            overflow-y: auto;
-            box-sizing: border-box;
-            font-size: 16pt; /* Font size set to 16pt */
-            align-items: flex-start;
-        }
-
-        .chat-input {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            box-sizing: border-box;
-            padding: 10px;
-        }
-
-        .prompt-area {
-            display: flex;
-            flex-direction: column;
-            height: 100%; /* Make sure prompt area takes full height */
-        }
-
-        textarea {
-            width: 100%;
-            margin-bottom: 10px;
-            padding: 8px;
-            border: 1px solid #4C657E;
-            border-radius: 6px;
-            resize: vertical;
-            flex: 1; /* Textarea takes up remaining space */
-            box-sizing: border-box;
-            font-size: 16pt; /* Font size set to 16pt */
-            background-color: #3d597a; /* Light blue */
-            overflow-y: auto; /* Enable vertical scrolling */
-            color: #D9E1EC;
-        }
-
-        #submitButton {
-           padding: 10px 20px;
-            font-size: 16px;
-            cursor: pointer;
-            background-color: gold;
-            color: dimgrey;
-            border: none;
-            border-radius: 6px;
-            width: 100%;
-            box-sizing: border-box;
-            height: auto;
-            align-self: flex-end; /* Align Submit button to bottom */
-}
-
-        h3.dataNote {
-            text-align: center;
-            font-size: 1.2em;
-            margin-bottom: 10px;
-            color: #AEBCCF;
-        }
-
-        #saveButton {
-            text-align: center;
-            align-self: center;
-            margin-top: 20px;
-            padding: 10px 20px;
-            font-size: 16px;
-            cursor: pointer;
-            background-color: #27AE60;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            /* Make height one line and width auto adjust */
-            height: auto;
-            width: auto;
-            white-space: nowrap; /* Prevent text wrapping */
-        }
-
-
-        #sessionSummary {
-            margin-top: 20px;
-            padding: 10px;
-            border: 1px solid #4C657E;
-            border-radius: 6px;
-            background-color: #2A3D55;
-            white-space: pre-wrap;
-            overflow-y: auto;
-            min-height: 0; /*Removes min height so no shape present*/
-            text-align: left;
-            box-sizing: border-box;
-            font-size: 1.2em;
-            display:none; /*Hides the shape*/
-        }
-
-        #checkpointOutput { /* Renamed from combinedOutput to checkpointOutput, now for combined output */
-            width: 90%;
-            margin: 10px auto;
-            padding: 10px;
-            border: 1px solid #4C657E;
-            border-radius: 6px;
-            background-color: #4C657E; /* Changed to API output style */
-            color: #D9E1EC;
-            text-align: left;
-            white-space: pre-wrap;
-            overflow-y: auto; /* Enable scroll if content overflows */
-            max-height: 250px; /* Increased max height */
-            box-sizing: border-box;
-            font-size: 1.2em;
-        }
-
-        /* Improvement #5: Biography Outline Styles */
-        .biography-outline {
-            text-align: left;
-            margin-top: 20px;
-            padding: 10px;
-            border: 1px solid #4C657E;
-            border-radius: 6px;
-            background-color: #2A3D55;
-            color: #D9E1EC;
-        }
-
-        .biography-outline h2 {
-            color: #2D9CDB;
-            font-size: 20px;
-            margin-bottom: 10px;
-        }
-
-        .biography-outline ul {
-            list-style: none;
-            padding-left: 20px;
-        }
-
-        .biography-outline li {
-            margin-bottom: 5px;
-        }
-
-        .chapter-title {
-            font-weight: bold;
-        }
-
-        .chapter-status-tbd {
-            color: #AEBCCF; /* Greyed out for TBD chapters */
-            font-style: italic;
-        }
-        .chapter-status-complete {
-            color: #27AE60; /* Green for completed chapters */
-            font-weight: bold;
-        }
-
-        /* New Styles for layout and "Craft Biography" Button */
-        .checkpoint-area {
-            display: flex;
-            flex-direction: column; /* Stack items vertically */
-            justify-content: center; /* Center items horizontally in container */
-            align-items: center; /* Center items horizontally in flex direction (which is column now) */
-            margin-top: 20px;
-            gap: 20px; /* Space between tone selector area and craft button */
-        }
-
-        .tone-and-craft-group {
-            display: flex; /* Arrange tone selector and craft button horizontally */
-            justify-content: center; /* Center content horizontally within this group */
-            align-items: flex-end; /* Align items to the bottom of this group */
-            gap: 20px; /* Space between tone selector and craft button inside group */
-            width: auto; /* Adjust width to content */
-            margin: 0 auto; /* Center the tone-and-craft-group itself if needed within checkpoint-area */
-        }
-
-
-        .tone-selector-area {
-            text-align: left; /* Align tone selector to the left */
-            flex-grow: 1; /* Allow tone selector area to take available space if needed - not needed now but keep */
-            display: flex; /* Use flexbox for horizontal alignment */
-            align-items: baseline; /* Align label and select text baselines */
-            gap: 10px; /* Space between label and select */
-            justify-content: flex-end; /* Align to the right side - now within tone-and-craft-group */
-        }
-
-        .tone-selector-area label {
-            margin-bottom: 0; /* Remove default margin for label */
-        }
-
-
-        #craftBiographyButton {
-            padding: 15px 30px; /* Larger padding */
-            font-size: 20px; /* Larger font size */
-            cursor: pointer;
-            background-color: #FFA500; /* Example: Orange color */
-            color: black;
-            border: none;
-            border-radius: 8px; /* Slightly more rounded */
-            font-weight: bold; /* Bold text */
-            box-shadow: 0 4px 8px rgba(255, 165, 0, 0.5); /* Example shadow */
-            transition: background-color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
-            white-space: nowrap; /* Prevent text wrapping */
-            /* align-self: flex-end;  Not needed anymore as alignment is within tone-and-craft-group */
-        }
-
-        #craftBiographyButton:hover {
-            background-color: #FF8C00; /* Darker orange on hover */
-            transform: scale(1.05); /* Slight scale up on hover */
-            box-shadow: 0 6px 12px rgba(255, 165, 0, 0.7); /* Enhanced shadow on hover */
-        }
-
-        .save-checkpoint-area {
-            text-align: center; /* Center the save checkpoint button */
-            margin-top: 20px; /* Add some space above the button */
-        }
-
-
-    </style>
-    <script>
-        // All the code here is to ensure it is loaded at the top level scope.
-        let uploaded_content = ""; //Global variable to store uploaded content
-        let storyUpload; // Declare storyUpload outside the event listener
-        let biographyOutline; // For storing biography outline (Improvement #5)
-
-        function submitPrompt() {
-            let userInput = document.getElementById("userPrompt").value;
-            let chatOutput = document.getElementById("chatOutput");
-            let toneSelector = document.getElementById("toneSelector"); // Improvement #4
-            let selectedTone = toneSelector.value; // Get selected tone
-
-            chatOutput.textContent = "Loading...";
-            sendToOpenAI(userInput, chatOutput, uploaded_content, selectedTone); // Send tone
-            document.getElementById("userPrompt").value = "";
-        }
-
-         function sendToOpenAI(userInput, chatOutput, fileContent, tone) { // Accept tone
-            // Get CSRF token from cookie
-            function getCookie(name) {
-                const value = `; ${document.cookie}`;
-                const parts = value.split(`; ${name}=`);
-                if (parts.length === 2) return parts.pop().split(';').shift();
-            }
-
-            const csrfToken = getCookie('csrf_token');
-
-            fetch("/walt_analyze", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/x-www-form-urlencoded",
-                    "X-CSRFToken": csrfToken
-                },
-                 body: "user_query=" + encodeURIComponent(userInput) + "&uploaded_content=" + encodeURIComponent(fileContent) + "&tone=" + encodeURIComponent(tone) // Send tone
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.error) {
-                    chatOutput.textContent = "Error: " + data.error;
-                } else {
-                    chatOutput.textContent = data.response;
-                    if (data.biography_outline) { // Improvement #5: Update outline display
-                        biographyOutline = data.biography_outline;
-                        updateBiographyOutlineDisplay();
-                    }
-                }
-            })
-            .catch(error => {
-                chatOutput.textContent = "Error: " + error.message;
-            });
-        }
-
-
-         function getStoryBoard(){
-            let chatOutput = document.getElementById("chatOutput").textContent;
-            return chatOutput
-        }
-
-       function saveTextAsFile() {
-            // Get CSRF token from cookie
-            function getCookie(name) {
-                const value = `; ${document.cookie}`;
-                const parts = value.split(`; ${name}=`);
-                if (parts.length === 2) return parts.pop().split(';').shift();
-            }
-
-            const csrfToken = getCookie('csrf_token');
-             let chatOutput = document.getElementById("chatOutput");  // Get chatOutput for feedback
-             let toneSelector = document.getElementById("toneSelector"); // Improvement #4
-             let selectedTone = toneSelector.value; // Get selected tone
-
-
-            chatOutput.textContent = "Processing Checkpoint and Creating File... Please wait."; // Update chatOutput for processing message
-
-            fetch("/walt_process_checkpoint", { // Call the NEW route
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/x-www-form-urlencoded",
-                    "X-CSRFToken": csrfToken
-                },
-                body: "tone=" + encodeURIComponent(selectedTone) // Send tone for bio creation (Improvement #4)
-            })
-            .then(response => response.text()) // Changed to .text() to handle plain text API responses
-            .then(textResponse => { // Handle text response, not JSON
-                try {
-                    const data = JSON.parse(textResponse); // Try to parse as JSON first (for structured responses)
-                    if (data.error) {
-                        alert("Error creating checkpoint: " + data.error);
-                        chatOutput.textContent = "API Error: " + data.error; // Display API error in chatOutput
-                    } else {
-                        // If valid JSON, handle as before
-                        const fileContent = data["checkpoint_data"];
-
-                        // checkpointOutput.textContent = data["api_response"]; // No longer update checkpointOutput
-                        chatOutput.textContent += "\n\nCheckpoint file created and download started."; // Inform user in chatOutput
-
-                        console.log("fileContent from server", fileContent)
-
-                        const textFileAsBlob = new Blob([fileContent], { type: 'text/plain' });
-                        const fileNameToSaveAs = "sessionStory.txt";
-
-                        const downloadLink = document.createElement("a");
-                        downloadLink.download = fileNameToSaveAs;
-                        downloadLink.innerHTML = "Download File";
-                        downloadLink.href = window.URL.createObjectURL(textFileAsBlob);
-                        downloadLink.style.display = "none";
-
-                        document.body.appendChild(downloadLink);
-                        downloadLink.click();
-                        document.body.removeChild(downloadLink);
-                    }
-                } catch (e) {
-                    // If JSON parsing fails, treat the whole response as plain text
-                    console.warn("Response is not JSON, treating as plain text:", textResponse);
-                    // checkpointOutput.textContent = textResponse; // No longer update checkpointOutput
-                    chatOutput.textContent += "\n\nError processing checkpoint, but download may still start.\nRaw response: " + textResponse; // Inform user in chatOutput
-
-                     // Still trigger file download for checkpoint even if API response is not JSON
-                     fetch('/saveTextAsFileDownload', { // Call download endpoint separately
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRFToken': csrfToken
-                        },
-                        body: JSON.stringify({ checkpoint_data: chatOutput.textContent }) // Send current chatOutput text for download (might not be ideal, consider revising backend to return consistent checkpoint data)
-                    })
-                    .then(downloadResponse => downloadResponse.json()) // Expect JSON for download trigger
-                    .then(downloadData => {
-                        if (downloadData.fileContent) {
-                            const textFileAsBlob = new Blob([downloadData.fileContent], { type: 'text/plain' });
-                            const fileNameToSaveAs = "sessionStory.txt";
-                            const downloadLink = document.createElement("a");
-                            downloadLink.download = fileNameToSaveAs;
-                            downloadLink.innerHTML = "Download File";
-                            downloadLink.href = window.URL.createObjectURL(textFileAsBlob);
-                            downloadLink.style.display = "none";
-                            document.body.appendChild(downloadLink);
-                            downloadLink.click();
-                            document.body.removeChild(downloadLink);
-                        } else if (downloadData.error) {
-                            alert("Error triggering download after API issue: " + downloadData.error);
-                            chatOutput.textContent += "\n\nDownload Error: " + downloadData.error; // Inform user of download error in chatOutput
-                        }
-                    })
-                    .catch(downloadError => {
-                        alert("Error triggering download after API issue: " + downloadError.message);
-                        chatOutput.textContent += "\n\nDownload Fetch Error: " + downloadError.message; // Inform user of download fetch error in chatOutput
-                    });
-                }
-            })
-            .catch(error => {
-                chatOutput.textContent = "Fetch Error: " + error.message; // Display fetch error in chatOutput
-            });
-        }
-
-        function sendCheckpointData(fileContent) {
-              try {
-                // Get CSRF token from cookie
-                function getCookie(name) {
-                    const value = `; ${document.cookie}`;
-                    const parts = value.split(`; ${name}=`);
-                    if (parts.length === 2) return parts.pop().split(';').shift();
-                }
-
-                const csrfToken = getCookie('csrf_token');
-
-                fetch("/load_checkpoint", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/x-www-form-urlencoded",
-                        "X-CSRFToken": csrfToken
-                    },
-                    body: "checkpoint_data=" + encodeURIComponent(fileContent)
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.error) {
-                        document.getElementById("chatOutput").textContent = "Error: " + data.error;
-                    } else {
-                        document.getElementById("chatOutput").textContent = data.response;
-                        if (data.biography_outline) { // Improvement #5: Load and display outline
-                            biographyOutline = data.biography_outline;
-                            updateBiographyOutlineDisplay();
-                        }
-                        sendLoadMessage(); // Added message on upload
-                    }
-                })
-                .catch(error => {
-                    document.getElementById("chatOutput").textContent = "Error loading checkpoint.";
-                });
-            } catch (error) {
-                console.error("Error in sendCheckpointData:", error);
-                document.getElementById("chatOutput").textContent = "Error loading checkpoint.";
-            }
-        }
-
-        function sendLoadMessage() {
-            let chatOutput = document.getElementById("chatOutput");
-            chatOutput.textContent ="Oh I see! I'd forgotten what we already did. Wonderful";
-         }
-         // This function is triggered when the "Start at last Checkpoint" is pressed
-         function uploadStory() {
-              console.log("Firing Upload Story Trigger");
-              if (storyUpload) {
-                  storyUpload.click(); //Programitcally fire "load a checkpoint file."
-               } else {
-                 console.error("storyUpload element not found");
-               }
-
-           }
-
-
-        // Function to update biography outline display (Improvement #5)
-        function updateBiographyOutlineDisplay() {
-            const outlineDiv = document.getElementById('biographyOutline');
-            if (!biographyOutline || !outlineDiv) return;
-
-            let outlineHTML = '<h2>Biography Outline</h2><ul>';
-            biographyOutline.forEach(chapter => {
-                const statusClass = chapter.status === 'Complete' ? 'chapter-status-complete' : 'chapter-status-tbd';
-                outlineHTML += `<li><span class="chapter-title">Chapter ${chapter.chapter}: ${chapter.title}</span> - <span class="${statusClass}">${chapter.status}</span></li>`;
-            });
-            outlineHTML += '</ul>';
-            outlineDiv.innerHTML = outlineHTML;
-        }
-
-
-        //Event Handling
-        document.addEventListener('DOMContentLoaded', function() {
-            storyUpload = document.getElementById("story_upload"); // Define at document load
-            biographyOutline = {{ biography_outline|tojson }}; // Initialize biographyOutline from template (Improvement #5)
-            updateBiographyOutlineDisplay(); // Initial outline display (Improvement #5)
-            const chatOutput = document.getElementById("chatOutput");
-            const initialMessage = "{{ initial_message|default('') | safe }}"; // Get initial message from template
-
-            if (initialMessage) { // Check if initial message exists
-                chatOutput.textContent = initialMessage; // Set initial message in chat output
-            }
-
-
-             console.log("Story Upload: Document is loaded");
-            if (storyUpload) {
-               //Event
-               storyUpload.addEventListener("change", function(event) { //Make sure event is captured
-                    console.log("Event Listener Triggered");
-                    if (this.files && this.files[0]) {
-                      const fileInput = document.getElementById("story_upload");
-                      const chatOutput = document.getElementById("chatOutput");
-
-                      const file = fileInput.files[0];
-
-                       const reader = new FileReader();
-                          //Set value for upload
-                         reader.onload = function(event) {
-                               try{
-                                    console.log ("Story Uploaded to the Chat Output", event.target.result); //Check log before
-                                    //Capture the file upload
-                                    uploaded_content = event.target.result;
-
-                                    //Display Load
-                                    chatOutput.textContent = "Loading Checkpoint...";  // Display loading message
-
-                                    //Load the checkpoint
-                                     sendCheckpointData(event.target.result);
-                                }
-
-                                catch (error){
-                                    chatOutput.textContent = "Error loading file: " + event.target.error;
-                                }
-                         };
-
-                         reader.onerror = function(event) {
-                            chatOutput.textContent = "Error reading file: " + event.target.error;
-                             console.error("Error reading file:", event.target.error);
-                        };
-
-                        reader.readAsText(file);
-                     }
-                  })
-            } else {
-               console.log("Story Upload does not exist")
-            }
-        })
-
-        window.onload = function() {
-            document.getElementById("chatOutput").textContent = "";  // Clear default text
-        };
-    </script>
-</head>
-<body>
-    <h1>Walt the Biographer</h1>
-    <p class="tagline">I want to write your story!</p>
-
-       <div id="uploadButtonContainer">
-        <button id="uploadButton" onclick="uploadStory()">Start at last Checkpoint</button>
-    </div>
-    <input type="file" id="story_upload" name="story_upload" accept=".txt, .walt">
-
-    <div class="chat-container">
-         <div class="chat-area">
-            <h2 class="chat-title">Walt</h2>
-            <div class="chat-output" id="chatOutput"></div>
-        </div>
-        <div class="chat-area">
-            <h2 class="chat-title">Your Prompts</h2>
-            <div class="prompt-area">
-                <textarea id="userPrompt" placeholder="Enter your prompt" rows="13"></textarea>
-                <button id="submitButton" onclick="submitPrompt()">Submit</button>
-            </div>
-        </div>
-    </div>
-
-    <h3 class="dataNote">Note: No data is saved by this application, the only memory is through this file alone.</h3>
-
-    <div class="save-checkpoint-area">
-        <button id="saveButton" onclick="saveTextAsFile()">Create Checkpoint File and Analyze</button>
-    </div>
-
-    <div class="checkpoint-area">
-        <div class="tone-and-craft-group">  <!-- NEW GROUPING DIV -->
-            <div class="tone-selector-area">
-                <label for="toneSelector">Biography Tone:</label>
-                <select id="toneSelector">
-                    <option value="default">Default</option>
-                    <option value="humorous">Humorous</option>
-                    <option value="reflective">Reflective</option>
-                    <option value="dramatic">Dramatic</option>
-                    <option value="inspirational">Inspirational</option>
-                </select>
-            </div>
-            <div>
-                <button id="craftBiographyButton">Craft Biography</button>
-            </div>
-        </div>
-    </div>
-
-
-    <div id="sessionSummary"></div>
-</body>
-</html>
-
---- FILE: walt/templates/walt_splash.html ---
-
-<!-- file: walt/templates/walt_splash.html -->
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Welcome to Walt Biographer</title>
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #1E2A38;
-            color: #E5E5E5;
-            margin: 0;
-            padding: 0;
-            height: 100vh;
-            display: flex; /* Enable flexbox for body */
-            justify-content: center;
-            align-items: center;
-        }
-
-        .splash-container {
-            display: flex; /* Flex container for image/title and buttons */
-            width: 80%; /* Adjust as needed, max width of splash screen */
-            max-width: 1200px;
-            height: 70%; /* Adjust as needed, max height of splash screen */
-            max-height: 800px;
-            border-radius: 12px;
-            background: #2A3D55;
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
-            overflow: hidden; /* Clip any overflowing content */
-        }
-
-        .splash-left {
-            flex: 1; /* Take 50% of the container width */
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-            text-align: center;
-        }
-
-        .splash-right {
-            flex: 1; /* Take 50% of the container width */
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-            background-color: #1E2A38; /* Slightly darker background for buttons side */
-        }
-
-
-        .splash-image {
-            max-width: 80%; /* Control image size within its container */
-            max-height: 60%;
-            height: auto;
-            margin-bottom: 20px; /* Space below image */
-        }
-
-        h1 {
-            color: #2D9CDB;
-            font-size: 2.5em; /* Slightly smaller than before, adjust as needed */
-            margin: 0; /* Remove default margins */
-        }
-
-        .splash-tagline {
-            font-style: italic;
-            color: #D9E1EC;
-            font-size: 1.4em; /* Adjust font size as needed */
-            margin-bottom: 15px; /* Space below tagline */
-        }
-
-        .splash-get-started {
-            color: #AEBCCF;
-            font-size: 1em; /* Smaller font size for "Get Started" */
-            margin-bottom: 10px; /* Space below "Get Started" */
-        }
-
-
-        .splash-buttons {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            width: 80%; /* Buttons width relative to right container */
-            max-width: 400px; /* Max width for buttons */
-            margin-top: 10px; /* Space above buttons - reduced slightly */
-        }
-
-        .splash-button {
-            padding: 15px 20px;
-            font-size: 1.2em;
-            cursor: pointer;
-            background-color: #27AE60;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            transition: background-color 0.3s ease;
-            white-space: nowrap; /* Prevent button text wrapping */
-        }
-
-        .splash-button:hover {
-            background-color: #1F8A4C;
-        }
-
-        #story_upload {
-            display: none; /* Hide the file input initially */
-        }
-
-        /* Responsive adjustments for smaller screens */
-        @media (max-width: 768px) {
-            .splash-container {
-                flex-direction: column; /* Stack image/title and buttons vertically */
-                width: 95%; /* Take up more width on smaller screens */
-                height: auto; /* Adjust height to content */
-                text-align: center; /* Center text on smaller screens */
-            }
-            .splash-left, .splash-right {
-                flex: none; /* No flex for stacked layout */
-                width: 100%; /* Full width when stacked */
-            }
-             .splash-image {
-                max-width: 50%; /* Smaller image on mobile */
-                max-height: 40%;
-             }
-            h1 {
-                font-size: 2em; /* Smaller title on mobile */
-            }
-            .splash-tagline {
-                font-size: 1.2em; /* Smaller tagline on mobile */
-            }
-             .splash-buttons {
-                width: 95%; /* Wider buttons on mobile */
-            }
-        }
-    </style>
-    <script>
-        function beginNewBiography() {
-            window.location.href = "/walt?new_bio=true"; // Corrected path to just "/walt"
-        }
-
-        function loadCheckpointFile() {
-            document.getElementById('story_upload').click(); // Trigger file input
-        }
-
-        document.addEventListener('DOMContentLoaded', function() {
-            const storyUpload = document.getElementById("story_upload");
-            if (storyUpload) {
-                storyUpload.addEventListener("change", function(event) {
-                    if (this.files && this.files[0]) {
-                        const file = this.files[0];
-                        const reader = new FileReader();
-
-                        reader.onload = function(event) {
-                            const fileContent = event.target.result;
-                            sendCheckpointData(fileContent); // Call existing function to load checkpoint
-                        };
-                        reader.onerror = function(event) {
-                            alert("Error reading file: " + event.target.error);
-                            console.error("Error reading file:", event.target.error);
-                        };
-                        reader.readAsText(file);
-                    }
-                });
-            }
-        });
-
-        function sendCheckpointData(fileContent) {
-            // Get CSRF token from cookie
-            function getCookie(name) {
-                const value = `; ${document.cookie}`;
-                const parts = value.split(`; ${name}=`);
-                if (parts.length === 2) return parts.pop().split(';').shift();
-            }
-
-            const csrfToken = getCookie('csrf_token');
-
-            fetch("/walt/load_checkpoint", { // Corrected path to "/walt/load_checkpoint"
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/x-www-form-urlencoded",
-                    "X-CSRFToken": csrfToken
-                },
-                body: "checkpoint_data=" + encodeURIComponent(fileContent)
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.error) {
-                    alert("Error loading checkpoint: " + data.error);
-                } else {
-                    window.location.href = "/walt"; // Corrected path to just "/walt"
-                }
-            })
-            .catch(error => {
-                alert("Error loading checkpoint.");
-            });
-        }
-
-
-    </script>
-</head>
-<body>
-    <div class="splash-container">
-        <div class="splash-left">
-            <img src="{{ url_for('static', filename='images/walt.png') }}" alt="Walt Biographer" class="splash-image">
-            <h1>Walt, the AI Biographer</h1>
-        </div>
-        <div class="splash-right">
-            <p class="splash-tagline">I want to write your unique story!</p> <p class="splash-get-started">Get Started</p>
-            <div class="splash-buttons">
-                <button class="splash-button" onclick="beginNewBiography()">Begin New Biography</button>
-                <button class="splash-button" onclick="loadCheckpointFile()">Load Your Checkpoint file</button>
-            </div>
-        </div>
-    </div>
-    <input type="file" id="story_upload" name="story_upload" accept=".txt, .walt">
-</body>
-</html>
-
 --- FILE: walt2/walt2.py ---
 
 from flask import Blueprint, render_template, request, jsonify, session, send_file
@@ -3175,6 +1974,7 @@ def get_biography_outline():
 
 --- FILE: walt2/templates/walt_window2.html ---
 
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -3184,39 +1984,40 @@ def get_biography_outline():
     <style>
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #1E2A38;
-            color: #E5E5E5;
-            padding: 20px; /* Keep body padding */
+            background-color: #1E2A38; /* Changed back to blue background */
+            color: #E5E5E5; /* Changed text color to light for blue background */
+            padding: 20px;
             text-align: center;
             margin: 0;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
             box-sizing: border-box;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
 
         h1 {
-            color: #2D9CDB;
+            color: #2D9CDB; /* Changed title color to light blue for blue background */
             margin-bottom: 5px;
+            font-weight: 600;
         }
 
         p.tagline {
             font-style: italic;
-            color: #AEBCCF;
+            color: #AEBCCF; /* Changed tagline color to lighter grey for blue background */
             margin-bottom: 20px;
         }
 
         #uploadButtonContainer {
             margin-bottom: 20px;
-            display: flex;
+            display: none; /* HIDE Upload Button Container */
             align-items: flex-end;
             justify-content: space-between;
             width: 100%;
             box-sizing: border-box;
-            /* padding-left: 10px;  REMOVED padding-left from container*/
-            /* padding-right: 10px; REMOVED padding-right from container */
-            padding-left: 0px; /* Set container padding-left to 0 */
-            padding-right: 0px; /* Set container padding-right to 0 */
+            padding-left: 0px;
+            padding-right: 0px;
         }
 
         #uploadButton {
@@ -3232,14 +2033,18 @@ def get_biography_outline():
             white-space: nowrap;
             margin-left: auto;
             text-align: right;
-            margin-right: 20px; /* ADDED margin-right to button */
+            margin-right: 20px;
         }
 
         #waltImage {
+            display: none; /* HIDE Walt Image */
             height: 80px;
-            margin-right: 15px;
+            position: absolute; /* Positioned absolutely */
+            top: 20px;
+            right: 20px;
+            margin-right: 0;
+            margin-left: 20px;
             align-self: flex-start;
-            margin-left: 20px; /* ADDED margin-left to image */
         }
 
 
@@ -3340,17 +2145,19 @@ def get_biography_outline():
         #saveButton {
             text-align: center;
             align-self: center;
-            margin-top: 20px;
+            margin-top: 10px; /* Reduced top margin for stacked buttons */
             padding: 10px 20px;
             font-size: 16px;
             cursor: pointer;
-            background-color: #27AE60;
+            background-color: #27AE60; /* Green for Checkpoint File */
             color: white;
             border: none;
-            border-radius: 6px;
+            border-radius: 8px;
             height: auto;
             width: auto;
             white-space: nowrap;
+            margin-right: 0; /* Removed right margin */
+            margin-bottom: 10px; /* Added bottom margin to separate buttons */
         }
 
 
@@ -3404,7 +2211,7 @@ def get_biography_outline():
         .biography-outline ul {
             list-style: none;
             padding-left: 20px;
-        }
+            }
 
         .biography-outline li {
             margin-bottom: 5px;
@@ -3433,7 +2240,7 @@ def get_biography_outline():
         }
 
         .tone-and-craft-group {
-            display: flex;
+            display: none; /* HIDE Tone and Craft Group */
             justify-content: center;
             align-items: flex-end;
             gap: 20px;
@@ -3483,12 +2290,26 @@ def get_biography_outline():
             margin-bottom: 0;
         }
 
+        /* New CSS class for disabled features */
+        .disabled-feature {
+            opacity: 0.6; /* Grey out visually */
+            pointer-events: none; /* Disable interaction */
+            cursor: default; /* Revert cursor to default */
+            color: #777; /* Grey out text color */
+        }
+
+        .disabled-feature select {
+             background-color: #ddd; /* Grey out background of select */
+             color: #777; /* Grey out text in select */
+             border-color: #eee; /* Grey out border */
+        }
+
 
         #craftBiographyButton {
             padding: 15px 30px;
             font-size: 20px;
             cursor: pointer;
-            background-color: #FFA500;
+            background-color: #FFA500; /* Gold/Orange for Craft Biography */
             color: black;
             border: none;
             border-radius: 8px;
@@ -3497,6 +2318,7 @@ def get_biography_outline():
             transition: background-color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
             white-space: nowrap;
             width: 100%;
+             margin-top: 10px; /* Added top margin to separate buttons vertically */
         }
 
         #craftBiographyButton:hover {
@@ -3509,6 +2331,11 @@ def get_biography_outline():
         .save-checkpoint-area {
             text-align: center;
             margin-top: 20px;
+            display: flex; /* Flex container for buttons */
+            flex-direction: column; /* Stack buttons vertically */
+            align-items: center; /* Center buttons horizontally */
+            justify-content: center; /* Center vertically in save-checkpoint-area if needed */
+            gap: 10px; /* Reduced gap between stacked buttons */
         }
 
 
@@ -3618,7 +2445,7 @@ def get_biography_outline():
         }
 
         function craftBiography() {
-             function getCookie(name) {
+            function getCookie(name) {
                 const value = `; ${document.cookie}`;
                 const parts = value.split(`; ${name}=`);
                 if (parts.length === 2) return parts.pop().split(';').shift();
@@ -3664,8 +2491,8 @@ def get_biography_outline():
               try {
                 function getCookie(name) {
                     const value = `; ${document.cookie}`;
-                    const parts = value.split(`; ${name}=`);
-                    if (parts.length === 2) return parts.pop().split(';').shift();
+                const parts = value.split(`; ${name}=`);
+                if (parts.length === 2) return parts.pop().split(';').shift();
                 }
 
                 const csrfToken = getCookie('csrf_token');
@@ -3765,6 +2592,7 @@ def get_biography_outline():
                                     chatOutput.textContent = "Loading Checkpoint...";
                                      sendCheckpointData(event.target.result);
                                 }
+
                                 catch (error){
                                     chatOutput.textContent = "Error loading file: " + event.target.error;
                                 }
@@ -3790,11 +2618,11 @@ def get_biography_outline():
      <h1>Walt the Biographer</h1>
      <p class="tagline">I want to write your story!</p>
 
-        <div id="uploadButtonContainer">
-            <img id="waltImage" src="{{ url_for('static', filename='images/walt.png') }}" alt="Walt Biographer">
-         <button id="uploadButton" onclick="uploadStory()">Start at last Checkpoint</button>
+        <div id="uploadButtonContainer" style="display:none">  <!-- HIDDEN -->
+            <img id="waltImage" src="{{ url_for('static', filename='images/walt.png') }}" alt="Walt Biographer"  style="display:none"> <!-- HIDDEN -->
+         <button id="uploadButton" onclick="uploadStory()" disabled class="disabled-feature" style="display:none">Start at last Checkpoint</button>
      </div>
-     <input type="file" id="story_upload" name="story_upload" accept=".txt, .walt">
+     <input type="file" id="story_upload" name="story_upload" accept=".txt, .walt" style="display:none">  <!-- HIDDEN -->
 
      <div class="chat-container">
           <div class="chat-area">
@@ -3813,14 +2641,15 @@ def get_biography_outline():
      <h3 class="dataNote">Note: No data is saved by this application, the only memory is through this file alone.</h3>
 
      <div class="save-checkpoint-area">
-         <button id="saveButton" onclick="saveTextAsFile()">Create Checkpoint File</button>
+        <button id="saveButton" onclick="saveTextAsFile()">Create Checkpoint File</button>
+        <button id="craftBiographyButton" onclick="craftBiography()">Craft Biography</button>
      </div>
 
-     <div class="craft-area-container">
-         <div class="tone-and-craft-group">
-             <div class="tone-selector-area">
-                 <label for="toneSelector">Biography Tone:</label>
-                 <select id="toneSelector">
+     <div class="craft-area-container"  style="display:none">  <!-- HIDDEN -->
+         <div class="tone-and-craft-group disabled-feature"  style="display:none">
+             <div class="tone-selector-area disabled-feature"  style="display:none">
+                 <label for="toneSelector" class="disabled-feature"  style="display:none">Biography Tone:</label>
+                 <select id="toneSelector" class="disabled-feature" disabled  style="display:none">
                      <option value="default">Default</option>
                      <option value="humorous">Humor</option>
                      <option value="reflective">Reflective</option>
@@ -3829,9 +2658,9 @@ def get_biography_outline():
                  </select>
              </div>
          </div>
-          <div class="checkpoint-area">
+          <div class="checkpoint-area" style="display:none">
              <div>
-                 <button id="craftBiographyButton" onclick="craftBiography()">Craft Biography</button>
+                 <button id="craftBiographyButton" onclick="craftBiography()"  style="display:none">Craft Biography</button>
              </div>
          </div>
      </div>
@@ -4165,6 +2994,7 @@ For follow-up questions:
 
 --- FILE: templates/gallery.html ---
 
+
 <!-- Filename: gallery.html -->
 <!-- Location: templates/gallery.html -->
 <!DOCTYPE html>
@@ -4301,9 +3131,10 @@ For follow-up questions:
             }
         }
 
-        function openWaltWindow() {
-            window.location.href = "/walt";
+        function openWalt2Window() {
+            window.location.href = "/walt2";
         }
+
         function openWaltXWindow() {
             window.location.href = "/waltx";
         }
@@ -4317,23 +3148,23 @@ For follow-up questions:
         <h1>Jeff Virtual Lab</h1>
         <div class="gallery">
 
-            <!-- Walt Button -->
+            <!-- Walt2 Button (First Position, Green Button) -->
             <div class="project-tile">
-                <img src="static/icons/amber-button.jpeg" alt="Walt App">
-                <h3>Walt</h3>
-                <p>Walt wants to write your story!</p>
-                <a href="#" onclick="openWaltWindow()">Open App</a>
+                <img src="static/icons/green-button.jpeg" alt="Walt2 App">
+                <h3>Walt2</h3>
+                <p>Walt wants to write your story! (New Version)</p>
+                <a href="#" onclick="openWalt2Window()">Open App</a>
             </div>
 
-            <!-- WaltX Button (Second Icon - NEW) -->
+            <!-- WaltX Button (Second Position) -->
             <div class="project-tile">
-                <img src="static/icons/amber-button.jpeg" alt="WaltX App">  <!-- You can use amber-button or create a yellow-button.jpeg -->
+                <img src="static/icons/amber-button.jpeg" alt="WaltX App">
                 <h3>WaltX</h3>
                 <p>WaltX wants to write your story! (New Version)</p>
-                <a href="#" onclick="openWaltXWindow()">Open App</a>  <!-- Link to WaltX -->
+                <a href="#" onclick="openWaltXWindow()">Open App</a>
             </div>
 
-            <!-- Jeff's Art Button -->
+            <!-- Jeff's Art Button (Third Position) -->
             <div class="project-tile">
                 <img src="static/icons/green-button.jpeg" alt="Jeff's Art">
                 <h3>Jeff's Art</h3>
@@ -4341,7 +3172,7 @@ For follow-up questions:
                 <a href="#" onclick="openJeffsArt('racecars.jpeg')">View Art</a>
             </div>
 
-            <!-- Dynamic Graph Button -->
+            <!-- Dynamic Graph Button (Fourth Position) -->
             <div class="project-tile">
                 <img src="static/icons/green-button.jpeg" alt="Dynamic Graph">
                 <h3>Dynamic Graphing</h3>
@@ -4349,7 +3180,7 @@ For follow-up questions:
                 <a href="#" onclick="openDynamicGraph()">Open App</a>
             </div>
 
-           <!-- GPT Prototype Button -->
+           <!-- GPT Prototype Button (Fifth Position) -->
             <div class="project-tile">
                 <img src="static/icons/amber-button.jpeg" alt="GPT Prototype">
                 <h3>GPT Prototype</h3>
@@ -4357,7 +3188,7 @@ For follow-up questions:
                 <a href="/angel_investment_analysis">Launch Project</a>
             </div>
 
-            <!-- API Test Button -->
+            <!-- API Test Button (Sixth Position) -->
             <div class="project-tile">
                 <img src="static/icons/green-button.jpeg" alt="API Test">
                 <h3>API Test</h3>
@@ -4365,7 +3196,7 @@ For follow-up questions:
                 <a href="#" onclick="openTestWindow()">API Test</a>
             </div>
 
-            <!-- Word Counter Button -->
+            <!-- Word Counter Button (Seventh Position) -->
             <div class="project-tile">
                 <img src="static/icons/amber-button.jpeg" alt="Word Counter App">
                 <h3>Word Counter</h3>
