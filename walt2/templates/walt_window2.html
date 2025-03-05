@@ -477,7 +477,7 @@
 
             const csrfToken = getCookie('csrf_token');
             let chatOutput = document.getElementById("chatOutput");
-            chatOutput.textContent = "Crafting Biography... Please wait.  This may take a minute.";
+            chatOutput.textContent = "Crafting Biography based on interview so far... Please wait.  This may take a minute.";
 
             fetch("/walt2/craft_biography", {
                 method: "POST",
@@ -553,7 +553,7 @@
 
         function sendLoadMessage() {
             let chatOutput = document.getElementById("chatOutput");
-            chatOutput.textContent ="Oh I see! I'd forgotten what we already did. Wonderful";
+            chatOutput.textContent ="Oh now I remember what we already did. Thank you.";
          }
 
          function uploadStory() {
@@ -639,11 +639,11 @@
          };
      </script>
  <body>
-     <h1>Walt the Biographer</h1>
-     <p class="tagline">I want to write your story!</p>
+     <h1>Walt the (auto)Biographer</h1>
+     <p class="tagline">I will write your story!</p>
 
         <div id="uploadButtonContainer" style="display:none">  <!-- HIDDEN -->
-            <img id="waltImage" src="{{ url_for('static', filename='images/walt.png') }}" alt="Walt Biographer"  style="display:none"> <!-- HIDDEN -->
+            <img id="waltImage" src="{{ url_for('static', filename='images/walt.png') }}" alt="Walt (auto)Biographer"  style="display:none"> <!-- HIDDEN -->
          <button id="uploadButton" onclick="uploadStory()" disabled class="disabled-feature" style="display:none">Start at last Checkpoint</button>
      </div>
      <input type="file" id="story_upload" name="story_upload" accept=".txt, .walt" style="display:none">  <!-- HIDDEN -->
@@ -662,7 +662,7 @@
          </div>
      </div>
 
-     <h3 class="dataNote">Note: No data is saved by this application, the only memory is through this file alone.</h3>
+     <h3 class="dataNote">!!! Please save the checkpoint file to your computer.  Everything is erased when you leave.  Walt saves nothing.</h3>
 
      <div class="save-checkpoint-area">
         <button id="saveButton" onclick="saveTextAsFile()">Create Checkpoint File</button>
