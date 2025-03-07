@@ -294,9 +294,10 @@ def craft_biography():
             model="gpt-4o",
             messages=[{"role": "user", "content": api_input_text}],
             temperature=0.7,
-            max_tokens=1000,
+            max_tokens=2048, # <-- INCREASED max_tokens here
         )
         biography_content = response.choices[0].message.content.strip()
+        logging.info(f"Biography content length: {len(biography_content)}") # <-- Added length logging
         formatted_biography = format_openai_text(biography_content)
 
         formatted_biography_file = biography_content.replace("<br>", "\n")
