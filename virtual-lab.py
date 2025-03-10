@@ -1,6 +1,6 @@
 
 import os
-from flask import Flask, request, render_template, send_file, jsonify
+from flask import Flask, request, render_template, send_file, jsonify, redirect # ADDED redirect to import
 from dotenv import load_dotenv
 import numpy as np
 import json
@@ -129,7 +129,7 @@ def calculate_mandelbrot(width, height, max_iter, palette_index):
 # Home route redirecting to the gallery page
 @app.route('/')
 def home():
-    return render_template('gallery.html')
+    return redirect('/walt2') # <-- CHANGED to redirect to /walt2 from gallery
 
 
 ALLOWED_EXTENSIONS = {'pdf'}  # only allow pdf files
