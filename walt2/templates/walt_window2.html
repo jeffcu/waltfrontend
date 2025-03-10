@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Walt the auto-Biographer</title>
+    <title>Walt the Biographer</title>
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -340,8 +340,9 @@
             box-shadow: 0 4px 8px rgba(255, 165, 0, 0.5);
             transition: background-color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
             white-space: nowrap;
-            width: 100%;
+            width: auto; /* Changed width to auto */
              margin-top: 10px; /* Added top margin to separate buttons vertically */
+             align-self: center; /* Added align-self: center; to horizontally center */
         }
 
         #craftBiographyButton:hover {
@@ -491,25 +492,11 @@
                     alert("Error crafting biography: " + data.error);
                     chatOutput.textContent = "Error crafting biography: " + data.error;
                 } else {
-                    // Biography content is in data.biography_content (raw text)
-                    const biographyContent = data.biography_content;
+                    chatOutput.innerHTML = data.api_response;
+
+                    const fileContent = data.api_response.replace(/<br>/g, '\n');
+                    const textFileAsBlob = new Blob([fileContent], { type: 'text/plain' });
                     const fileNameToSaveAs = data.file_download_name || "Full_biography.txt";
-
-                    // Open a new popup window
-                    let popupWindow = window.open('', '_blank', 'width=800,height=600,scrollbars=yes,resizable=yes');
-                    if (popupWindow) {
-                        // Write the biography content to the popup window
-                        popupWindow.document.write('<html><head><title>Your Biography</title></head><body><pre style="white-space: pre-wrap; font-family: monospace; margin: 10px;">' + biographyContent + '</pre></body></html>');
-                        popupWindow.document.close(); // Important to close document for content to render
-
-                        // Inform user in the chat output
-                        chatOutput.textContent = "Biography crafted and displayed in a new window. Download started.";
-                    } else {
-                        chatOutput.textContent = "Biography crafted, but popup window blocked. Please allow popups to view biography, download started.";
-                    }
-
-
-                    const textFileAsBlob = new Blob([biographyContent], { type: 'text/plain' });
                     const downloadLink = document.createElement("a");
                     downloadLink.download = fileNameToSaveAs;
                     downloadLink.href = window.URL.createObjectURL(textFileAsBlob);
@@ -517,7 +504,7 @@
                     document.body.appendChild(downloadLink);
                     downloadLink.click();
                     document.body.removeChild(downloadLink);
-
+                    chatOutput.textContent += "\n\nBiography crafted and download started.";
                 }
             })
             .catch(error => chatOutput.textContent = "Error crafting biography: " + error.message);
@@ -528,7 +515,7 @@
               try {
                 function getCookie(name) {
                     const value = `; ${document.cookie}`;
-                const parts = value.split(`; ${name}=`);
+                    const parts = value.split(`; ${name}=`);
                 if (parts.length === 2) return parts.pop().split(';').shift();
                 }
 
@@ -566,9 +553,8 @@
 
         function sendLoadMessage() {
             let chatOutput = document.getElementById("chatOutput");
-            chatOutput.textContent ="Oh now I remember what we already did. Thank you.";
+            chatOutput.textContent ="Oh I see! I'd forgotten what we already did. Wonderful";
          }
-
          function uploadStory() {
               console.log("Firing Upload Story Trigger");
               if (storyUpload) {
@@ -576,15 +562,8 @@
                } else {
                  console.error("storyUpload element not found");
                }
-           }
 
-        function displayInitialMessageOnLoad() {
-            const initialMessage = sessionStorage.getItem('initial_message');
-            if (initialMessage) {
-                document.getElementById("chatOutput").textContent = initialMessage;
-                sessionStorage.removeItem('initial_message');
-            }
-        }
+           }
 
 
         function updateBiographyOutlineDisplay() {
@@ -608,7 +587,9 @@
             const chatOutput = document.getElementById("chatOutput");
             const initialMessage = "{{ initial_message|default('') | safe }}";
 
-            displayInitialMessageOnLoad();
+            if (initialMessage) {
+                chatOutput.textContent = initialMessage;
+            }
 
 
              console.log("Story Upload: Document is loaded");
@@ -649,16 +630,18 @@
          })
 
          window.onload = function() {
+             // document.getElementById("chatOutput").textContent = "";
          };
      </script>
  <body>
-     <h1>Walt the auto-Biographer</h1>
-     <p class="tagline">I want to write your story!</p>
+     <h1>Walt the (auto)Biographer</h1>
+     <p class="tagline">I will write your story!</p>
 
-        <div id="uploadButtonContainer">
-         <button id="uploadButton" onclick="uploadStory()">Start at last Checkpoint</button>
+        <div id="uploadButtonContainer" style="display:none">  <!-- HIDDEN -->
+            <img id="waltImage" src="{{ url_for('static', filename='images/walt.png') }}" alt="Walt (auto)Biographer"  style="display:none"> <!-- HIDDEN -->
+         <button id="uploadButton" onclick="uploadStory()" disabled class="disabled-feature" style="display:none">Start at last Checkpoint</button>
      </div>
-     <input type="file" id="story_upload" name="story_upload" accept=".txt, .walt">
+     <input type="file" id="story_upload" name="story_upload" accept=".txt, .walt" style="display:none">  <!-- HIDDEN -->
 
      <div class="chat-container">
           <div class="chat-area">
