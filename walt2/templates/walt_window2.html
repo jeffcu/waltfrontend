@@ -585,10 +585,11 @@
             biographyOutline = {{ biography_outline|tojson }};
             updateBiographyOutlineDisplay();
             const chatOutput = document.getElementById("chatOutput");
-            const initialMessage = "{{ initial_message|default('') | safe }}";
+            const initialMessage = sessionStorage.getItem('initial_message'); // <-- GET initialMessage from sessionStorage here
 
-            if (initialMessage) {
+            if (initialMessage) { // <-- Conditionally set textContent only if initialMessage exists
                 chatOutput.textContent = initialMessage;
+                sessionStorage.removeItem('initial_message');
             }
 
 
