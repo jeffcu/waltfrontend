@@ -1,4 +1,3 @@
-
 from flask import Blueprint, render_template, request, jsonify, session, send_file
 import os
 import openai
@@ -307,6 +306,7 @@ def craft_biography():
         biography_content = response.choices[0].message.content.strip()
         logging.info(f"Biography content length: {len(biography_content)}") # <-- Added length logging
         formatted_biography = format_openai_text(biography_content)
+        # No longer formatting for chat output in backend
 
         formatted_biography_file = biography_content.replace("<br>", "\n")
         filename = "Full_biography.txt"
@@ -316,7 +316,8 @@ def craft_biography():
         session['file_content'] = biography_content
         session.modified = True
 
-        return jsonify({"api_response": formatted_biography, "file_download_name": filename})
+        # Return raw biography content and filename for popup
+        return jsonify({"biography_content": biography_content, "file_download_name": filename})
 
     except Exception as e:
         logging.error(f"Error crafting biography in craft_biography:", exc_info=True) # Added route name to log
