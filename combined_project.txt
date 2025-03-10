@@ -1607,7 +1607,6 @@ def walt_analyze():
 @walt2_bp.route('/create_checkpoint', methods=['POST'])
 def create_checkpoint():
     try:
-        checkpoint_data_text = session.get('file_content', '')
         bio_prompt_content = ""
         try:
             with open('walt2/walt_prompts/bio_creator_prompt.txt', 'r', encoding='utf-8') as f:
@@ -1624,22 +1623,40 @@ def create_checkpoint():
 
         extended_conversation_text = ""
         for message in extended_conversation:
-            if message['role'] in ['user', 'assistant']:
+            if message['role'] in ['user', 'assistant']: # Only include user and assistant messages in history
                 conversation_text += f"{message['role']}: {message['content']}\n"
                 extended_conversation_text += f"{message['role']}: {message['content']}\n" # Current extended conv text - for CURRENT HISTORY SECTION
 
+
         previous_checkpoint_history_text = session.get('previous_checkpoint_history_text', "") # Retrieve previous history - NEW
 
-        file_content_for_download = bio_prompt_content + "\n\n" + checkpoint_data_text + "\n\n--- CURRENT CONVERSATION HISTORY ---\n\n" + extended_conversation_text + "\n\n--- PREVIOUS CHECKPOINT CONVERSATION HISTORY ---\n\n" + previous_checkpoint_history_text # Include both histories - NEW
+        api_input_text = bio_prompt_content + "\n\n--- CONVERSATION HISTORY ---\n\n" + conversation_text # Combine prompt and conversation
 
-        session['file_content'] = file_content_for_download
-        session.modified = True
+        try: # Call OpenAI API to process and summarize checkpoint data
+            client = openai.Client()
+            response = client.chat.completions.create(
+                model="gpt-4o", # Or desired model
+                messages=[{"role": "user", "content": api_input_text}],
+                temperature=0.7, # Adjust as needed
+                max_tokens=500, # Adjust as needed
+            )
+            checkpoint_data_text = response.choices[0].message.content.strip() # Get processed summary
+            session['file_content'] = checkpoint_data_text # Store processed summary in session
+        except Exception as openai_error:
+            logging.error(f"OpenAI API error during checkpoint processing: {openai_error}", exc_info=True)
+            checkpoint_data_text = "Error processing checkpoint data. Conversation history saved, but summary generation failed." # Informative error message in checkpoint
+            session['file_content'] = checkpoint_data_text # Still store error in session
 
-        logging.info(f"Checkpoint data being created (Current and Previous History): {file_content_for_download[:100]}...")
 
-        return jsonify({"checkpoint_data": file_content_for_download})
+        file_content_for_download = checkpoint_data_text + "\n\n--- CURRENT CONVERSATION HISTORY ---\n\n" + extended_conversation_text + "\n\n--- PREVIOUS CHECKPOINT CONVERSATION HISTORY ---\n\n" + previous_checkpoint_history_text # Checkpoint file now contains PROCESSED data, then conversation history
 
-    except Exception as e:
+        session.modified = True # Ensure session is saved
+
+        logging.info(f"Checkpoint data being created (Processed Summary and History): {file_content_for_download[:100]}...")
+
+        return jsonify({"checkpoint_data": file_content_for_download}) # Send the complete file content for download
+
+    except Exception as e: # Catch any errors during checkpoint creation
         logging.error(f"Error processing checkpoint and calling API: {e}", exc_info=True)
         return jsonify({"error": str(e)}), 500
 
@@ -1667,9 +1684,10 @@ def craft_biography():
             model="gpt-4o",
             messages=[{"role": "user", "content": api_input_text}],
             temperature=0.7,
-            max_tokens=1000,
+            max_tokens=2048, # <-- INCREASED max_tokens here
         )
         biography_content = response.choices[0].message.content.strip()
+        logging.info(f"Biography content length: {len(biography_content)}") # <-- Added length logging
         formatted_biography = format_openai_text(biography_content)
 
         formatted_biography_file = biography_content.replace("<br>", "\n")
@@ -2453,7 +2471,7 @@ def get_biography_outline():
 
             const csrfToken = getCookie('csrf_token');
             let chatOutput = document.getElementById("chatOutput");
-            chatOutput.textContent = "Crafting Biography... Please wait.  This may take a minute.";
+            chatOutput.textContent = "Crafting Biography based on interview so far... Please wait.  This may take a minute.";
 
             fetch("/walt2/craft_biography", {
                 method: "POST",
@@ -2529,7 +2547,7 @@ def get_biography_outline():
 
         function sendLoadMessage() {
             let chatOutput = document.getElementById("chatOutput");
-            chatOutput.textContent ="Oh I see! I'd forgotten what we already did. Wonderful";
+            chatOutput.textContent ="Oh now I remember what we already did. Thank you.";
          }
 
          function uploadStory() {
@@ -2615,11 +2633,11 @@ def get_biography_outline():
          };
      </script>
  <body>
-     <h1>Walt the Biographer</h1>
-     <p class="tagline">I want to write your story!</p>
+     <h1>Walt the (auto)Biographer</h1>
+     <p class="tagline">I will write your story!</p>
 
         <div id="uploadButtonContainer" style="display:none">  <!-- HIDDEN -->
-            <img id="waltImage" src="{{ url_for('static', filename='images/walt.png') }}" alt="Walt Biographer"  style="display:none"> <!-- HIDDEN -->
+            <img id="waltImage" src="{{ url_for('static', filename='images/walt.png') }}" alt="Walt (auto)Biographer"  style="display:none"> <!-- HIDDEN -->
          <button id="uploadButton" onclick="uploadStory()" disabled class="disabled-feature" style="display:none">Start at last Checkpoint</button>
      </div>
      <input type="file" id="story_upload" name="story_upload" accept=".txt, .walt" style="display:none">  <!-- HIDDEN -->
@@ -2638,7 +2656,7 @@ def get_biography_outline():
          </div>
      </div>
 
-     <h3 class="dataNote">Note: No data is saved by this application, the only memory is through this file alone.</h3>
+     <h3 class="dataNote">!!! Please save the checkpoint file to your computer.  Everything is erased when you leave.  Walt saves nothing.</h3>
 
      <div class="save-checkpoint-area">
         <button id="saveButton" onclick="saveTextAsFile()">Create Checkpoint File</button>
@@ -2689,6 +2707,106 @@ Choose a Chapter that is currently marked TBD and focus the interview in that ar
 Immediately begin your response with a compelling and concise open-ended question that Walt would ask to encourage them to continue sharing their life story on this chapter. This question should directly invite them to pick up creating their story where they left off in the checkpoint file.
 Make it absolutely clear that your *first words* are a question.  The question should be inviting and make them want to talk more right away.  Think of a friendly biographer eager to hear the next part of the story.
 Do not start with a summary or statement. Start with a question.
+
+
+--- FILE: walt2/walt_prompts/bio_blueprints.txt ---
+
+Got it! Here are 10 universal story arcs tailored for the biographies of ordinary people, designed to help guide interviews and capture unique life stories with messages for future readers. Each arc provides a framework to uncover the extraordinary within the ordinary.
+
+1. The Local Power Broker (For those who built something lasting in their community)
+
+🔹 Early Aspirations – A young person with dreams of improving their town or workplace.
+🔹 First Steps – They get involved in local projects, perhaps through volunteering or an entry-level job.
+🔹 Gaining Influence – Their work gains recognition, and they take on leadership roles.
+🔹 Challenges & Resistance – They face opposition, bureaucracy, or unforeseen obstacles.
+🔹 Making Tough Decisions – They must choose between personal gain and the greater good.
+🔹 The Peak of Power – Their impact is undeniable, shaping their surroundings.
+🔹 Consequences of Control – Their influence grows, but so do their critics.
+🔹 Reckoning & Reflection – They confront their mistakes, limits, or the unintended effects of their choices.
+🔹 Legacy Building – They work to cement their contributions, passing down knowledge.
+🔹 Final Reflection – What lessons do they want future leaders to learn?
+
+2. The Relentless Dreamer (For entrepreneurs, creators, or anyone who turned an idea into reality)
+
+🔹 Humble Beginnings – A person with a vision but little to no resources.
+🔹 First Failures – Early attempts are met with setbacks, self-doubt, and rejection.
+🔹 Finding a Path – They learn skills, find mentors, or pivot strategies.
+🔹 The Breakthrough Moment – A small success sparks momentum.
+🔹 Scaling Up – They take bigger risks, facing new challenges.
+🔹 Personal Sacrifices – Relationships, health, or finances suffer due to their dedication.
+🔹 Major Setback – A crushing failure, financial collapse, or betrayal threatens everything.
+🔹 Rebuilding Smarter – Lessons learned help them make a smarter, more sustainable move.
+🔹 Achieving Stability – Success comes, but in a way they never expected.
+🔹 Final Words – What advice do they have for future dreamers?
+
+3. From Nothing to Something (For people who overcame hardship to build a better life)
+
+🔹 A Rough Start – Born into poverty, instability, or hardship.
+🔹 Survival Mode – They develop resourcefulness, finding ways to get by.
+🔹 First Steps Toward Change – Education, a mentor, or an opportunity shifts their perspective.
+🔹 Hard Work & Grit – They grind through tough jobs, setbacks, and discrimination.
+🔹 Defining Moment – A chance encounter, event, or decision propels them forward.
+🔹 Climbing the Ladder – Small successes build into bigger ones.
+🔹 Facing the Past – Old wounds or doubts resurface as they gain success.
+🔹 Giving Back – They help others in the way they once needed help.
+🔹 A Life Transformed – How their journey changed their family and future generations.
+🔹 Lessons for the Next Generation – Their message for those still struggling.
+
+4. The Reluctant Leader (For people who never sought leadership but stepped up when needed)
+
+🔹 An Ordinary Life – They prefer staying in the background, content with routine.
+🔹 A Problem Emerges – Something goes wrong in their workplace, family, or community.
+🔹 Waiting for Someone Else – They assume someone more qualified will fix it.
+🔹 The Call to Action – They realize they must take responsibility.
+🔹 First Leadership Challenges – They struggle with self-doubt and resistance from others.
+🔹 Turning Point – A mentor, a win, or sheer perseverance convinces them they can do this.
+🔹 Mastering the Role – They grow into leadership, gaining trust and effectiveness.
+🔹 Balancing Power & Responsibility – Leadership strains personal relationships or forces hard choices.
+🔹 Lasting Impact – What they built or changed continues beyond them.
+🔹 What They Wish They Knew – Their wisdom for future reluctant leaders.
+
+5. The Small-Town Tycoon (For self-made business owners and local success stories)
+
+🔹 A Modest Start – A kid with a paper route, odd jobs, or a knack for making deals.
+🔹 Spotting an Opportunity – They see a need others overlook.
+🔹 Risking It All – They put everything on the line to start a business.
+🔹 First Big Win – A breakthrough moment gives them confidence.
+🔹 The Grind of Growth – They work tirelessly, often to exhaustion.
+🔹 Competitors & Setbacks – Bigger players or unforeseen challenges threaten them.
+🔹 Adapting & Innovating – They pivot to survive and thrive.
+🔹 Reaching the Top – Their business or influence reaches its peak.
+🔹 Giving Back to the Community – They use success to uplift others.
+🔹 The Hardest Business Lesson – What they wish they knew at the start.
+
+6. The Curious Mind (For lifelong learners, inventors, or self-taught experts)
+
+🔹 Early Fascination – A childhood obsession with a subject or skill.
+🔹 Unconventional Learning – They teach themselves through books, trial-and-error, or unconventional means.
+🔹 First Successes – Their knowledge leads to small, unexpected wins.
+🔹 Facing Skepticism – Others dismiss them for lacking formal credentials.
+🔹 Proving Themselves – A moment where their expertise changes minds.
+🔹 Passion vs. Practicality – Balancing their obsession with making a living.
+🔹 Breakthrough Moment – Their ideas or work gain recognition.
+🔹 Sharing Knowledge – They become mentors, teachers, or influencers.
+🔹 The Evolution of Their Mind – How their thinking changed over decades.
+🔹 Why Curiosity Matters – Their message for future knowledge seekers.
+
+7. The Neighborhood Peacemaker (For those who solve problems in communities)
+
+🔹 A Divided Community – Two groups, families, or individuals are at odds.
+🔹 Personal Investment – The peacemaker has ties to both sides.
+🔹 Tensions Rise – Small disputes escalate, threatening long-term damage.
+🔹 Taking a Risk – They step into the fray, risking criticism from both sides.
+🔹 The First Attempts Fail – People resist peace, forcing them to rethink their approach.
+🔹 Breakthrough – A shared moment of understanding changes everything.
+🔹 Gaining Trust – They become a bridge, navigating delicate conversations.
+🔹 A Community Heals – New friendships or collaborations emerge.
+🔹 What They Learned About Conflict – Insights on human nature.
+🔹 The Power of One Person – Their advice for future peacemakers.
+
+These story arcs provide blueprints for capturing the biographies of thousands of ordinary people, uncovering universal truths in their unique lives.
+
+Would you like any refinements to fit different audiences or themes?
 
 
 --- FILE: walt2/walt_prompts/walt_promptold.txt ---
@@ -2755,30 +2873,76 @@ For follow-up questions:
 
 --- FILE: walt2/walt_prompts/welcome.txt ---
 
-Greet the user as a concise, charismatic, elegant, and genuinely interested, gentleman would.   For example, "I'm so glad to see you.  My name is Walt and I'd he honored to learn all about you as I write your biograpy".  Ask their name and where and when they were born.
+Greet the user as a concise, charismatic, elegant, and genuinely interested, gentleman would.   Present these instructions "I'm a conversational chatbot so please interject to change my direction.   Tell me stories or ideas at any time and I will include them."  For example, "I'm so glad to see you.  My name is Walt and I'd he honored to learn all about you as I write your biograpy".
+The first question is to always ask their name and where and when they were born.   Invite them to begin by telling you a bit about their family and life.
 
 
 --- FILE: walt2/walt_prompts/write_bio.txt ---
 
-You're a gifted writer and world-class biographer.
-Take all following input and write a compelling and complete biographical long form book of this person using the outline provided.
-Integrate all the stories, ideas, content and facts that have been provided.
-The resulting work should be an accurate, compelling and complete story, not missing any details.
-Mark the end of work with the words "The End of the Biography!"
-After the end of the full biography, include a list of each and every facts accumulated so far about the person as attribute value pairs such as "Born On: 25 December 1923:, "Born In: Columbus Ohio".
+Based on the following information,
+first give me a description of  history changing periods or events that would have impacted this persons world view. Examples are wars, technology breakthroughs, economic upheaval
+Second: Give the list in bullets.
+Third: Write a compelling 10-page biography.  Expand on each chapter thoroughly, ensuring transitions between sections are smooth. Incorporate all facts and stories provided by the individual in each chapter.   Incorporate context from historical events happening at that time how they might have influenced the individual.
+The audience family members with a high school reading level.
+Keep it factual and accurate.
+Tell the story so that it underscores their journey to their legacy and how they want to be remembered.
+
+Look over these blueprints of popular ways to tell a persons story when it applies.  Apply as clever story line when they are similar.
+
+--- SECTION - BIOGRAPHY BLUEPRINTS
+
+7 universal story arcs for the biographies of ordinary people, designed to help guide interviews and capture unique life stories with messages for future readers. Each arc provides a framework to uncover the extraordinary within the ordinary.
+
+1. The Local Power Broker (For those who built something lasting in their community)
+
+🔹 Final Reflection – What lessons do they want future leaders to learn?
+
+2. The Relentless Dreamer (For entrepreneurs, creators, or anyone who turned an idea into reality)
+
+🔹 Final Words – What advice do they have for future dreamers?
+
+3. From Nothing to Something (For people who overcame hardship to build a better life)
+
+🔹 Lessons for the Next Generation – Their message for those still struggling.
+
+4. The Reluctant Leader (For people who never sought leadership but stepped up when needed)
+
+🔹 What They Wish They Knew – Their wisdom for future reluctant leaders.
+
+5. The Small-Town Tycoon (For self-made business owners and local success stories)
+
+🔹 The Hardest Business Lesson – What they wish they knew at the start.
+
+6. The Curious Mind (For lifelong learners, inventors, or self-taught experts)
+
+🔹 Why Curiosity Matters – Their message for future knowledge seekers.
+
+7. The Neighborhood Peacemaker (For those who solve problems in communities)
+
+🔹 The Power of One Person – Their advice for future peacemakers.
+
+
+Here's the interview:
 
 
 --- FILE: walt2/walt_prompts/walt_prompt.txt ---
 
-Personality: You are Walt, a biographer inspired by Oprah. Be friendly, warm, genuinely curious, and concise.  Make the interview feel like a comfortable chat. Use light humor and enthusiasm naturally.
+PERSONALITY: You are Walt, a biographer inspired by Oprah. Be friendly, warm, genuinely curious, and concise.  Make the interview feel like a comfortable chat. Use light humor and enthusiasm naturally.
 
-Identity: Walt.  charismatic, enthusiastic biographer and friend.
+IDENTITY: Walt.  charismatic, enthusiastic biographer and friend.
 
-Process:
-First: Examine the outline.  If the hook hasn't been established, always start there with the question "What's the *one thing* you hope people will remember most about you?".  Otherwise, select one chapter that us marked TBD and ask an open ended question to get them talking about the topic. Focus questions on collecting information to write that chapter.
-Second: Dig deeper into their answer to understand why they answered that way.
+MISSION: You interview people to craft their unique life story in a patient, honest way.
+Interviewing: You ask inquisitive questions while behind the scene you seek to uncover stories using the BIOGRAPHY BLUEPRINTS.
+You frequently consult the Biography Blueprints to create you next thoughtful and open ended question to learn about the personal
+You never reveal any aspect of the Biography Blueprints to the user, they are only to help you craft questions.
+Whenever the USER introduces a new event or person, ask for details:  peoples names, dates, places, events so that you accurate.
+
+PROCESS:
+First: When you have no previous_history_content,  inquire of the users biggest dream using the question "What's the *one thing* you hope people will remember most about you?".
+Otherwise, ask three questions about one TBD chapter in the Checkpoint filed question to get them talking about the topic. Focus questions on collecting information to write that chapter.
+Second: Behind the scenes contemplate the Biography Blueprints and your current conversation to follow a possible discussion path for a natural line of questioning.
 Third: If not offered, ask for facts relevant to the conversation including names, dates, places and major events.
-Fourth: Be a good listener! Follow up questions and surprising information with more follow-up questions to expand on the subject.
+Fourth: Ask follow up questions to complete the users stories and weave a story arc and add color to lives
 Fifth, be an active listener.  Concisely confirm what you heard and be supportive. Use follow-on questions like a curious friend. Use brief questions like:
 - "Tell me more..."
 - "What were you feeling?"
@@ -2786,39 +2950,52 @@ Fifth, be an active listener.  Concisely confirm what you heard and be supportiv
 - "What did you learn?"
 Occasionally, use Oprah-style reflective questions, but sparingly.
 
-Tone: Warm, encouraging, conversational, and concise. Imagine a friendly coffee shop chat, but efficient. Avoid overly formal or robotic language. Inject personality and genuine interest concisely. Emojis sparingly.
+TONE: Warm, encouraging, conversational, and concise. Imagine a friendly coffee shop chat, but efficient. Avoid overly formal or robotic language. Inject personality and genuine interest concisely. Emojis sparingly.
 
-Remember: Co-create biography *with* the user, making it insightful and pleasant, but efficient. Be a supportive guide and enthusiastic listener, concisely.
+REMEMBER: Always as a question to keep the conversation moving. Be polite, friendly, concise.  Ask direct questions to uncover similar and complete Biography Blueprints
 
-Examples of concise questions:
-- What was a shaping experience (pain or joy)?
-- What's one truth for the world to know?
-- When did you felt most alive?
-- Belief worth standing alone for?
-- Hardest lesson, wouldn’t trade?
-- Younger self's surprise now?
-- One self-mystery?
-- Deepest love/connection?
-- Three words for your soul?
-- Moment to relive (not change)?
+--- SECTION - BIOGRAPHY BLUEPRINTS
 
-Outline: (Guide, be flexible)
-1. Hook – Defining Moment
-2. Origins – Early Life & Influences
-3. Call to Action – First Big Decision
-4. Rising Conflict – Struggles & Growth
-5. Climax – Defining Achievements
+Read these story arcs to match up good lines of questioning.  The priority is to capture unique life stories with messages for future readers. Each arc provides a framework to uncover the extraordinary within the ordinary.
 
---- NEW SECTION - CONCISE INSTRUCTIONS FOR FOLLOW-UP QUESTIONS ---
+1. The Local Power Broker (For those who built something lasting in their community)
 
-For follow-up questions:
+🔹 Final Reflection – What lessons do they want future leaders to learn?
 
-*   Integrate questions directly into your conversational response.
-*   Phrase as natural, friendly questions Walt would ask.
-*   Keep questions very brief and focused. Aim for single, direct questions.
-*   Use a warm, concise, engaging tone.
-*   Example of concise integration:  "Montreal sounds pivotal!  What year did you arrive?  Key people in hockey then?"
-*   Avoid: Formal introductions, numbered lists, verbose phrasing.
+2. The Relentless Dreamer (For entrepreneurs, creators, or anyone who turned an idea into reality)
+
+🔹 Final Words – What advice do they have for future dreamers?
+
+3. From Nothing to Something (For people who overcame hardship to build a better life)
+
+🔹 Lessons for the Next Generation – Their message for those still struggling.
+
+4. The Reluctant Leader (For people who never sought leadership but stepped up when needed)
+
+🔹 What They Wish They Knew – Their wisdom for future reluctant leaders.
+
+5. The Small-Town Tycoon (For self-made business owners and local success stories)
+
+🔹 The Hardest Business Lesson – What they wish they knew at the start.
+
+6. The Curious Mind (For lifelong learners, inventors, or self-taught experts)
+
+🔹 Why Curiosity Matters – Their message for future knowledge seekers.
+
+7. The Neighborhood Peacemaker (For those who solve problems in communities)
+
+🔹 The Power of One Person – Their advice for future peacemakers.
+
+
+--- SECTION - HOW TO ANSWER QUESTIONS FROM THE USER
+You can openly share a story about yourself and your creator.
+Walt is a program consisting of AI-centered piece of software
+A guy named Jeff created Walt because he doesn't want people to be lost when they pass or want to share their story
+Jeff is mostly a creator.  He's retired and paints and creates things, like this.
+Jeff created this program using the OpenAI API where information is shared back and forth but not stopRecording
+Jeff has a message for you: If you don't save your Checkpoint file on your computer, you will  loose your work so format_api_response
+The name Walt is a nod to Walter Cronkite and Barbara Walters to straight shooting news and interview personalities
+If they ask about using Walt, tell them they can share anything important to them with Walt at any time. They do not have to ask for Walt to ask.  Tell Walt important memories and stories at any time.
 
 
 --- FILE: templates/index.html ---

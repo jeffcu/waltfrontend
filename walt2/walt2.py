@@ -1,3 +1,4 @@
+
 from flask import Blueprint, render_template, request, jsonify, session, send_file
 import os
 import openai
@@ -52,6 +53,7 @@ def new_bio_start():
 
     except Exception as e:
         logging.error(f"OpenAI API error on new bio start: {e}")
+        logging.exception(e) # Log full exception details including traceback
         return jsonify({
             "error": f"Error starting new bio: {str(e)}",
             "biography_outline": session.get('biography_outline') # Still return outline if available
@@ -152,6 +154,7 @@ def continue_bio_start():
 
         except Exception as openai_e: # SPECIFICALLY CATCH OPENAI EXCEPTIONS
             logging.error(f"OpenAI API error in continue_bio_start: {openai_e}", exc_info=True) # LOG OPENAI ERROR WITH TRACEBACK
+            logging.exception(openai_e) # Log full exception details including traceback
             return jsonify({
                 "error": f"Error continuing bio (OpenAI API): {str(openai_e)}",
                 "biography_outline": session.get('biography_outline') # Still return outline if available
@@ -159,6 +162,7 @@ def continue_bio_start():
 
     except Exception as e: # CATCH ALL OTHER EXCEPTIONS IN THE ROUTE
         logging.error(f"General error in continue_bio_start: {e}", exc_info=True) # LOG GENERAL ERROR WITH TRACEBACK
+        logging.exception(e) # Log full exception details including traceback
         return jsonify({
             "error": f"Error processing checkpoint: {str(e)}"
         }) # RETURN JSON ERROR FOR AJAX CALL
@@ -210,7 +214,8 @@ def walt_analyze():
         return jsonify({"response": api_response, "biography_outline": session['biography_outline']})
 
     except Exception as e:
-        logging.error(f"OpenAI API Error: {e}", exc_info=True)
+        logging.error(f"OpenAI API Error in walt_analyze:", exc_info=True) # Added route name to log
+        logging.exception(e) # Log full exception details including traceback
         return jsonify({"error": str(e)}), 500
 
 
@@ -222,7 +227,8 @@ def create_checkpoint():
             with open('walt2/walt_prompts/bio_creator_prompt.txt', 'r', encoding='utf-8') as f:
                 bio_prompt_content = f.read()
         except Exception as e:
-            logging.error(f"Error reading bio_prompt.txt: {e}")
+            logging.error(f"Error reading bio_prompt.txt in create_checkpoint:", exc_info=True) # Added route name to log
+            logging.exception(e) # Log full exception details including traceback
             bio_prompt_content = "Error loading bio creator prompt."
 
         conversation_text = ""
@@ -253,7 +259,8 @@ def create_checkpoint():
             checkpoint_data_text = response.choices[0].message.content.strip() # Get processed summary
             session['file_content'] = checkpoint_data_text # Store processed summary in session
         except Exception as openai_error:
-            logging.error(f"OpenAI API error during checkpoint processing: {openai_error}", exc_info=True)
+            logging.error(f"OpenAI API error during checkpoint processing in create_checkpoint:", exc_info=True) # Added route name to log
+            logging.exception(openai_error) # Log full exception details including traceback
             checkpoint_data_text = "Error processing checkpoint data. Conversation history saved, but summary generation failed." # Informative error message in checkpoint
             session['file_content'] = checkpoint_data_text # Still store error in session
 
@@ -267,7 +274,8 @@ def create_checkpoint():
         return jsonify({"checkpoint_data": file_content_for_download}) # Send the complete file content for download
 
     except Exception as e: # Catch any errors during checkpoint creation
-        logging.error(f"Error processing checkpoint and calling API: {e}", exc_info=True)
+        logging.error(f"Error processing checkpoint and calling API in create_checkpoint:", exc_info=True) # Added route name to log
+        logging.exception(e) # Log full exception details including traceback
         return jsonify({"error": str(e)}), 500
 
 
@@ -311,7 +319,8 @@ def craft_biography():
         return jsonify({"api_response": formatted_biography, "file_download_name": filename})
 
     except Exception as e:
-        logging.error(f"Error crafting biography: {e}", exc_info=True)
+        logging.error(f"Error crafting biography in craft_biography:", exc_info=True) # Added route name to log
+        logging.exception(e) # Log full exception details including traceback
         error_message = f"Error crafting biography: {str(e)}"
         formatted_error = format_openai_text(error_message)
         return jsonify({"error": error_message, "api_response": formatted_error}), 500
@@ -342,7 +351,8 @@ def saveTextAsFileDownload():
 
 
     except Exception as e:
-        logging.error(f"Error return and saving checkpoint from saveTextAsFileDownload: {e}", exc_info=True)
+        logging.error(f"Error return and saving checkpoint from saveTextAsFileDownload:", exc_info=True) # Added route name to log
+        logging.exception(e) # Log full exception details including traceback
         return jsonify({"error": str(e)}), 500
 
 def get_biography_outline():
