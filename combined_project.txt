@@ -132,7 +132,7 @@ python-3.11.2
 
 
 import os
-from flask import Flask, request, render_template, send_file, jsonify
+from flask import Flask, request, render_template, send_file, jsonify, redirect # ADDED redirect to import
 from dotenv import load_dotenv
 import numpy as np
 import json
@@ -261,7 +261,7 @@ def calculate_mandelbrot(width, height, max_iter, palette_index):
 # Home route redirecting to the gallery page
 @app.route('/')
 def home():
-    return render_template('gallery.html')
+    return redirect('/walt2') # <-- CHANGED to redirect to /walt2 from gallery
 
 
 ALLOWED_EXTENSIONS = {'pdf'}  # only allow pdf files
@@ -1442,6 +1442,7 @@ def new_bio_start():
 
     except Exception as e:
         logging.error(f"OpenAI API error on new bio start: {e}")
+        logging.exception(e) # Log full exception details including traceback
         return jsonify({
             "error": f"Error starting new bio: {str(e)}",
             "biography_outline": session.get('biography_outline') # Still return outline if available
@@ -1542,6 +1543,7 @@ def continue_bio_start():
 
         except Exception as openai_e: # SPECIFICALLY CATCH OPENAI EXCEPTIONS
             logging.error(f"OpenAI API error in continue_bio_start: {openai_e}", exc_info=True) # LOG OPENAI ERROR WITH TRACEBACK
+            logging.exception(openai_e) # Log full exception details including traceback
             return jsonify({
                 "error": f"Error continuing bio (OpenAI API): {str(openai_e)}",
                 "biography_outline": session.get('biography_outline') # Still return outline if available
@@ -1549,6 +1551,7 @@ def continue_bio_start():
 
     except Exception as e: # CATCH ALL OTHER EXCEPTIONS IN THE ROUTE
         logging.error(f"General error in continue_bio_start: {e}", exc_info=True) # LOG GENERAL ERROR WITH TRACEBACK
+        logging.exception(e) # Log full exception details including traceback
         return jsonify({
             "error": f"Error processing checkpoint: {str(e)}"
         }) # RETURN JSON ERROR FOR AJAX CALL
@@ -1600,7 +1603,8 @@ def walt_analyze():
         return jsonify({"response": api_response, "biography_outline": session['biography_outline']})
 
     except Exception as e:
-        logging.error(f"OpenAI API Error: {e}", exc_info=True)
+        logging.error(f"OpenAI API Error in walt_analyze:", exc_info=True) # Added route name to log
+        logging.exception(e) # Log full exception details including traceback
         return jsonify({"error": str(e)}), 500
 
 
@@ -1612,7 +1616,8 @@ def create_checkpoint():
             with open('walt2/walt_prompts/bio_creator_prompt.txt', 'r', encoding='utf-8') as f:
                 bio_prompt_content = f.read()
         except Exception as e:
-            logging.error(f"Error reading bio_prompt.txt: {e}")
+            logging.error(f"Error reading bio_prompt.txt in create_checkpoint:", exc_info=True) # Added route name to log
+            logging.exception(e) # Log full exception details including traceback
             bio_prompt_content = "Error loading bio creator prompt."
 
         conversation_text = ""
@@ -1643,7 +1648,8 @@ def create_checkpoint():
             checkpoint_data_text = response.choices[0].message.content.strip() # Get processed summary
             session['file_content'] = checkpoint_data_text # Store processed summary in session
         except Exception as openai_error:
-            logging.error(f"OpenAI API error during checkpoint processing: {openai_error}", exc_info=True)
+            logging.error(f"OpenAI API error during checkpoint processing in create_checkpoint:", exc_info=True) # Added route name to log
+            logging.exception(openai_error) # Log full exception details including traceback
             checkpoint_data_text = "Error processing checkpoint data. Conversation history saved, but summary generation failed." # Informative error message in checkpoint
             session['file_content'] = checkpoint_data_text # Still store error in session
 
@@ -1657,7 +1663,8 @@ def create_checkpoint():
         return jsonify({"checkpoint_data": file_content_for_download}) # Send the complete file content for download
 
     except Exception as e: # Catch any errors during checkpoint creation
-        logging.error(f"Error processing checkpoint and calling API: {e}", exc_info=True)
+        logging.error(f"Error processing checkpoint and calling API in create_checkpoint:", exc_info=True) # Added route name to log
+        logging.exception(e) # Log full exception details including traceback
         return jsonify({"error": str(e)}), 500
 
 
@@ -1689,6 +1696,7 @@ def craft_biography():
         biography_content = response.choices[0].message.content.strip()
         logging.info(f"Biography content length: {len(biography_content)}") # <-- Added length logging
         formatted_biography = format_openai_text(biography_content)
+        # No longer formatting for chat output in backend
 
         formatted_biography_file = biography_content.replace("<br>", "\n")
         filename = "Full_biography.txt"
@@ -1698,10 +1706,12 @@ def craft_biography():
         session['file_content'] = biography_content
         session.modified = True
 
-        return jsonify({"api_response": formatted_biography, "file_download_name": filename})
+        # Return raw biography content and filename for popup
+        return jsonify({"biography_content": biography_content, "file_download_name": filename})
 
     except Exception as e:
-        logging.error(f"Error crafting biography: {e}", exc_info=True)
+        logging.error(f"Error crafting biography in craft_biography:", exc_info=True) # Added route name to log
+        logging.exception(e) # Log full exception details including traceback
         error_message = f"Error crafting biography: {str(e)}"
         formatted_error = format_openai_text(error_message)
         return jsonify({"error": error_message, "api_response": formatted_error}), 500
@@ -1732,7 +1742,8 @@ def saveTextAsFileDownload():
 
 
     except Exception as e:
-        logging.error(f"Error return and saving checkpoint from saveTextAsFileDownload: {e}", exc_info=True)
+        logging.error(f"Error return and saving checkpoint from saveTextAsFileDownload:", exc_info=True) # Added route name to log
+        logging.exception(e) # Log full exception details including traceback
         return jsonify({"error": str(e)}), 500
 
 def get_biography_outline():
@@ -1752,7 +1763,7 @@ def get_biography_outline():
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Welcome to Walt Biographer</title>
+    <title>Welcome to Walt auto-Biographer</title>
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -1976,7 +1987,7 @@ def get_biography_outline():
     <div class="splash-container">
         <div class="splash-left">
             <img src="{{ url_for('static', filename='images/walt.png') }}" alt="Walt Biographer" class="splash-image">
-            <h1>Walt, the AI Biographer</h1>
+            <h1>Walt, the auto-Biographer</h1>
         </div>
         <div class="splash-right">
             <p class="splash-tagline">I want to write your unique story!</p> <p class="splash-get-started">Get Started</p>
@@ -1991,7 +2002,6 @@ def get_biography_outline():
 </html>
 
 --- FILE: walt2/templates/walt_window2.html ---
-
 
 <!DOCTYPE html>
 <html>
@@ -2335,8 +2345,9 @@ def get_biography_outline():
             box-shadow: 0 4px 8px rgba(255, 165, 0, 0.5);
             transition: background-color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
             white-space: nowrap;
-            width: 100%;
+            width: auto; /* Changed width to auto */
              margin-top: 10px; /* Added top margin to separate buttons vertically */
+             align-self: center; /* Added align-self: center; to horizontally center */
         }
 
         #craftBiographyButton:hover {
@@ -2509,7 +2520,7 @@ def get_biography_outline():
               try {
                 function getCookie(name) {
                     const value = `; ${document.cookie}`;
-                const parts = value.split(`; ${name}=`);
+                    const parts = value.split(`; ${name}=`);
                 if (parts.length === 2) return parts.pop().split(';').shift();
                 }
 
@@ -2547,9 +2558,8 @@ def get_biography_outline():
 
         function sendLoadMessage() {
             let chatOutput = document.getElementById("chatOutput");
-            chatOutput.textContent ="Oh now I remember what we already did. Thank you.";
+            chatOutput.textContent ="Oh I see! I'd forgotten what we already did. Wonderful";
          }
-
          function uploadStory() {
               console.log("Firing Upload Story Trigger");
               if (storyUpload) {
@@ -2557,15 +2567,8 @@ def get_biography_outline():
                } else {
                  console.error("storyUpload element not found");
                }
-           }
 
-        function displayInitialMessageOnLoad() {
-            const initialMessage = sessionStorage.getItem('initial_message');
-            if (initialMessage) {
-                document.getElementById("chatOutput").textContent = initialMessage;
-                sessionStorage.removeItem('initial_message');
-            }
-        }
+           }
 
 
         function updateBiographyOutlineDisplay() {
@@ -2589,7 +2592,9 @@ def get_biography_outline():
             const chatOutput = document.getElementById("chatOutput");
             const initialMessage = "{{ initial_message|default('') | safe }}";
 
-            displayInitialMessageOnLoad();
+            if (initialMessage) {
+                chatOutput.textContent = initialMessage;
+            }
 
 
              console.log("Story Upload: Document is loaded");
@@ -2630,6 +2635,7 @@ def get_biography_outline():
          })
 
          window.onload = function() {
+             // document.getElementById("chatOutput").textContent = "";
          };
      </script>
  <body>
@@ -2687,6 +2693,38 @@ def get_biography_outline():
      <div id="sessionSummary"></div>
  </body>
  </html>
+
+--- FILE: walt2/templates/biography_popup.html ---
+
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Your Biography</title>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f7f7f7;
+            color: #333;
+            padding: 20px;
+            margin: 0;
+        }
+        pre {
+            white-space: pre-wrap;       /* css-3 */
+            white-space: -moz-pre-wrap;  /* Mozilla, since 1999 */
+            white-space: -pre-wrap;      /* Opera 4-6 */
+            white-space: -o-pre-wrap;    /* Opera 7 */
+            word-wrap: break-word;       /* Internet Explorer 5.5+ */
+            font-family: monospace;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+    </style>
+</head>
+<body>
+    <pre id="biographyContent"></pre>
+</body>
+</html>
 
 --- FILE: walt2/walt_prompts/bio_creator_prompt.txt ---
 
