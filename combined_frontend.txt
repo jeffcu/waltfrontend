@@ -1,0 +1,1893 @@
+
+
+--- FILE: combined_frontend.txt ---
+
+
+
+--- FILE: pubspec.yaml ---
+
+name: walt_interview_app
+description: "A new Flutter project."
+# The following line prevents the package from being accidentally published to
+# pub.dev using `flutter pub publish`. This is preferred for private packages.
+publish_to: 'none' # Remove this line if you wish to publish to pub.dev
+
+# The following defines the version and build number for your application.
+# A version number is three numbers separated by dots, like 1.2.43
+# followed by an optional build number separated by a +.
+# Both the version and the builder number may be overridden in flutter
+# build by specifying --build-name and --build-number, respectively.
+# In Android, build-name is used as versionName while build-number used as versionCode.
+# Read more about Android versioning at https://developer.android.com/studio/publish/versioning
+# In iOS, build-name is used as CFBundleShortVersionString while build-number is used as CFBundleVersion.
+# Read more about iOS versioning at
+# https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
+# In Windows, build-name is used as the major, minor, and patch parts
+# of the product and file versions while build-number is used as the build suffix.
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.7.0
+
+# Dependencies specify other packages that your package needs in order to work.
+# To automatically upgrade your package dependencies to the latest versions
+# consider running `flutter pub upgrade --major-versions`. Alternatively,
+# dependencies can be manually updated by changing the version numbers below to
+# the latest version available on pub.dev. To see which dependencies have newer
+# versions available, run `flutter pub outdated`.
+dependencies:
+  flutter:
+    sdk: flutter
+  http: ^1.2.0  # Check for the latest version on pub.dev if needed
+  # The following adds the Cupertino Icons font to your application.
+  # Use with the CupertinoIcons class for iOS style icons.
+  cupertino_icons: ^1.0.8
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  # The "flutter_lints" package below contains a set of recommended lints to
+  # encourage good coding practices. The lint set provided by the package is
+  # activated in the `analysis_options.yaml` file located at the root of your
+  # package. See that file for information about deactivating specific lint
+  # rules and activating additional ones.
+  flutter_lints: ^5.0.0
+
+# For information on the generic Dart part of this file, see the
+# following page: https://dart.dev/tools/pub/pubspec
+
+# The following section is specific to Flutter packages.
+flutter:
+
+  # The following line ensures that the Material Icons font is
+  # included with your application, so that you can use the icons in
+  # the material Icons class.
+  uses-material-design: true
+
+  # To add assets to your application, add an assets section, like this:
+  # assets:
+  #   - images/a_dot_burr.jpeg
+  #   - images/a_dot_ham.jpeg
+
+  # An image asset can refer to one or more resolution-specific "variants", see
+  # https://flutter.dev/to/resolution-aware-images
+
+  # For details regarding adding assets from package dependencies, see
+  # https://flutter.dev/to/asset-from-package
+
+  # To add custom fonts to your application, add a fonts section here,
+  # in this "flutter" section. Each entry in this list should have a
+  # "family" key with the font family name, and a "fonts" key with a
+  # list giving the asset and other descriptors for the font. For
+  # example:
+  # fonts:
+  #   - family: Schyler
+  #     fonts:
+  #       - asset: fonts/Schyler-Regular.ttf
+  #       - asset: fonts/Schyler-Italic.ttf
+  #         style: italic
+  #   - family: Trajan Pro
+  #     fonts:
+  #       - asset: fonts/TrajanPro.ttf
+  #       - asset: fonts/TrajanPro_Bold.ttf
+  #         weight: 700
+  #
+  # For details regarding fonts from package dependencies,
+  # see https://flutter.dev/to/font-from-package
+
+
+--- FILE: analysis_options.yaml ---
+
+# This file configures the analyzer, which statically analyzes Dart code to
+# check for errors, warnings, and lints.
+#
+# The issues identified by the analyzer are surfaced in the UI of Dart-enabled
+# IDEs (https://dart.dev/tools#ides-and-editors). The analyzer can also be
+# invoked from the command line by running `flutter analyze`.
+
+# The following line activates a set of recommended lints for Flutter apps,
+# packages, and plugins designed to encourage good coding practices.
+include: package:flutter_lints/flutter.yaml
+
+linter:
+  # The lint rules applied to this project can be customized in the
+  # section below to disable rules from the `package:flutter_lints/flutter.yaml`
+  # included above or to enable additional rules. A list of all available lints
+  # and their documentation is published at https://dart.dev/lints.
+  #
+  # Instead of disabling a lint rule for the entire project in the
+  # section below, it can also be suppressed for a single line of code
+  # or a specific dart file by using the `// ignore: name_of_lint` and
+  # `// ignore_for_file: name_of_lint` syntax on the line or in the file
+  # producing the lint.
+  rules:
+    # avoid_print: false  # Uncomment to disable the `avoid_print` rule
+    # prefer_single_quotes: true  # Uncomment to enable the `prefer_single_quotes` rule
+
+# Additional information about this file can be found at
+# https://dart.dev/guides/language/analysis-options
+
+
+--- FILE: macos/Runner/Assets.xcassets/AppIcon.appiconset/Contents.json ---
+
+{
+  "images" : [
+    {
+      "size" : "16x16",
+      "idiom" : "mac",
+      "filename" : "app_icon_16.png",
+      "scale" : "1x"
+    },
+    {
+      "size" : "16x16",
+      "idiom" : "mac",
+      "filename" : "app_icon_32.png",
+      "scale" : "2x"
+    },
+    {
+      "size" : "32x32",
+      "idiom" : "mac",
+      "filename" : "app_icon_32.png",
+      "scale" : "1x"
+    },
+    {
+      "size" : "32x32",
+      "idiom" : "mac",
+      "filename" : "app_icon_64.png",
+      "scale" : "2x"
+    },
+    {
+      "size" : "128x128",
+      "idiom" : "mac",
+      "filename" : "app_icon_128.png",
+      "scale" : "1x"
+    },
+    {
+      "size" : "128x128",
+      "idiom" : "mac",
+      "filename" : "app_icon_256.png",
+      "scale" : "2x"
+    },
+    {
+      "size" : "256x256",
+      "idiom" : "mac",
+      "filename" : "app_icon_256.png",
+      "scale" : "1x"
+    },
+    {
+      "size" : "256x256",
+      "idiom" : "mac",
+      "filename" : "app_icon_512.png",
+      "scale" : "2x"
+    },
+    {
+      "size" : "512x512",
+      "idiom" : "mac",
+      "filename" : "app_icon_512.png",
+      "scale" : "1x"
+    },
+    {
+      "size" : "512x512",
+      "idiom" : "mac",
+      "filename" : "app_icon_1024.png",
+      "scale" : "2x"
+    }
+  ],
+  "info" : {
+    "version" : 1,
+    "author" : "xcode"
+  }
+}
+
+
+--- FILE: test/widget_test.dart ---
+
+// This is a basic Flutter widget test.
+//
+// To perform an interaction with a widget in your test, use the WidgetTester
+// utility in the flutter_test package. For example, you can send tap and scroll
+// gestures. You can also use WidgetTester to find child widgets in the widget
+// tree, read text, and verify that the values of widget properties are correct.
+
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+import 'package:walt_interview_app/main.dart';
+
+void main() {
+  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
+    // Build our app and trigger a frame.
+    await tester.pumpWidget(const MyApp());
+
+    // Verify that our counter starts at 0.
+    expect(find.text('0'), findsOneWidget);
+    expect(find.text('1'), findsNothing);
+
+    // Tap the '+' icon and trigger a frame.
+    await tester.tap(find.byIcon(Icons.add));
+    await tester.pump();
+
+    // Verify that our counter has incremented.
+    expect(find.text('0'), findsNothing);
+    expect(find.text('1'), findsOneWidget);
+  });
+}
+
+
+--- FILE: web/manifest.json ---
+
+{
+    "name": "walt_interview_app",
+    "short_name": "walt_interview_app",
+    "start_url": ".",
+    "display": "standalone",
+    "background_color": "#0175C2",
+    "theme_color": "#0175C2",
+    "description": "A new Flutter project.",
+    "orientation": "portrait-primary",
+    "prefer_related_applications": false,
+    "icons": [
+        {
+            "src": "icons/Icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "icons/Icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        },
+        {
+            "src": "icons/Icon-maskable-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "maskable"
+        },
+        {
+            "src": "icons/Icon-maskable-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "maskable"
+        }
+    ]
+}
+
+
+--- FILE: ios/Runner/Assets.xcassets/LaunchImage.imageset/Contents.json ---
+
+{
+  "images" : [
+    {
+      "idiom" : "universal",
+      "filename" : "LaunchImage.png",
+      "scale" : "1x"
+    },
+    {
+      "idiom" : "universal",
+      "filename" : "LaunchImage@2x.png",
+      "scale" : "2x"
+    },
+    {
+      "idiom" : "universal",
+      "filename" : "LaunchImage@3x.png",
+      "scale" : "3x"
+    }
+  ],
+  "info" : {
+    "version" : 1,
+    "author" : "xcode"
+  }
+}
+
+
+--- FILE: ios/Runner/Assets.xcassets/AppIcon.appiconset/Contents.json ---
+
+{
+  "images" : [
+    {
+      "size" : "20x20",
+      "idiom" : "iphone",
+      "filename" : "Icon-App-20x20@2x.png",
+      "scale" : "2x"
+    },
+    {
+      "size" : "20x20",
+      "idiom" : "iphone",
+      "filename" : "Icon-App-20x20@3x.png",
+      "scale" : "3x"
+    },
+    {
+      "size" : "29x29",
+      "idiom" : "iphone",
+      "filename" : "Icon-App-29x29@1x.png",
+      "scale" : "1x"
+    },
+    {
+      "size" : "29x29",
+      "idiom" : "iphone",
+      "filename" : "Icon-App-29x29@2x.png",
+      "scale" : "2x"
+    },
+    {
+      "size" : "29x29",
+      "idiom" : "iphone",
+      "filename" : "Icon-App-29x29@3x.png",
+      "scale" : "3x"
+    },
+    {
+      "size" : "40x40",
+      "idiom" : "iphone",
+      "filename" : "Icon-App-40x40@2x.png",
+      "scale" : "2x"
+    },
+    {
+      "size" : "40x40",
+      "idiom" : "iphone",
+      "filename" : "Icon-App-40x40@3x.png",
+      "scale" : "3x"
+    },
+    {
+      "size" : "60x60",
+      "idiom" : "iphone",
+      "filename" : "Icon-App-60x60@2x.png",
+      "scale" : "2x"
+    },
+    {
+      "size" : "60x60",
+      "idiom" : "iphone",
+      "filename" : "Icon-App-60x60@3x.png",
+      "scale" : "3x"
+    },
+    {
+      "size" : "20x20",
+      "idiom" : "ipad",
+      "filename" : "Icon-App-20x20@1x.png",
+      "scale" : "1x"
+    },
+    {
+      "size" : "20x20",
+      "idiom" : "ipad",
+      "filename" : "Icon-App-20x20@2x.png",
+      "scale" : "2x"
+    },
+    {
+      "size" : "29x29",
+      "idiom" : "ipad",
+      "filename" : "Icon-App-29x29@1x.png",
+      "scale" : "1x"
+    },
+    {
+      "size" : "29x29",
+      "idiom" : "ipad",
+      "filename" : "Icon-App-29x29@2x.png",
+      "scale" : "2x"
+    },
+    {
+      "size" : "40x40",
+      "idiom" : "ipad",
+      "filename" : "Icon-App-40x40@1x.png",
+      "scale" : "1x"
+    },
+    {
+      "size" : "40x40",
+      "idiom" : "ipad",
+      "filename" : "Icon-App-40x40@2x.png",
+      "scale" : "2x"
+    },
+    {
+      "size" : "76x76",
+      "idiom" : "ipad",
+      "filename" : "Icon-App-76x76@1x.png",
+      "scale" : "1x"
+    },
+    {
+      "size" : "76x76",
+      "idiom" : "ipad",
+      "filename" : "Icon-App-76x76@2x.png",
+      "scale" : "2x"
+    },
+    {
+      "size" : "83.5x83.5",
+      "idiom" : "ipad",
+      "filename" : "Icon-App-83.5x83.5@2x.png",
+      "scale" : "2x"
+    },
+    {
+      "size" : "1024x1024",
+      "idiom" : "ios-marketing",
+      "filename" : "Icon-App-1024x1024@1x.png",
+      "scale" : "1x"
+    }
+  ],
+  "info" : {
+    "version" : 1,
+    "author" : "xcode"
+  }
+}
+
+
+--- FILE: linux/CMakeLists.txt ---
+
+# Project-level configuration.
+cmake_minimum_required(VERSION 3.13)
+project(runner LANGUAGES CXX)
+
+# The name of the executable created for the application. Change this to change
+# the on-disk name of your application.
+set(BINARY_NAME "walt_interview_app")
+# The unique GTK application identifier for this application. See:
+# https://wiki.gnome.org/HowDoI/ChooseApplicationID
+set(APPLICATION_ID "com.example.walt_interview_app")
+
+# Explicitly opt in to modern CMake behaviors to avoid warnings with recent
+# versions of CMake.
+cmake_policy(SET CMP0063 NEW)
+
+# Load bundled libraries from the lib/ directory relative to the binary.
+set(CMAKE_INSTALL_RPATH "$ORIGIN/lib")
+
+# Root filesystem for cross-building.
+if(FLUTTER_TARGET_PLATFORM_SYSROOT)
+  set(CMAKE_SYSROOT ${FLUTTER_TARGET_PLATFORM_SYSROOT})
+  set(CMAKE_FIND_ROOT_PATH ${CMAKE_SYSROOT})
+  set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
+  set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
+  set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
+  set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
+endif()
+
+# Define build configuration options.
+if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+  set(CMAKE_BUILD_TYPE "Debug" CACHE
+    STRING "Flutter build mode" FORCE)
+  set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS
+    "Debug" "Profile" "Release")
+endif()
+
+# Compilation settings that should be applied to most targets.
+#
+# Be cautious about adding new options here, as plugins use this function by
+# default. In most cases, you should add new options to specific targets instead
+# of modifying this function.
+function(APPLY_STANDARD_SETTINGS TARGET)
+  target_compile_features(${TARGET} PUBLIC cxx_std_14)
+  target_compile_options(${TARGET} PRIVATE -Wall -Werror)
+  target_compile_options(${TARGET} PRIVATE "$<$<NOT:$<CONFIG:Debug>>:-O3>")
+  target_compile_definitions(${TARGET} PRIVATE "$<$<NOT:$<CONFIG:Debug>>:NDEBUG>")
+endfunction()
+
+# Flutter library and tool build rules.
+set(FLUTTER_MANAGED_DIR "${CMAKE_CURRENT_SOURCE_DIR}/flutter")
+add_subdirectory(${FLUTTER_MANAGED_DIR})
+
+# System-level dependencies.
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(GTK REQUIRED IMPORTED_TARGET gtk+-3.0)
+
+# Application build; see runner/CMakeLists.txt.
+add_subdirectory("runner")
+
+# Run the Flutter tool portions of the build. This must not be removed.
+add_dependencies(${BINARY_NAME} flutter_assemble)
+
+# Only the install-generated bundle's copy of the executable will launch
+# correctly, since the resources must in the right relative locations. To avoid
+# people trying to run the unbundled copy, put it in a subdirectory instead of
+# the default top-level location.
+set_target_properties(${BINARY_NAME}
+  PROPERTIES
+  RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/intermediates_do_not_run"
+)
+
+
+# Generated plugin build rules, which manage building the plugins and adding
+# them to the application.
+include(flutter/generated_plugins.cmake)
+
+
+# === Installation ===
+# By default, "installing" just makes a relocatable bundle in the build
+# directory.
+set(BUILD_BUNDLE_DIR "${PROJECT_BINARY_DIR}/bundle")
+if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+  set(CMAKE_INSTALL_PREFIX "${BUILD_BUNDLE_DIR}" CACHE PATH "..." FORCE)
+endif()
+
+# Start with a clean build bundle directory every time.
+install(CODE "
+  file(REMOVE_RECURSE \"${BUILD_BUNDLE_DIR}/\")
+  " COMPONENT Runtime)
+
+set(INSTALL_BUNDLE_DATA_DIR "${CMAKE_INSTALL_PREFIX}/data")
+set(INSTALL_BUNDLE_LIB_DIR "${CMAKE_INSTALL_PREFIX}/lib")
+
+install(TARGETS ${BINARY_NAME} RUNTIME DESTINATION "${CMAKE_INSTALL_PREFIX}"
+  COMPONENT Runtime)
+
+install(FILES "${FLUTTER_ICU_DATA_FILE}" DESTINATION "${INSTALL_BUNDLE_DATA_DIR}"
+  COMPONENT Runtime)
+
+install(FILES "${FLUTTER_LIBRARY}" DESTINATION "${INSTALL_BUNDLE_LIB_DIR}"
+  COMPONENT Runtime)
+
+foreach(bundled_library ${PLUGIN_BUNDLED_LIBRARIES})
+  install(FILES "${bundled_library}"
+    DESTINATION "${INSTALL_BUNDLE_LIB_DIR}"
+    COMPONENT Runtime)
+endforeach(bundled_library)
+
+# Copy the native assets provided by the build.dart from all packages.
+set(NATIVE_ASSETS_DIR "${PROJECT_BUILD_DIR}native_assets/linux/")
+install(DIRECTORY "${NATIVE_ASSETS_DIR}"
+   DESTINATION "${INSTALL_BUNDLE_LIB_DIR}"
+   COMPONENT Runtime)
+
+# Fully re-copy the assets directory on each build to avoid having stale files
+# from a previous install.
+set(FLUTTER_ASSET_DIR_NAME "flutter_assets")
+install(CODE "
+  file(REMOVE_RECURSE \"${INSTALL_BUNDLE_DATA_DIR}/${FLUTTER_ASSET_DIR_NAME}\")
+  " COMPONENT Runtime)
+install(DIRECTORY "${PROJECT_BUILD_DIR}/${FLUTTER_ASSET_DIR_NAME}"
+  DESTINATION "${INSTALL_BUNDLE_DATA_DIR}" COMPONENT Runtime)
+
+# Install the AOT library on non-Debug builds only.
+if(NOT CMAKE_BUILD_TYPE MATCHES "Debug")
+  install(FILES "${AOT_LIBRARY}" DESTINATION "${INSTALL_BUNDLE_LIB_DIR}"
+    COMPONENT Runtime)
+endif()
+
+
+--- FILE: linux/runner/CMakeLists.txt ---
+
+cmake_minimum_required(VERSION 3.13)
+project(runner LANGUAGES CXX)
+
+# Define the application target. To change its name, change BINARY_NAME in the
+# top-level CMakeLists.txt, not the value here, or `flutter run` will no longer
+# work.
+#
+# Any new source files that you add to the application should be added here.
+add_executable(${BINARY_NAME}
+  "main.cc"
+  "my_application.cc"
+  "${FLUTTER_MANAGED_DIR}/generated_plugin_registrant.cc"
+)
+
+# Apply the standard set of build settings. This can be removed for applications
+# that need different build settings.
+apply_standard_settings(${BINARY_NAME})
+
+# Add preprocessor definitions for the application ID.
+add_definitions(-DAPPLICATION_ID="${APPLICATION_ID}")
+
+# Add dependency libraries. Add any application-specific dependencies here.
+target_link_libraries(${BINARY_NAME} PRIVATE flutter)
+target_link_libraries(${BINARY_NAME} PRIVATE PkgConfig::GTK)
+
+target_include_directories(${BINARY_NAME} PRIVATE "${CMAKE_SOURCE_DIR}")
+
+
+--- FILE: linux/flutter/CMakeLists.txt ---
+
+# This file controls Flutter-level build steps. It should not be edited.
+cmake_minimum_required(VERSION 3.10)
+
+set(EPHEMERAL_DIR "${CMAKE_CURRENT_SOURCE_DIR}/ephemeral")
+
+# Configuration provided via flutter tool.
+include(${EPHEMERAL_DIR}/generated_config.cmake)
+
+# TODO: Move the rest of this into files in ephemeral. See
+# https://github.com/flutter/flutter/issues/57146.
+
+# Serves the same purpose as list(TRANSFORM ... PREPEND ...),
+# which isn't available in 3.10.
+function(list_prepend LIST_NAME PREFIX)
+    set(NEW_LIST "")
+    foreach(element ${${LIST_NAME}})
+        list(APPEND NEW_LIST "${PREFIX}${element}")
+    endforeach(element)
+    set(${LIST_NAME} "${NEW_LIST}" PARENT_SCOPE)
+endfunction()
+
+# === Flutter Library ===
+# System-level dependencies.
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(GTK REQUIRED IMPORTED_TARGET gtk+-3.0)
+pkg_check_modules(GLIB REQUIRED IMPORTED_TARGET glib-2.0)
+pkg_check_modules(GIO REQUIRED IMPORTED_TARGET gio-2.0)
+
+set(FLUTTER_LIBRARY "${EPHEMERAL_DIR}/libflutter_linux_gtk.so")
+
+# Published to parent scope for install step.
+set(FLUTTER_LIBRARY ${FLUTTER_LIBRARY} PARENT_SCOPE)
+set(FLUTTER_ICU_DATA_FILE "${EPHEMERAL_DIR}/icudtl.dat" PARENT_SCOPE)
+set(PROJECT_BUILD_DIR "${PROJECT_DIR}/build/" PARENT_SCOPE)
+set(AOT_LIBRARY "${PROJECT_DIR}/build/lib/libapp.so" PARENT_SCOPE)
+
+list(APPEND FLUTTER_LIBRARY_HEADERS
+  "fl_basic_message_channel.h"
+  "fl_binary_codec.h"
+  "fl_binary_messenger.h"
+  "fl_dart_project.h"
+  "fl_engine.h"
+  "fl_json_message_codec.h"
+  "fl_json_method_codec.h"
+  "fl_message_codec.h"
+  "fl_method_call.h"
+  "fl_method_channel.h"
+  "fl_method_codec.h"
+  "fl_method_response.h"
+  "fl_plugin_registrar.h"
+  "fl_plugin_registry.h"
+  "fl_standard_message_codec.h"
+  "fl_standard_method_codec.h"
+  "fl_string_codec.h"
+  "fl_value.h"
+  "fl_view.h"
+  "flutter_linux.h"
+)
+list_prepend(FLUTTER_LIBRARY_HEADERS "${EPHEMERAL_DIR}/flutter_linux/")
+add_library(flutter INTERFACE)
+target_include_directories(flutter INTERFACE
+  "${EPHEMERAL_DIR}"
+)
+target_link_libraries(flutter INTERFACE "${FLUTTER_LIBRARY}")
+target_link_libraries(flutter INTERFACE
+  PkgConfig::GTK
+  PkgConfig::GLIB
+  PkgConfig::GIO
+)
+add_dependencies(flutter flutter_assemble)
+
+# === Flutter tool backend ===
+# _phony_ is a non-existent file to force this command to run every time,
+# since currently there's no way to get a full input/output list from the
+# flutter tool.
+add_custom_command(
+  OUTPUT ${FLUTTER_LIBRARY} ${FLUTTER_LIBRARY_HEADERS}
+    ${CMAKE_CURRENT_BINARY_DIR}/_phony_
+  COMMAND ${CMAKE_COMMAND} -E env
+    ${FLUTTER_TOOL_ENVIRONMENT}
+    "${FLUTTER_ROOT}/packages/flutter_tools/bin/tool_backend.sh"
+      ${FLUTTER_TARGET_PLATFORM} ${CMAKE_BUILD_TYPE}
+  VERBATIM
+)
+add_custom_target(flutter_assemble DEPENDS
+  "${FLUTTER_LIBRARY}"
+  ${FLUTTER_LIBRARY_HEADERS}
+)
+
+
+--- FILE: android/app/src/profile/AndroidManifest.xml ---
+
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- The INTERNET permission is required for development. Specifically,
+         the Flutter tool needs it to communicate with the running application
+         to allow setting breakpoints, to provide hot reload, etc.
+    -->
+    <uses-permission android:name="android.permission.INTERNET"/>
+</manifest>
+
+
+--- FILE: android/app/src/main/AndroidManifest.xml ---
+
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application
+        android:label="walt_interview_app"
+        android:name="${applicationName}"
+        android:icon="@mipmap/ic_launcher">
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:launchMode="singleTop"
+            android:taskAffinity=""
+            android:theme="@style/LaunchTheme"
+            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
+            android:hardwareAccelerated="true"
+            android:windowSoftInputMode="adjustResize">
+            <!-- Specifies an Android theme to apply to this Activity as soon as
+                 the Android process has started. This theme is visible to the user
+                 while the Flutter UI initializes. After that, this theme continues
+                 to determine the Window background behind the Flutter UI. -->
+            <meta-data
+              android:name="io.flutter.embedding.android.NormalTheme"
+              android:resource="@style/NormalTheme"
+              />
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity>
+        <!-- Don't delete the meta-data below.
+             This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
+        <meta-data
+            android:name="flutterEmbedding"
+            android:value="2" />
+    </application>
+    <!-- Required to query activities that can process text, see:
+         https://developer.android.com/training/package-visibility and
+         https://developer.android.com/reference/android/content/Intent#ACTION_PROCESS_TEXT.
+
+         In particular, this is used by the Flutter engine in io.flutter.plugin.text.ProcessTextPlugin. -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.PROCESS_TEXT"/>
+            <data android:mimeType="text/plain"/>
+        </intent>
+    </queries>
+</manifest>
+
+
+--- FILE: android/app/src/main/res/drawable/launch_background.xml ---
+
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Modify this file to customize your launch splash screen -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@android:color/white" />
+
+    <!-- You can insert your own image assets here -->
+    <!-- <item>
+        <bitmap
+            android:gravity="center"
+            android:src="@mipmap/launch_image" />
+    </item> -->
+</layer-list>
+
+
+--- FILE: android/app/src/main/res/values-night/styles.xml ---
+
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Theme applied to the Android Window while the process is starting when the OS's Dark Mode setting is on -->
+    <style name="LaunchTheme" parent="@android:style/Theme.Black.NoTitleBar">
+        <!-- Show a splash screen on the activity. Automatically removed when
+             the Flutter engine draws its first frame -->
+        <item name="android:windowBackground">@drawable/launch_background</item>
+    </style>
+    <!-- Theme applied to the Android Window as soon as the process has started.
+         This theme determines the color of the Android Window while your
+         Flutter UI initializes, as well as behind your Flutter UI while its
+         running.
+
+         This Theme is only used starting with V2 of Flutter's Android embedding. -->
+    <style name="NormalTheme" parent="@android:style/Theme.Black.NoTitleBar">
+        <item name="android:windowBackground">?android:colorBackground</item>
+    </style>
+</resources>
+
+
+--- FILE: android/app/src/main/res/values/styles.xml ---
+
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Theme applied to the Android Window while the process is starting when the OS's Dark Mode setting is off -->
+    <style name="LaunchTheme" parent="@android:style/Theme.Light.NoTitleBar">
+        <!-- Show a splash screen on the activity. Automatically removed when
+             the Flutter engine draws its first frame -->
+        <item name="android:windowBackground">@drawable/launch_background</item>
+    </style>
+    <!-- Theme applied to the Android Window as soon as the process has started.
+         This theme determines the color of the Android Window while your
+         Flutter UI initializes, as well as behind your Flutter UI while its
+         running.
+
+         This Theme is only used starting with V2 of Flutter's Android embedding. -->
+    <style name="NormalTheme" parent="@android:style/Theme.Light.NoTitleBar">
+        <item name="android:windowBackground">?android:colorBackground</item>
+    </style>
+</resources>
+
+
+--- FILE: android/app/src/main/res/drawable-v21/launch_background.xml ---
+
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Modify this file to customize your launch splash screen -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="?android:colorBackground" />
+
+    <!-- You can insert your own image assets here -->
+    <!-- <item>
+        <bitmap
+            android:gravity="center"
+            android:src="@mipmap/launch_image" />
+    </item> -->
+</layer-list>
+
+
+--- FILE: android/app/src/debug/AndroidManifest.xml ---
+
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- The INTERNET permission is required for development. Specifically,
+         the Flutter tool needs it to communicate with the running application
+         to allow setting breakpoints, to provide hot reload, etc.
+    -->
+    <uses-permission android:name="android.permission.INTERNET"/>
+</manifest>
+
+
+--- FILE: lib/walt2_home_screen.dart ---
+
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+
+class Walt2HomeScreen extends StatefulWidget {
+  final String initialMessage;
+  final String? csrfToken;
+  final String? sessionCookie;
+
+  const Walt2HomeScreen({
+    super.key,
+    required this.initialMessage,
+    this.csrfToken,
+    this.sessionCookie,
+  });
+
+  @override
+  _Walt2HomeScreenState createState() => _Walt2HomeScreenState();
+}
+
+class _Walt2HomeScreenState extends State<Walt2HomeScreen> {
+  String chatOutput = "";
+  final TextEditingController _promptController = TextEditingController();
+  String baseUrl = "https://virtual-lab-staging-jeff-b43cbb10d55f.herokuapp.com";
+  late http.Client client;
+
+  @override
+  void initState() {
+    super.initState();
+    client = http.Client();
+    setState(() {
+      chatOutput = widget.initialMessage;
+    });
+  }
+
+  @override
+  void dispose() {
+    client.close();
+    super.dispose();
+  }
+
+  Future<void> _analyzePrompt() async {
+    String userInput = _promptController.text.trim();
+    if (userInput.isEmpty) return;
+
+    setState(() {
+      chatOutput = "Analyzing your prompt...";
+    });
+
+    try {
+      final response = await client.post(
+        Uri.parse('$baseUrl/api/walt2/analyze'),
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+          "X-CSRFToken": widget.csrfToken ?? "",
+          "Cookie": "session=${widget.sessionCookie ?? ''}",
+          "Referer": "$baseUrl/walt2/", // Added Referer header
+        },
+        body: "user_query=${Uri.encodeComponent(userInput)}",
+      );
+      print("Raw response (analyze): ${response.body}");
+      print("Status code (analyze): ${response.statusCode}");
+      print("Headers: ${response.headers}");
+
+      if (response.statusCode != 200) {
+        throw Exception("Server error: ${response.statusCode} - ${response.body.substring(0, 100)}...");
+      }
+
+      if (response.body.isEmpty) {
+        throw Exception("Empty response from server");
+      }
+
+      if (!response.body.trim().startsWith('{') && !response.body.trim().startsWith('[')) {
+        throw Exception("Invalid JSON response: ${response.body.substring(0, 100)}...");
+      }
+
+      final data = jsonDecode(response.body);
+      if (data['error'] != null) {
+        setState(() {
+          chatOutput = "Error: ${data['error']}";
+        });
+      } else {
+        setState(() {
+          chatOutput = data['response'] ?? "No response provided";
+        });
+        _promptController.clear();
+      }
+    } catch (e) {
+      print("Error in _analyzePrompt: $e");
+      setState(() {
+        chatOutput = "Error analyzing prompt: $e";
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Walt2 Biographer'),
+        backgroundColor: Theme.of(context).primaryColor,
+      ),
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              const Text(
+                "Let’s write your story together!",
+                style: TextStyle(
+                  fontStyle: FontStyle.italic,
+                  color: Color(0xFF777777),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: const Color(0xFFEEEEEE)),
+                        borderRadius: BorderRadius.circular(12),
+                        color: Colors.white,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            "Walt",
+                            style: TextStyle(
+                              color: Color(0xFF007AFF),
+                              fontWeight: FontWeight.w500,
+                              fontSize: 20,
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          SizedBox(
+                            height: 400,
+                            child: SingleChildScrollView(
+                              child: Text(
+                                chatOutput,
+                                style: const TextStyle(fontSize: 16),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 20),
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            "Your Story",
+                            style: TextStyle(
+                              color: Color(0xFF007AFF),
+                              fontWeight: FontWeight.w500,
+                              fontSize: 20,
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          TextField(
+                            controller: _promptController,
+                            maxLines: 8,
+                            decoration: const InputDecoration(
+                              border: OutlineInputBorder(),
+                              hintText: "Tell Walt about your life...",
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          ElevatedButton(
+                            onPressed: _analyzePrompt,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.yellow,
+                              foregroundColor: Colors.grey,
+                              minimumSize: const Size(double.infinity, 50),
+                            ),
+                            child: const Text("Submit"),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+
+--- FILE: lib/main.dart ---
+
+import 'package:flutter/material.dart';
+import 'walt2_splash_screen.dart';
+
+void main() {
+  runApp(const Walt2App());
+}
+
+class Walt2App extends StatelessWidget {
+  const Walt2App({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Walt2 Biographer',
+      theme: ThemeData(
+        primaryColor: const Color(0xFF007AFF),
+        scaffoldBackgroundColor: const Color(0xFFF7F7F7),
+        textTheme: const TextTheme(
+          bodyLarge: TextStyle(color: Color(0xFF333333)),
+        ),
+      ),
+      home: const Walt2SplashScreen(),
+    );
+  }
+}
+
+
+--- FILE: lib/walt2_splash_screen.dart ---
+
+import 'package:flutter/material.dart';
+import 'walt2_home_screen.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+
+class Walt2SplashScreen extends StatefulWidget {
+  const Walt2SplashScreen({super.key});
+
+  @override
+  _Walt2SplashScreenState createState() => _Walt2SplashScreenState();
+}
+
+class _Walt2SplashScreenState extends State<Walt2SplashScreen> {
+  String baseUrl = "https://virtual-lab-staging-jeff-b43cbb10d55f.herokuapp.com";
+  String? csrfToken;
+  String? sessionCookie;
+  late http.Client client;
+
+  @override
+  void initState() {
+    super.initState();
+    client = http.Client();
+    _fetchCsrfToken();
+  }
+
+  @override
+  void dispose() {
+    client.close();
+    super.dispose();
+  }
+
+  Future<void> _fetchCsrfToken() async {
+    try {
+      final response = await client.get(Uri.parse('$baseUrl/walt2'));
+      print("CSRF fetch response: ${response.body.substring(0, 200)}..."); // Truncated for brevity
+      print("CSRF status code: ${response.statusCode}");
+      if (response.statusCode == 200) {
+        final cookies = response.headers['set-cookie'];
+        print("Cookies: $cookies");
+        if (cookies != null) {
+          final csrfMatch = RegExp(r'csrf_token=([^;]+)').firstMatch(cookies);
+          final sessionMatch = RegExp(r'session=([^;]+)').firstMatch(cookies);
+          setState(() {
+            csrfToken = csrfMatch?.group(1);
+            sessionCookie = sessionMatch?.group(1);
+          });
+        }
+      }
+    } catch (e) {
+      print("Error fetching CSRF token: $e");
+    }
+  }
+
+  void _beginNewBio() async {
+    try {
+      final response = await client.get(
+        Uri.parse('$baseUrl/api/walt2/new_bio'),
+        headers: {"Content-Type": "application/json"},
+      );
+      print("Raw response (new_bio): ${response.body}");
+      print("Status code (new_bio): ${response.statusCode}");
+      print("Headers: ${response.headers}");
+
+      if (response.statusCode != 200) {
+        throw Exception("Server error: ${response.statusCode} - ${response.body.substring(0, 100)}...");
+      }
+
+      if (response.body.isEmpty) {
+        throw Exception("Empty response from server");
+      }
+
+      if (!response.body.trim().startsWith('{') && !response.body.trim().startsWith('[')) {
+        throw Exception("Invalid JSON response: ${response.body.substring(0, 100)}...");
+      }
+
+      final data = jsonDecode(response.body);
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => Walt2HomeScreen(
+            initialMessage: data['initial_message'] ?? "No response provided",
+            csrfToken: csrfToken,
+            sessionCookie: sessionCookie,
+          ),
+        ),
+      );
+    } catch (e) {
+      print("Error in _beginNewBio: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error starting new bio: $e")),
+      );
+    }
+  }
+
+  void _loadStory() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Checkpoint file would have been loaded now")),
+    );
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => Walt2HomeScreen(
+          initialMessage: "Continuing biography... (Checkpoint would have been loaded)",
+          csrfToken: csrfToken,
+          sessionCookie: sessionCookie,
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Center(
+        child: Container(
+          width: MediaQuery.of(context).size.width * 0.8,
+          height: MediaQuery.of(context).size.height * 0.7,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(15),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.08),
+                blurRadius: 16,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(30),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Text(
+                        "Walt, Your AI Biographer",
+                        style: TextStyle(
+                          color: Color(0xFF007AFF),
+                          fontSize: 32,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 20),
+                      const Text(
+                        "I want to write your unique story!",
+                        style: TextStyle(
+                          color: Color(0xFF555555),
+                          fontSize: 18,
+                          fontStyle: FontStyle.italic,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              Expanded(
+                child: Container(
+                  color: const Color(0xFFF0F0F0),
+                  padding: const EdgeInsets.all(30),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Text(
+                        "Get Started",
+                        style: TextStyle(
+                          color: Color(0xFF777777),
+                          fontSize: 16,
+                        ),
+                      ),
+                      const SizedBox(height: 15),
+                      ElevatedButton(
+                        onPressed: _beginNewBio,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF007AFF),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                        child: const Text("Begin New Bio"),
+                      ),
+                      const SizedBox(height: 20),
+                      ElevatedButton(
+                        onPressed: _loadStory,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF007AFF),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                        child: const Text("Load Your Story"),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+
+--- FILE: .dart_tool/package_config.json ---
+
+{
+  "configVersion": 2,
+  "packages": [
+    {
+      "name": "async",
+      "rootUri": "file:///Users/jeffcurie/.pub-cache/hosted/pub.dev/async-2.12.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.4"
+    },
+    {
+      "name": "boolean_selector",
+      "rootUri": "file:///Users/jeffcurie/.pub-cache/hosted/pub.dev/boolean_selector-2.1.2",
+      "packageUri": "lib/",
+      "languageVersion": "3.1"
+    },
+    {
+      "name": "characters",
+      "rootUri": "file:///Users/jeffcurie/.pub-cache/hosted/pub.dev/characters-1.4.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.4"
+    },
+    {
+      "name": "clock",
+      "rootUri": "file:///Users/jeffcurie/.pub-cache/hosted/pub.dev/clock-1.1.2",
+      "packageUri": "lib/",
+      "languageVersion": "3.4"
+    },
+    {
+      "name": "collection",
+      "rootUri": "file:///Users/jeffcurie/.pub-cache/hosted/pub.dev/collection-1.19.1",
+      "packageUri": "lib/",
+      "languageVersion": "3.4"
+    },
+    {
+      "name": "cupertino_icons",
+      "rootUri": "file:///Users/jeffcurie/.pub-cache/hosted/pub.dev/cupertino_icons-1.0.8",
+      "packageUri": "lib/",
+      "languageVersion": "3.1"
+    },
+    {
+      "name": "fake_async",
+      "rootUri": "file:///Users/jeffcurie/.pub-cache/hosted/pub.dev/fake_async-1.3.2",
+      "packageUri": "lib/",
+      "languageVersion": "3.3"
+    },
+    {
+      "name": "flutter",
+      "rootUri": "file:///opt/homebrew/Caskroom/flutter/3.29.1/flutter/packages/flutter",
+      "packageUri": "lib/",
+      "languageVersion": "3.7"
+    },
+    {
+      "name": "flutter_lints",
+      "rootUri": "file:///Users/jeffcurie/.pub-cache/hosted/pub.dev/flutter_lints-5.0.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.5"
+    },
+    {
+      "name": "flutter_test",
+      "rootUri": "file:///opt/homebrew/Caskroom/flutter/3.29.1/flutter/packages/flutter_test",
+      "packageUri": "lib/",
+      "languageVersion": "3.7"
+    },
+    {
+      "name": "http",
+      "rootUri": "file:///Users/jeffcurie/.pub-cache/hosted/pub.dev/http-1.3.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.4"
+    },
+    {
+      "name": "http_parser",
+      "rootUri": "file:///Users/jeffcurie/.pub-cache/hosted/pub.dev/http_parser-4.1.2",
+      "packageUri": "lib/",
+      "languageVersion": "3.4"
+    },
+    {
+      "name": "leak_tracker",
+      "rootUri": "file:///Users/jeffcurie/.pub-cache/hosted/pub.dev/leak_tracker-10.0.8",
+      "packageUri": "lib/",
+      "languageVersion": "3.2"
+    },
+    {
+      "name": "leak_tracker_flutter_testing",
+      "rootUri": "file:///Users/jeffcurie/.pub-cache/hosted/pub.dev/leak_tracker_flutter_testing-3.0.9",
+      "packageUri": "lib/",
+      "languageVersion": "3.2"
+    },
+    {
+      "name": "leak_tracker_testing",
+      "rootUri": "file:///Users/jeffcurie/.pub-cache/hosted/pub.dev/leak_tracker_testing-3.0.1",
+      "packageUri": "lib/",
+      "languageVersion": "3.2"
+    },
+    {
+      "name": "lints",
+      "rootUri": "file:///Users/jeffcurie/.pub-cache/hosted/pub.dev/lints-5.1.1",
+      "packageUri": "lib/",
+      "languageVersion": "3.6"
+    },
+    {
+      "name": "matcher",
+      "rootUri": "file:///Users/jeffcurie/.pub-cache/hosted/pub.dev/matcher-0.12.17",
+      "packageUri": "lib/",
+      "languageVersion": "3.4"
+    },
+    {
+      "name": "material_color_utilities",
+      "rootUri": "file:///Users/jeffcurie/.pub-cache/hosted/pub.dev/material_color_utilities-0.11.1",
+      "packageUri": "lib/",
+      "languageVersion": "2.17"
+    },
+    {
+      "name": "meta",
+      "rootUri": "file:///Users/jeffcurie/.pub-cache/hosted/pub.dev/meta-1.16.0",
+      "packageUri": "lib/",
+      "languageVersion": "2.12"
+    },
+    {
+      "name": "path",
+      "rootUri": "file:///Users/jeffcurie/.pub-cache/hosted/pub.dev/path-1.9.1",
+      "packageUri": "lib/",
+      "languageVersion": "3.4"
+    },
+    {
+      "name": "sky_engine",
+      "rootUri": "file:///opt/homebrew/Caskroom/flutter/3.29.1/flutter/bin/cache/pkg/sky_engine",
+      "packageUri": "lib/",
+      "languageVersion": "3.7"
+    },
+    {
+      "name": "source_span",
+      "rootUri": "file:///Users/jeffcurie/.pub-cache/hosted/pub.dev/source_span-1.10.1",
+      "packageUri": "lib/",
+      "languageVersion": "3.1"
+    },
+    {
+      "name": "stack_trace",
+      "rootUri": "file:///Users/jeffcurie/.pub-cache/hosted/pub.dev/stack_trace-1.12.1",
+      "packageUri": "lib/",
+      "languageVersion": "3.4"
+    },
+    {
+      "name": "stream_channel",
+      "rootUri": "file:///Users/jeffcurie/.pub-cache/hosted/pub.dev/stream_channel-2.1.4",
+      "packageUri": "lib/",
+      "languageVersion": "3.3"
+    },
+    {
+      "name": "string_scanner",
+      "rootUri": "file:///Users/jeffcurie/.pub-cache/hosted/pub.dev/string_scanner-1.4.1",
+      "packageUri": "lib/",
+      "languageVersion": "3.1"
+    },
+    {
+      "name": "term_glyph",
+      "rootUri": "file:///Users/jeffcurie/.pub-cache/hosted/pub.dev/term_glyph-1.2.2",
+      "packageUri": "lib/",
+      "languageVersion": "3.1"
+    },
+    {
+      "name": "test_api",
+      "rootUri": "file:///Users/jeffcurie/.pub-cache/hosted/pub.dev/test_api-0.7.4",
+      "packageUri": "lib/",
+      "languageVersion": "3.5"
+    },
+    {
+      "name": "typed_data",
+      "rootUri": "file:///Users/jeffcurie/.pub-cache/hosted/pub.dev/typed_data-1.4.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.5"
+    },
+    {
+      "name": "vector_math",
+      "rootUri": "file:///Users/jeffcurie/.pub-cache/hosted/pub.dev/vector_math-2.1.4",
+      "packageUri": "lib/",
+      "languageVersion": "2.14"
+    },
+    {
+      "name": "vm_service",
+      "rootUri": "file:///Users/jeffcurie/.pub-cache/hosted/pub.dev/vm_service-14.3.1",
+      "packageUri": "lib/",
+      "languageVersion": "3.3"
+    },
+    {
+      "name": "web",
+      "rootUri": "file:///Users/jeffcurie/.pub-cache/hosted/pub.dev/web-1.1.1",
+      "packageUri": "lib/",
+      "languageVersion": "3.4"
+    },
+    {
+      "name": "walt_interview_app",
+      "rootUri": "../",
+      "packageUri": "lib/",
+      "languageVersion": "3.7"
+    }
+  ],
+  "generated": "2025-03-13T02:10:18.194611Z",
+  "generator": "pub",
+  "generatorVersion": "3.7.0",
+  "flutterRoot": "file:///opt/homebrew/Caskroom/flutter/3.29.1/flutter",
+  "flutterVersion": "3.29.1",
+  "pubCache": "file:///Users/jeffcurie/.pub-cache"
+}
+
+
+--- FILE: .dart_tool/flutter_build/f645642020618fdff561f725e0441523/outputs.json ---
+
+["/Users/jeffcurie/Dropbox (Personal)/Mac/Documents/Projects/walt_mobile/walt_interview_app/build/ios/Debug-iphonesimulator/Flutter.framework/Flutter","/Users/jeffcurie/Dropbox (Personal)/Mac/Documents/Projects/walt_mobile/walt_interview_app/build/ios/Debug-iphonesimulator/App.framework/flutter_assets/vm_snapshot_data","/Users/jeffcurie/Dropbox (Personal)/Mac/Documents/Projects/walt_mobile/walt_interview_app/build/ios/Debug-iphonesimulator/App.framework/flutter_assets/isolate_snapshot_data","/Users/jeffcurie/Dropbox (Personal)/Mac/Documents/Projects/walt_mobile/walt_interview_app/build/ios/Debug-iphonesimulator/App.framework/flutter_assets/kernel_blob.bin","/Users/jeffcurie/Dropbox (Personal)/Mac/Documents/Projects/walt_mobile/walt_interview_app/build/ios/Debug-iphonesimulator/App.framework/App","/Users/jeffcurie/Dropbox (Personal)/Mac/Documents/Projects/walt_mobile/walt_interview_app/build/ios/Debug-iphonesimulator/App.framework/Info.plist","/Users/jeffcurie/Dropbox (Personal)/Mac/Documents/Projects/walt_mobile/walt_interview_app/build/ios/Debug-iphonesimulator/App.framework/flutter_assets/packages/cupertino_icons/assets/CupertinoIcons.ttf","/Users/jeffcurie/Dropbox (Personal)/Mac/Documents/Projects/walt_mobile/walt_interview_app/build/ios/Debug-iphonesimulator/App.framework/flutter_assets/fonts/MaterialIcons-Regular.otf","/Users/jeffcurie/Dropbox (Personal)/Mac/Documents/Projects/walt_mobile/walt_interview_app/build/ios/Debug-iphonesimulator/App.framework/flutter_assets/shaders/ink_sparkle.frag","/Users/jeffcurie/Dropbox (Personal)/Mac/Documents/Projects/walt_mobile/walt_interview_app/build/ios/Debug-iphonesimulator/App.framework/flutter_assets/AssetManifest.json","/Users/jeffcurie/Dropbox (Personal)/Mac/Documents/Projects/walt_mobile/walt_interview_app/build/ios/Debug-iphonesimulator/App.framework/flutter_assets/AssetManifest.bin","/Users/jeffcurie/Dropbox (Personal)/Mac/Documents/Projects/walt_mobile/walt_interview_app/build/ios/Debug-iphonesimulator/App.framework/flutter_assets/FontManifest.json","/Users/jeffcurie/Dropbox (Personal)/Mac/Documents/Projects/walt_mobile/walt_interview_app/build/ios/Debug-iphonesimulator/App.framework/flutter_assets/NOTICES.Z","/Users/jeffcurie/Dropbox (Personal)/Mac/Documents/Projects/walt_mobile/walt_interview_app/build/ios/Debug-iphonesimulator/App.framework/flutter_assets/NativeAssetsManifest.json"]
+
+--- FILE: .dart_tool/flutter_build/f645642020618fdff561f725e0441523/dart_build_result.json ---
+
+{"dependencies":[],"code_assets":[]}
+
+--- FILE: .dart_tool/flutter_build/f645642020618fdff561f725e0441523/native_assets.json ---
+
+{"format-version":[1,0,0],"native-assets":{}}
+
+--- FILE: .dart_tool/flutter_build/997fe42ce340b0866dc4ca1526ca10f3/outputs.json ---
+
+["/Users/jeffcurie/Dropbox (Personal)/Mac/Documents/Projects/walt_mobile/walt_interview_app/build/macos/Build/Products/Debug/FlutterMacOS.framework/Versions/A/FlutterMacOS","/Users/jeffcurie/Dropbox (Personal)/Mac/Documents/Projects/walt_mobile/walt_interview_app/build/macos/Build/Products/Debug/App.framework/Versions/A/App","/Users/jeffcurie/Dropbox (Personal)/Mac/Documents/Projects/walt_mobile/walt_interview_app/build/macos/Build/Products/Debug/App.framework/Versions/A/Resources/Info.plist","/Users/jeffcurie/Dropbox (Personal)/Mac/Documents/Projects/walt_mobile/walt_interview_app/build/macos/Build/Products/Debug/App.framework/Versions/A/Resources/flutter_assets/kernel_blob.bin","/Users/jeffcurie/Dropbox (Personal)/Mac/Documents/Projects/walt_mobile/walt_interview_app/build/macos/Build/Products/Debug/App.framework/Versions/A/Resources/flutter_assets/vm_snapshot_data","/Users/jeffcurie/Dropbox (Personal)/Mac/Documents/Projects/walt_mobile/walt_interview_app/build/macos/Build/Products/Debug/App.framework/Versions/A/Resources/flutter_assets/isolate_snapshot_data","/Users/jeffcurie/Dropbox (Personal)/Mac/Documents/Projects/walt_mobile/walt_interview_app/build/macos/Build/Products/Debug/App.framework/Versions/A/Resources/flutter_assets/packages/cupertino_icons/assets/CupertinoIcons.ttf","/Users/jeffcurie/Dropbox (Personal)/Mac/Documents/Projects/walt_mobile/walt_interview_app/build/macos/Build/Products/Debug/App.framework/Versions/A/Resources/flutter_assets/fonts/MaterialIcons-Regular.otf","/Users/jeffcurie/Dropbox (Personal)/Mac/Documents/Projects/walt_mobile/walt_interview_app/build/macos/Build/Products/Debug/App.framework/Versions/A/Resources/flutter_assets/shaders/ink_sparkle.frag","/Users/jeffcurie/Dropbox (Personal)/Mac/Documents/Projects/walt_mobile/walt_interview_app/build/macos/Build/Products/Debug/App.framework/Versions/A/Resources/flutter_assets/AssetManifest.json","/Users/jeffcurie/Dropbox (Personal)/Mac/Documents/Projects/walt_mobile/walt_interview_app/build/macos/Build/Products/Debug/App.framework/Versions/A/Resources/flutter_assets/AssetManifest.bin","/Users/jeffcurie/Dropbox (Personal)/Mac/Documents/Projects/walt_mobile/walt_interview_app/build/macos/Build/Products/Debug/App.framework/Versions/A/Resources/flutter_assets/FontManifest.json","/Users/jeffcurie/Dropbox (Personal)/Mac/Documents/Projects/walt_mobile/walt_interview_app/build/macos/Build/Products/Debug/App.framework/Versions/A/Resources/flutter_assets/NOTICES.Z","/Users/jeffcurie/Dropbox (Personal)/Mac/Documents/Projects/walt_mobile/walt_interview_app/build/macos/Build/Products/Debug/App.framework/Versions/A/Resources/flutter_assets/NativeAssetsManifest.json"]
+
+--- FILE: .dart_tool/flutter_build/997fe42ce340b0866dc4ca1526ca10f3/dart_build_result.json ---
+
+{"dependencies":[],"code_assets":[]}
+
+--- FILE: .dart_tool/flutter_build/997fe42ce340b0866dc4ca1526ca10f3/native_assets.json ---
+
+{"format-version":[1,0,0],"native-assets":{}}
+
+--- FILE: .dart_tool/dartpad/web_plugin_registrant.dart ---
+
+// Flutter web plugin registrant file.
+//
+// Generated file. Do not edit.
+//
+
+// ignore_for_file: type=lint
+
+void registerPlugins() {}
+
+
+--- FILE: windows/CMakeLists.txt ---
+
+# Project-level configuration.
+cmake_minimum_required(VERSION 3.14)
+project(walt_interview_app LANGUAGES CXX)
+
+# The name of the executable created for the application. Change this to change
+# the on-disk name of your application.
+set(BINARY_NAME "walt_interview_app")
+
+# Explicitly opt in to modern CMake behaviors to avoid warnings with recent
+# versions of CMake.
+cmake_policy(VERSION 3.14...3.25)
+
+# Define build configuration option.
+get_property(IS_MULTICONFIG GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG)
+if(IS_MULTICONFIG)
+  set(CMAKE_CONFIGURATION_TYPES "Debug;Profile;Release"
+    CACHE STRING "" FORCE)
+else()
+  if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+    set(CMAKE_BUILD_TYPE "Debug" CACHE
+      STRING "Flutter build mode" FORCE)
+    set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS
+      "Debug" "Profile" "Release")
+  endif()
+endif()
+# Define settings for the Profile build mode.
+set(CMAKE_EXE_LINKER_FLAGS_PROFILE "${CMAKE_EXE_LINKER_FLAGS_RELEASE}")
+set(CMAKE_SHARED_LINKER_FLAGS_PROFILE "${CMAKE_SHARED_LINKER_FLAGS_RELEASE}")
+set(CMAKE_C_FLAGS_PROFILE "${CMAKE_C_FLAGS_RELEASE}")
+set(CMAKE_CXX_FLAGS_PROFILE "${CMAKE_CXX_FLAGS_RELEASE}")
+
+# Use Unicode for all projects.
+add_definitions(-DUNICODE -D_UNICODE)
+
+# Compilation settings that should be applied to most targets.
+#
+# Be cautious about adding new options here, as plugins use this function by
+# default. In most cases, you should add new options to specific targets instead
+# of modifying this function.
+function(APPLY_STANDARD_SETTINGS TARGET)
+  target_compile_features(${TARGET} PUBLIC cxx_std_17)
+  target_compile_options(${TARGET} PRIVATE /W4 /WX /wd"4100")
+  target_compile_options(${TARGET} PRIVATE /EHsc)
+  target_compile_definitions(${TARGET} PRIVATE "_HAS_EXCEPTIONS=0")
+  target_compile_definitions(${TARGET} PRIVATE "$<$<CONFIG:Debug>:_DEBUG>")
+endfunction()
+
+# Flutter library and tool build rules.
+set(FLUTTER_MANAGED_DIR "${CMAKE_CURRENT_SOURCE_DIR}/flutter")
+add_subdirectory(${FLUTTER_MANAGED_DIR})
+
+# Application build; see runner/CMakeLists.txt.
+add_subdirectory("runner")
+
+
+# Generated plugin build rules, which manage building the plugins and adding
+# them to the application.
+include(flutter/generated_plugins.cmake)
+
+
+# === Installation ===
+# Support files are copied into place next to the executable, so that it can
+# run in place. This is done instead of making a separate bundle (as on Linux)
+# so that building and running from within Visual Studio will work.
+set(BUILD_BUNDLE_DIR "$<TARGET_FILE_DIR:${BINARY_NAME}>")
+# Make the "install" step default, as it's required to run.
+set(CMAKE_VS_INCLUDE_INSTALL_TO_DEFAULT_BUILD 1)
+if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+  set(CMAKE_INSTALL_PREFIX "${BUILD_BUNDLE_DIR}" CACHE PATH "..." FORCE)
+endif()
+
+set(INSTALL_BUNDLE_DATA_DIR "${CMAKE_INSTALL_PREFIX}/data")
+set(INSTALL_BUNDLE_LIB_DIR "${CMAKE_INSTALL_PREFIX}")
+
+install(TARGETS ${BINARY_NAME} RUNTIME DESTINATION "${CMAKE_INSTALL_PREFIX}"
+  COMPONENT Runtime)
+
+install(FILES "${FLUTTER_ICU_DATA_FILE}" DESTINATION "${INSTALL_BUNDLE_DATA_DIR}"
+  COMPONENT Runtime)
+
+install(FILES "${FLUTTER_LIBRARY}" DESTINATION "${INSTALL_BUNDLE_LIB_DIR}"
+  COMPONENT Runtime)
+
+if(PLUGIN_BUNDLED_LIBRARIES)
+  install(FILES "${PLUGIN_BUNDLED_LIBRARIES}"
+    DESTINATION "${INSTALL_BUNDLE_LIB_DIR}"
+    COMPONENT Runtime)
+endif()
+
+# Copy the native assets provided by the build.dart from all packages.
+set(NATIVE_ASSETS_DIR "${PROJECT_BUILD_DIR}native_assets/windows/")
+install(DIRECTORY "${NATIVE_ASSETS_DIR}"
+   DESTINATION "${INSTALL_BUNDLE_LIB_DIR}"
+   COMPONENT Runtime)
+
+# Fully re-copy the assets directory on each build to avoid having stale files
+# from a previous install.
+set(FLUTTER_ASSET_DIR_NAME "flutter_assets")
+install(CODE "
+  file(REMOVE_RECURSE \"${INSTALL_BUNDLE_DATA_DIR}/${FLUTTER_ASSET_DIR_NAME}\")
+  " COMPONENT Runtime)
+install(DIRECTORY "${PROJECT_BUILD_DIR}/${FLUTTER_ASSET_DIR_NAME}"
+  DESTINATION "${INSTALL_BUNDLE_DATA_DIR}" COMPONENT Runtime)
+
+# Install the AOT library on non-Debug builds only.
+install(FILES "${AOT_LIBRARY}" DESTINATION "${INSTALL_BUNDLE_DATA_DIR}"
+  CONFIGURATIONS Profile;Release
+  COMPONENT Runtime)
+
+
+--- FILE: windows/runner/CMakeLists.txt ---
+
+cmake_minimum_required(VERSION 3.14)
+project(runner LANGUAGES CXX)
+
+# Define the application target. To change its name, change BINARY_NAME in the
+# top-level CMakeLists.txt, not the value here, or `flutter run` will no longer
+# work.
+#
+# Any new source files that you add to the application should be added here.
+add_executable(${BINARY_NAME} WIN32
+  "flutter_window.cpp"
+  "main.cpp"
+  "utils.cpp"
+  "win32_window.cpp"
+  "${FLUTTER_MANAGED_DIR}/generated_plugin_registrant.cc"
+  "Runner.rc"
+  "runner.exe.manifest"
+)
+
+# Apply the standard set of build settings. This can be removed for applications
+# that need different build settings.
+apply_standard_settings(${BINARY_NAME})
+
+# Add preprocessor definitions for the build version.
+target_compile_definitions(${BINARY_NAME} PRIVATE "FLUTTER_VERSION=\"${FLUTTER_VERSION}\"")
+target_compile_definitions(${BINARY_NAME} PRIVATE "FLUTTER_VERSION_MAJOR=${FLUTTER_VERSION_MAJOR}")
+target_compile_definitions(${BINARY_NAME} PRIVATE "FLUTTER_VERSION_MINOR=${FLUTTER_VERSION_MINOR}")
+target_compile_definitions(${BINARY_NAME} PRIVATE "FLUTTER_VERSION_PATCH=${FLUTTER_VERSION_PATCH}")
+target_compile_definitions(${BINARY_NAME} PRIVATE "FLUTTER_VERSION_BUILD=${FLUTTER_VERSION_BUILD}")
+
+# Disable Windows macros that collide with C++ standard library functions.
+target_compile_definitions(${BINARY_NAME} PRIVATE "NOMINMAX")
+
+# Add dependency libraries and include directories. Add any application-specific
+# dependencies here.
+target_link_libraries(${BINARY_NAME} PRIVATE flutter flutter_wrapper_app)
+target_link_libraries(${BINARY_NAME} PRIVATE "dwmapi.lib")
+target_include_directories(${BINARY_NAME} PRIVATE "${CMAKE_SOURCE_DIR}")
+
+# Run the Flutter tool portions of the build. This must not be removed.
+add_dependencies(${BINARY_NAME} flutter_assemble)
+
+
+--- FILE: windows/flutter/CMakeLists.txt ---
+
+# This file controls Flutter-level build steps. It should not be edited.
+cmake_minimum_required(VERSION 3.14)
+
+set(EPHEMERAL_DIR "${CMAKE_CURRENT_SOURCE_DIR}/ephemeral")
+
+# Configuration provided via flutter tool.
+include(${EPHEMERAL_DIR}/generated_config.cmake)
+
+# TODO: Move the rest of this into files in ephemeral. See
+# https://github.com/flutter/flutter/issues/57146.
+set(WRAPPER_ROOT "${EPHEMERAL_DIR}/cpp_client_wrapper")
+
+# Set fallback configurations for older versions of the flutter tool.
+if (NOT DEFINED FLUTTER_TARGET_PLATFORM)
+  set(FLUTTER_TARGET_PLATFORM "windows-x64")
+endif()
+
+# === Flutter Library ===
+set(FLUTTER_LIBRARY "${EPHEMERAL_DIR}/flutter_windows.dll")
+
+# Published to parent scope for install step.
+set(FLUTTER_LIBRARY ${FLUTTER_LIBRARY} PARENT_SCOPE)
+set(FLUTTER_ICU_DATA_FILE "${EPHEMERAL_DIR}/icudtl.dat" PARENT_SCOPE)
+set(PROJECT_BUILD_DIR "${PROJECT_DIR}/build/" PARENT_SCOPE)
+set(AOT_LIBRARY "${PROJECT_DIR}/build/windows/app.so" PARENT_SCOPE)
+
+list(APPEND FLUTTER_LIBRARY_HEADERS
+  "flutter_export.h"
+  "flutter_windows.h"
+  "flutter_messenger.h"
+  "flutter_plugin_registrar.h"
+  "flutter_texture_registrar.h"
+)
+list(TRANSFORM FLUTTER_LIBRARY_HEADERS PREPEND "${EPHEMERAL_DIR}/")
+add_library(flutter INTERFACE)
+target_include_directories(flutter INTERFACE
+  "${EPHEMERAL_DIR}"
+)
+target_link_libraries(flutter INTERFACE "${FLUTTER_LIBRARY}.lib")
+add_dependencies(flutter flutter_assemble)
+
+# === Wrapper ===
+list(APPEND CPP_WRAPPER_SOURCES_CORE
+  "core_implementations.cc"
+  "standard_codec.cc"
+)
+list(TRANSFORM CPP_WRAPPER_SOURCES_CORE PREPEND "${WRAPPER_ROOT}/")
+list(APPEND CPP_WRAPPER_SOURCES_PLUGIN
+  "plugin_registrar.cc"
+)
+list(TRANSFORM CPP_WRAPPER_SOURCES_PLUGIN PREPEND "${WRAPPER_ROOT}/")
+list(APPEND CPP_WRAPPER_SOURCES_APP
+  "flutter_engine.cc"
+  "flutter_view_controller.cc"
+)
+list(TRANSFORM CPP_WRAPPER_SOURCES_APP PREPEND "${WRAPPER_ROOT}/")
+
+# Wrapper sources needed for a plugin.
+add_library(flutter_wrapper_plugin STATIC
+  ${CPP_WRAPPER_SOURCES_CORE}
+  ${CPP_WRAPPER_SOURCES_PLUGIN}
+)
+apply_standard_settings(flutter_wrapper_plugin)
+set_target_properties(flutter_wrapper_plugin PROPERTIES
+  POSITION_INDEPENDENT_CODE ON)
+set_target_properties(flutter_wrapper_plugin PROPERTIES
+  CXX_VISIBILITY_PRESET hidden)
+target_link_libraries(flutter_wrapper_plugin PUBLIC flutter)
+target_include_directories(flutter_wrapper_plugin PUBLIC
+  "${WRAPPER_ROOT}/include"
+)
+add_dependencies(flutter_wrapper_plugin flutter_assemble)
+
+# Wrapper sources needed for the runner.
+add_library(flutter_wrapper_app STATIC
+  ${CPP_WRAPPER_SOURCES_CORE}
+  ${CPP_WRAPPER_SOURCES_APP}
+)
+apply_standard_settings(flutter_wrapper_app)
+target_link_libraries(flutter_wrapper_app PUBLIC flutter)
+target_include_directories(flutter_wrapper_app PUBLIC
+  "${WRAPPER_ROOT}/include"
+)
+add_dependencies(flutter_wrapper_app flutter_assemble)
+
+# === Flutter tool backend ===
+# _phony_ is a non-existent file to force this command to run every time,
+# since currently there's no way to get a full input/output list from the
+# flutter tool.
+set(PHONY_OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/_phony_")
+set_source_files_properties("${PHONY_OUTPUT}" PROPERTIES SYMBOLIC TRUE)
+add_custom_command(
+  OUTPUT ${FLUTTER_LIBRARY} ${FLUTTER_LIBRARY_HEADERS}
+    ${CPP_WRAPPER_SOURCES_CORE} ${CPP_WRAPPER_SOURCES_PLUGIN}
+    ${CPP_WRAPPER_SOURCES_APP}
+    ${PHONY_OUTPUT}
+  COMMAND ${CMAKE_COMMAND} -E env
+    ${FLUTTER_TOOL_ENVIRONMENT}
+    "${FLUTTER_ROOT}/packages/flutter_tools/bin/tool_backend.bat"
+      ${FLUTTER_TARGET_PLATFORM} $<CONFIG>
+  VERBATIM
+)
+add_custom_target(flutter_assemble DEPENDS
+  "${FLUTTER_LIBRARY}"
+  ${FLUTTER_LIBRARY_HEADERS}
+  ${CPP_WRAPPER_SOURCES_CORE}
+  ${CPP_WRAPPER_SOURCES_PLUGIN}
+  ${CPP_WRAPPER_SOURCES_APP}
+)
+
+
+--- FILE: .idea/workspace.xml ---
+
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="FileEditorManager">
+    <leaf>
+      <file leaf-file-name="main.dart" pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/lib/main.dart">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="0">
+              <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+    </leaf>
+  </component>
+  <component name="ToolWindowManager">
+    <editor active="true" />
+    <layout>
+      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
+    </layout>
+  </component>
+  <component name="ProjectView">
+    <navigator currentView="ProjectPane" proportions="" version="1">
+    </navigator>
+    <panes>
+      <pane id="ProjectPane">
+        <option name="show-excluded-files" value="false" />
+      </pane>
+    </panes>
+  </component>
+  <component name="PropertiesComponent">
+    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
+    <property name="dart.analysis.tool.window.force.activate" value="true" />
+    <property name="show.migrate.to.gradle.popup" value="false" />
+  </component>
+</project>
+
+
+--- FILE: .idea/modules.xml ---
+
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/walt_interview_app.iml" filepath="$PROJECT_DIR$/walt_interview_app.iml" />
+      <module fileurl="file://$PROJECT_DIR$/android/walt_interview_app_android.iml" filepath="$PROJECT_DIR$/android/walt_interview_app_android.iml" />
+    </modules>
+  </component>
+</project>
+
+
+--- FILE: .idea/runConfigurations/main_dart.xml ---
+
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="main.dart" type="FlutterRunConfigurationType" factoryName="Flutter">
+    <option name="filePath" value="$PROJECT_DIR$/lib/main.dart" />
+    <method />
+  </configuration>
+</component>
+
+--- FILE: .idea/libraries/Dart_SDK.xml ---
+
+<component name="libraryTable">
+  <library name="Dart SDK">
+    <CLASSES>
+      <root url="file:///opt/homebrew/Caskroom/flutter/3.29.1/flutter/bin/cache/dart-sdk/lib/async" />
+      <root url="file:///opt/homebrew/Caskroom/flutter/3.29.1/flutter/bin/cache/dart-sdk/lib/collection" />
+      <root url="file:///opt/homebrew/Caskroom/flutter/3.29.1/flutter/bin/cache/dart-sdk/lib/convert" />
+      <root url="file:///opt/homebrew/Caskroom/flutter/3.29.1/flutter/bin/cache/dart-sdk/lib/core" />
+      <root url="file:///opt/homebrew/Caskroom/flutter/3.29.1/flutter/bin/cache/dart-sdk/lib/developer" />
+      <root url="file:///opt/homebrew/Caskroom/flutter/3.29.1/flutter/bin/cache/dart-sdk/lib/html" />
+      <root url="file:///opt/homebrew/Caskroom/flutter/3.29.1/flutter/bin/cache/dart-sdk/lib/io" />
+      <root url="file:///opt/homebrew/Caskroom/flutter/3.29.1/flutter/bin/cache/dart-sdk/lib/isolate" />
+      <root url="file:///opt/homebrew/Caskroom/flutter/3.29.1/flutter/bin/cache/dart-sdk/lib/math" />
+      <root url="file:///opt/homebrew/Caskroom/flutter/3.29.1/flutter/bin/cache/dart-sdk/lib/mirrors" />
+      <root url="file:///opt/homebrew/Caskroom/flutter/3.29.1/flutter/bin/cache/dart-sdk/lib/typed_data" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
+
+--- FILE: .idea/libraries/KotlinJavaRuntime.xml ---
+
+<component name="libraryTable">
+  <library name="KotlinJavaRuntime">
+    <CLASSES>
+      <root url="jar://$KOTLIN_BUNDLED$/lib/kotlin-stdlib.jar!/" />
+      <root url="jar://$KOTLIN_BUNDLED$/lib/kotlin-reflect.jar!/" />
+      <root url="jar://$KOTLIN_BUNDLED$/lib/kotlin-test.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$KOTLIN_BUNDLED$/lib/kotlin-stdlib-sources.jar!/" />
+      <root url="jar://$KOTLIN_BUNDLED$/lib/kotlin-reflect-sources.jar!/" />
+      <root url="jar://$KOTLIN_BUNDLED$/lib/kotlin-test-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>
+
+
+--- ASSET FILES ---
+
