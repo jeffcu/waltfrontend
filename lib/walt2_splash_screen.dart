@@ -1,36 +1,28 @@
 // -- lib/walt2_splash_screen.dart
 import 'package:flutter/material.dart';
 import 'walt2_home_screen.dart';
-import 'api_service.dart'; // Import ApiService
+import 'api_service.dart';
 
 class Walt2SplashScreen extends StatefulWidget {
-  final ApiService apiService; // Receive ApiService from main.dart
+  final ApiService apiService;
 
-  const Walt2SplashScreen({super.key, required this.apiService}); // Constructor to receive ApiService
+  const Walt2SplashScreen({super.key, required this.apiService});
 
   @override
   _Walt2SplashScreenState createState() => _Walt2SplashScreenState();
 }
 
 class _Walt2SplashScreenState extends State<Walt2SplashScreen> {
-  // String baseUrl = "https://virtual-lab-staging-jeff-b43cbb10d55f.herokuapp.com"; // No need for baseUrl here
-  // late ApiService _apiService; // No need to create ApiService here, using the passed one
   bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
-    // _apiService = ApiService(baseUrl: baseUrl); // No need to initialize here
     _fetchInitialData();
   }
 
-  // @override // No need to dispose here, ApiService is managed in main.dart
-  // void dispose() {
-  //   _apiService.closeClient();
-  //   super.dispose();
-  // }
 
-  ApiService get _apiService => widget.apiService; // Helper to access ApiService easily
+  ApiService get _apiService => widget.apiService;
 
   Future<void> _fetchInitialData() async {
     setState(() {
@@ -67,7 +59,7 @@ class _Walt2SplashScreenState extends State<Walt2SplashScreen> {
         MaterialPageRoute(
           builder: (context) => Walt2HomeScreen(
             initialMessage: initialMessage,
-            apiService: _apiService, // Pass the SAME ApiService instance
+            apiService: _apiService,
           ),
         ),
       );
@@ -91,7 +83,7 @@ class _Walt2SplashScreenState extends State<Walt2SplashScreen> {
       MaterialPageRoute(
         builder: (context) => Walt2HomeScreen(
           initialMessage: "Loading your story...",
-          apiService: _apiService, // Pass the SAME ApiService instance
+          apiService: _apiService,
           loadStoryOnInit: true,
         ),
       ),
@@ -101,6 +93,10 @@ class _Walt2SplashScreenState extends State<Walt2SplashScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('Walt the auto-Biographer'), // Updated title
+        backgroundColor: Theme.of(context).primaryColor,
+      ),
       body: Stack(
         children: [
           Center(

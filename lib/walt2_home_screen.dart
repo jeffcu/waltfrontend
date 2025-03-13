@@ -7,13 +7,13 @@ import 'package:path_provider/path_provider.dart';
 
 class Walt2HomeScreen extends StatefulWidget {
   final String initialMessage;
-  final ApiService apiService; // Receive ApiService from main.dart and SplashScreen
+  final ApiService apiService;
   final bool loadStoryOnInit;
 
   const Walt2HomeScreen({
     super.key,
     required this.initialMessage,
-    required this.apiService, // Receive ApiService
+    required this.apiService,
     this.loadStoryOnInit = false,
   });
 
@@ -24,13 +24,13 @@ class Walt2HomeScreen extends StatefulWidget {
 class _Walt2HomeScreenState extends State<Walt2HomeScreen> {
   String chatOutput = "";
   final TextEditingController _promptController = TextEditingController();
-  // late ApiService _apiService; // No need to create ApiService here, using passed one
+  late ApiService _apiService;
   bool _isAnalyzing = false;
 
   @override
   void initState() {
     super.initState();
-    // _apiService = widget.apiService; // No need to initialize here, just use the passed one
+    _apiService = widget.apiService;
     setState(() {
       chatOutput = widget.initialMessage;
     });
@@ -41,14 +41,11 @@ class _Walt2HomeScreenState extends State<Walt2HomeScreen> {
     }
   }
 
-  // @override // No need to dispose here, ApiService is managed in main.dart
-  // void dispose() {
-  //   _apiService.closeClient();
-  //   super.dispose();
-  // }
-
-  ApiService get _apiService => widget.apiService; // Helper to access ApiService easily
-
+  @override
+  void dispose() {
+    _apiService.closeClient();
+    super.dispose();
+  }
 
   Future<void> _analyzePrompt() async {
     String userInput = _promptController.text.trim();
@@ -140,13 +137,19 @@ class _Walt2HomeScreenState extends State<Walt2HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Walt2 Biographer'),
+        title: const Text('Walt the auto-Biographer'), // Updated title
         backgroundColor: Theme.of(context).primaryColor,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.save),
-            tooltip: 'Save Story',
-            onPressed: saveStory,
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 8.0), // Adjust padding as needed
+            child: ElevatedButton(
+              onPressed: saveStory,
+              style: ElevatedButton.styleFrom(
+                foregroundColor: Colors.white,
+                backgroundColor: Colors.green, // Choose a suitable color
+              ),
+              child: const Text('Save Story'),
+            ),
           ),
         ],
       ),
@@ -241,6 +244,17 @@ class _Walt2HomeScreenState extends State<Walt2HomeScreen> {
                         ),
                       ),
                     ],
+                  ),
+                  const SizedBox(height: 20), // Added SizedBox for spacing
+                  ElevatedButton( // Craft Biography Button
+                    onPressed: _analyzePrompt, // Re-use _analyzePrompt for now
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Theme.of(context).primaryColor,
+                      foregroundColor: Colors.white,
+                      minimumSize: const Size(double.infinity, 60), // Make it wider and taller
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    child: const Text("Craft Biography"),
                   ),
                 ],
               ),
