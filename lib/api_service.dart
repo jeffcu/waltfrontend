@@ -86,6 +86,38 @@ class ApiService {
     }
   }
 
+  Future<String> continueBio(String checkpointData) async { // New continueBio function
+    try {
+      final response = await client.post(
+        Uri.parse('$baseUrl/api/walt2/continue_bio'), // Use continue_bio API endpoint
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+          "X-CSRFToken": csrfToken ?? "",
+          "Cookie": "session=$sessionCookie",
+          "Referer": "$baseUrl/walt2/",
+        },
+        body: "checkpoint_data=${Uri.encodeComponent(checkpointData)}", // Send checkpoint_data in body
+      );
+
+      if (response.statusCode != 200) {
+        throw Exception("Server error in continueBio: ${response.statusCode} - ${response.body.substring(0, 200)}...");
+      }
+
+      if (response.body.isEmpty) {
+        throw Exception("Empty response from server in continueBio");
+      }
+      final responseData = jsonDecode(response.body);
+       if (responseData['error'] != null) {
+        throw Exception("Server error in continueBio: ${responseData['error']}");
+      }
+      return responseData['initial_message'] ?? "No response provided"; // Extract initial_message
+    } catch (e) {
+      print("Error in continueBio: $e");
+      throw Exception('Failed to continue bio: $e'); // Re-throw the exception
+    }
+  }
+
+
   void closeClient() {
     client.close();
   }

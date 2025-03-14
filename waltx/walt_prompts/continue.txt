@@ -1,1 +1,0 @@
-Look in the attached information and extract the users first name.   Welcome the user by name and ask if they are ready to continue with their interview.

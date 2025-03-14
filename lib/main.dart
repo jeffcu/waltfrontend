@@ -1,4 +1,3 @@
-// -- lib/main.dart
 import 'package:flutter/material.dart';
 import 'walt2_splash_screen.dart';
 import 'api_service.dart'; // Import ApiService
@@ -23,11 +22,11 @@ class Walt2AppState extends State<Walt2App> {
     apiService = ApiService(baseUrl: "https://virtual-lab-staging-jeff-b43cbb10d55f.herokuapp.com"); // Initialize ApiService here
   }
 
-  @override
-  void dispose() {
-    apiService.closeClient(); // Dispose ApiService when the entire app is disposed
-    super.dispose();
-  }
+  // @override  <-- COMMENT OUT THE ENTIRE dispose() METHOD
+  // void dispose() {
+  //   apiService.closeClient(); // Dispose ApiService when the entire app is disposed
+  //   super.dispose();
+  // }
 
 
   @override
@@ -41,8 +40,7 @@ class Walt2AppState extends State<Walt2App> {
           bodyLarge: TextStyle(color: Color(0xFF333333)),
         ),
       ),
-      home: Walt2SplashScreen(apiService: apiService), // Pass ApiService to SplashScreen
+      home: Walt2SplashScreen(apiService: apiService), // Pass ApiService to SplashScreen // REMOVED 'const' HERE
     );
   }
 }
-// -- lib/main.dart
