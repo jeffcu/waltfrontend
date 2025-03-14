@@ -1,3 +1,4 @@
+
 // -- lib/walt2_home_screen.dart
 import 'package:flutter/material.dart';
 import 'api_service.dart';
@@ -36,13 +37,13 @@ class _Walt2HomeScreenState extends State<Walt2HomeScreen> {
     // No more conditional loadStory() in initState
   }
 
-  @override
-  void dispose() {
-    _apiService.closeClient();
-    _promptController.dispose();
-    _scrollController.dispose();
-    super.dispose();
-  }
+  // @override  <-- REMOVE THE ENTIRE dispose() METHOD
+  // void dispose() {
+  //   _apiService.closeClient();
+  //   _promptController.dispose();
+  //   _scrollController.dispose();
+  //   super.dispose();
+  // }
 
   void _addMessage(String text, ChatMessageType type) {
     setState(() {
@@ -59,6 +60,7 @@ class _Walt2HomeScreenState extends State<Walt2HomeScreen> {
 
   void _addWaltMessage(String text) {
     _addMessage(text, ChatMessageType.walt);
+    saveStory(); // Automatically save after each Walt message
   }
 
   void _addUserMessage(String text) {
@@ -99,25 +101,25 @@ class _Walt2HomeScreenState extends State<Walt2HomeScreen> {
   }
 
   Future<void> saveStory() async {
-    setState(() {
-      _isAnalyzing = true; // Use analyzing state for saving as well for UI feedback
-    });
+    // setState(() { // No longer need to set analyzing state for autosave - keep UI responsive
+    //   _isAnalyzing = true; // Use analyzing state for saving as well for UI feedback
+    // });
     try {
       final file = File(await _getFilePath());
       String storyText = _messages.where((message) => message.type == ChatMessageType.walt).map((message) => message.text).join("\n\n");
       await file.writeAsString(storyText);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Story saved locally!")),
-      );
+      // ScaffoldMessenger.of(context).showSnackBar( // No longer need confirmation for autosave
+      //   const SnackBar(content: Text("Story saved locally!")),
+      // );
     } catch (e) {
       print("Error saving story: $e");
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error saving story: $e")),
-      );
+      // ScaffoldMessenger.of(context).showSnackBar( // Keep error messages for save issues
+      //   SnackBar(content: Text("Error saving story: $e")),
+      // );
     } finally {
-      setState(() {
-        _isAnalyzing = false;
-      });
+      // setState(() {  // No longer need to set analyzing state for autosave
+      //   _isAnalyzing = false;
+      // });
     }
   }
 
@@ -166,19 +168,19 @@ class _Walt2HomeScreenState extends State<Walt2HomeScreen> {
       appBar: AppBar(
         title: const Text('Walt the auto-Biographer'),
         backgroundColor: Theme.of(context).primaryColor,
-        actions: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 8.0),
-            child: ElevatedButton(
-              onPressed: saveStory,
-              style: ElevatedButton.styleFrom(
-                foregroundColor: Colors.white,
-                backgroundColor: Colors.green,
-              ),
-              child: const Text('Save Story'),
-            ),
-          ),
-        ],
+        // actions: [ // Removed Save Story button
+        //   Padding(
+        //     padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 8.0),
+        //     child: ElevatedButton(
+        //       onPressed: saveStory,
+        //       style: ElevatedButton.styleFrom(
+        //         foregroundColor: Colors.white,
+        //         backgroundColor: Colors.green,
+        //       ),
+        //       child: const Text('Save Story'),
+        //     ),
+        //   ),
+        // ],
       ),
       body: Stack(
         children: [
@@ -188,9 +190,9 @@ class _Walt2HomeScreenState extends State<Walt2HomeScreen> {
                 child: ListView.builder(
                   controller: _scrollController,
                   itemCount: _messages.length,
-                  reverse: true, // Add this line to reverse the list
+                  // reverse: true, // REMOVE this line to display messages oldest to newest
                   itemBuilder: (context, index) {
-                    final message = _messages[index]; // No longer need to reverse index here
+                    final message = _messages[index]; // Index is now correct for forward order
                     return ChatBubble(message: message);
                   },
                 ),
